@@ -1,0 +1,13 @@
+__pycache__
+*.pyc
+.pytest_cache
+.setup-*
+*.egg-info
+build
+dist
+.eggs
+space/version.py
+p
+*.orig
+*.rej
+*.log

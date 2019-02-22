@@ -1,0 +1,59 @@
+#!/bin/bash
+# INSTALL: ln -svf ../../hooks/pre-commit .git/hooks/pre-commit
+
+N="$(basename "$0")"
+
+function join {
+    local IFS="$1"; shift
+    if [ $# = 0 ]; then
+        readarray -t T < <( cat )
+        set -- "${T[@]}"
+    fi
+    echo "$*"
+}
+
+function boring_filter {
+    while read X; do
+        if [ -e "$X" -a -s "$X" ]
+        then echo "$X"
+        fi
+    done
+}
+
+function commit_files {
+    git status --porcelain -uno \
+        | grep '^[A-Z]' \
+        | sed -e 's/^[A-Z][A-Z]*  *//' -e 's/.*[-][>][ ][ ]*//'
+}
+
+function py_files {
+    commit_files | grep -v contrib/ | grep '\.py$'
+}
+
+echo "[$N] commit files: $(commit_files | join ' ')"
+echo "[$N] python files: $(py_files | join ' ')"
+
+readarray -t dang < <( py_files | boring_filter | xargs -r grep -L coding: )
+if [ "${#dang[*]}" -gt 0 ]; then
+    echo $'\e[1;33m'
+    echo $'these files lack coding:\e[1;30m'
+    for f in "${dang[@]}"
+    do echo "${f#./}"
+    done
+    exit 1
+fi
+
+readarray -t dang < <( commit_files | grep -v hooks/pre-commit | xargs -r grep -i wtf )
+if [ "${#dang[*]}" -gt 0 ]; then
+    echo $'\e[1;33m'
+    echo $'these files contain WTF:\e[1;30m'
+    for f in "${dang[@]}"
+    do echo "${f#./}"
+    done
+    exit 1
+fi
+
+if [ -z "$SKIP_LINT$NOLINT$NO_LINT" ]
+then py_files | boring_filter | xargs -r pylint -d fixme || exit 1
+fi
+
