@@ -2,7 +2,7 @@
 
 import inspect
 import logging
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 log = logging.getLogger(__name__)
 
@@ -38,6 +38,24 @@ def filter_annotated_arg(name, item, annotation):
             if g:
                 return g
             return item
+
+def introspect_hints(fn):
+    ''' try to guess the needed argument types for the given function '''
+    from .container import Containable
+    from .living import Living
+    fas = inspect.getfullargspec(fn)
+    ret = OrderedDict()
+    for arg in fas.args:
+        annotation = fas.annotations.get(arg, None)
+        if annotation is None:
+            if arg.startswith('obj'):
+                annotation = Containable
+            elif arg.startswith('living') or arg.startswith('target'):
+                annotation = Living
+            else:
+                annotation = str
+        ret[arg] = annotation
+    return ret
 
 def introspect_args(fn, *iargs, **ikwargs):
     ''' given a function, zero or more args and zero or more kwargs
