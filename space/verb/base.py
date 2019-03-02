@@ -84,7 +84,4 @@ class Verb:
         me.parse_do(self.name, **kw)
 
     def can(self, me, **kw):
-        res, kw = self._test_pcr( me.parse_can(self.name, **kw) )
-        if res:
-            return kw
-        self.error(kw.get('error'))
+        return self._test_pcr( me.parse_can(self.name, **kw) )
