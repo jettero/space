@@ -39,13 +39,20 @@ def filter_annotated_arg(name, item, annotation):
                 return g
             return item
 
-def introspect_hints(fn):
+def introspect_hints(fn, add_kwonly=False):
     ''' try to guess the needed argument types for the given function '''
     from .container import Containable
     from .living import Living
     fas = inspect.getfullargspec(fn)
+    todo = list(fas.args)
+    if inspect.ismethod(fn):
+        todo = todo[1:]
+    if fas.varargs:
+        todo.append(fas.varargs)
+    if add_kwonly and fas.kwonlyargs:
+        todo += fas.kwonlyargs
     ret = OrderedDict()
-    for arg in fas.args:
+    for arg in todo:
         annotation = fas.annotations.get(arg, None)
         if annotation is None:
             if arg.startswith('obj'):

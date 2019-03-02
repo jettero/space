@@ -4,7 +4,7 @@ import logging
 import weakref
 from collections import namedtuple
 
-from .args import safe_execute, introspect_args
+from .args import safe_execute, introspect_args, introspect_hints
 
 log = logging.getLogger(__name__)
 
@@ -43,6 +43,16 @@ class FFAK(namedtuple('FFAK', ['func', 'filled', 'args', 'kwargs'])):
         return self._base_order
 
 class MethodArgsRouter(MethodRouter):
+    def hints(self):
+        ret = None
+        for fname in self.dir:
+            hints = introspect_hints(getattr(self.obj, fname))
+            if ret is None:
+                ret = hints
+            else:
+                ret.update(hints)
+        return ret
+
     def fill(self, *a, **kw):
         for fname in self.dir:
             fak = introspect_args(getattr(self.obj, fname), *a, **kw)
