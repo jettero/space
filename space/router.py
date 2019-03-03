@@ -44,13 +44,10 @@ class FFAK(namedtuple('FFAK', ['func', 'filled', 'args', 'kwargs'])):
 
 class MethodArgsRouter(MethodRouter):
     def hints(self):
-        ret = None
+        ret = list()
         for fname in self.dir:
             hints = introspect_hints(getattr(self.obj, fname))
-            if ret is None:
-                ret = hints
-            else:
-                ret.update(hints)
+            ret += hints.items()
         return ret
 
     def fill(self, *a, **kw):
