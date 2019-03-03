@@ -43,6 +43,7 @@ class FFAK(namedtuple('FFAK', ['func', 'filled', 'args', 'kwargs'])):
         return self._base_order
 
 class RouteHint(namedtuple('RouteHint', ['fname', 'func', 'hlist'])):
+    tokens = None
     def __repr__(self):
         hl = '/'.join([ repr(x) for x in self.hlist ])
         return f'RH({self.fname})«{hl}»'

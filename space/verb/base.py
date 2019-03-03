@@ -80,6 +80,9 @@ class Verb:
                 return pcr
         raise TypeError(f'me.parse_can() error: return should be (bool, dict)')
 
+    def preprocess_tokens(self, me, **tokens):
+        return tokens
+
     def do(self, me, **kw):
         me.parse_do(self.name, **kw)
 

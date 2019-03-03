@@ -3,7 +3,7 @@
 import logging
 
 from .base import Verb
-from ..map.dir_util import move_string_to_dirs
+from ..map.dir_util import move_string_to_dirs, is_direction_string
 
 log = logging.getLogger(__name__)
 
@@ -14,7 +14,12 @@ class Action(Verb):
         'verb OBJ words',
     ]
 
-    def can(self, me, words, **kw):
-        kw['words'] = words
-        kw['moves'] = tuple( move_string_to_dirs(words) )
-        return super().can(me, **kw)
+    def preprocess_tokens(self, me, **tokens):
+        tokens = super().preprocess_tokens(me, **tokens)
+        if 'moves' in tokens:
+            moves = ' '.join( tokens['moves'] )
+            if is_direction_string(moves):
+                tokens['moves'] = tuple(move_string_to_dirs(moves))
+            else:
+                del tokens['moves']
+        return tokens
