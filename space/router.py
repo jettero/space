@@ -42,12 +42,17 @@ class FFAK(namedtuple('FFAK', ['func', 'filled', 'args', 'kwargs'])):
             return self._base_order - len(self.args) + len(self.kwargs)
         return self._base_order
 
+class RouteHint(namedtuple('RouteHint', ['fname', 'func', 'hlist'])):
+    def __repr__(self):
+        hl = '/'.join([ repr(x) for x in self.hlist ])
+        return f'RH({self.fname})«{hl}»'
+
 class MethodArgsRouter(MethodRouter):
     def hints(self):
         ret = list()
         for fname in self.dir:
-            hints = introspect_hints(getattr(self.obj, fname))
-            ret += hints.items()
+            func = getattr(self.obj, fname)
+            ret.append(RouteHint(fname, func, introspect_hints(func)))
         return ret
 
     def fill(self, *a, **kw):

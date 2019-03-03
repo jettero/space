@@ -39,7 +39,10 @@ def filter_annotated_arg(name, item, annotation):
                 return g
             return item
 
-IntroHint = namedtuple('IntroHint', ['aname', 'tlist'])
+class IntroHint(namedtuple('IntroHint', ['aname', 'tlist'])):
+    def __repr__(self):
+        tl = '→'.join([ x.__name__ for x in self.tlist ])
+        return f'IH({self.aname})<{tl}>'
 
 def introspect_hints(fn, add_kwonly=False):
     ''' try to guess the needed argument types for the given function '''
