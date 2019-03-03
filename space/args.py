@@ -2,7 +2,7 @@
 
 import inspect
 import logging
-from collections import namedtuple, OrderedDict
+from collections import namedtuple
 
 log = logging.getLogger(__name__)
 
@@ -39,6 +39,8 @@ def filter_annotated_arg(name, item, annotation):
                 return g
             return item
 
+IntroHint = namedtuple('IntroHint', ['aname', 'tlist'])
+
 def introspect_hints(fn, add_kwonly=False):
     ''' try to guess the needed argument types for the given function '''
     from .container import Containable
@@ -51,17 +53,20 @@ def introspect_hints(fn, add_kwonly=False):
         todo.append(fas.varargs)
     if add_kwonly and fas.kwonlyargs:
         todo += fas.kwonlyargs
-    ret = OrderedDict()
-    for arg in todo:
-        annotation = fas.annotations.get(arg, None)
-        if annotation is None:
-            if arg.startswith('obj'):
-                annotation = Containable
-            elif arg.startswith('living') or arg.startswith('target'):
-                annotation = Living
+    ret = [ IntroHint(arg, list()) for arg in todo ]
+    for ih in ret:
+        if ih.aname == fas.varargs:
+            ih.tlist.append(tuple)
+        an = fas.annotations.get(ih.aname, None)
+        if an is not None:
+            ih.tlist.append(an)
+        else:
+            if ih.aname.startswith('obj'):
+                ih.tlist.append(Containable)
+            elif ih.aname.startswith('living') or ih.aname.startswith('target'):
+                ih.tlist.append(Living)
             else:
-                annotation = str
-        ret[arg] = annotation
+                ih.tlist.append(str)
     return ret
 
 def introspect_args(fn, *iargs, **ikwargs):
