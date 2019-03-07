@@ -2,6 +2,7 @@
 
 import logging
 import weakref
+import types
 from collections import namedtuple
 
 from .args import safe_execute, introspect_args, introspect_hints
@@ -42,11 +43,49 @@ class FFAK(namedtuple('FFAK', ['func', 'filled', 'args', 'kwargs'])):
             return self._base_order - len(self.args) + len(self.kwargs)
         return self._base_order
 
+def list_match(name, objs):
+    if isinstance(objs, (types.GeneratorType, list, tuple)):
+        s = name.split('.', 1)
+        assert len(s) in (1,2,)
+        objs = [ i for i in objs if i.parse_match(*s) ]
+        if objs:
+            return objs
+    return tuple()
+
 class RouteHint(namedtuple('RouteHint', ['fname', 'func', 'hlist'])):
     tokens = None
     def __repr__(self):
         hl = '/'.join([ repr(x) for x in self.hlist ])
         return f'RH({self.fname})«{hl}»'
+
+    def fill(self, objs):
+        ret = dict()
+        for aname,tlist in self.hlist:
+            type0,*remainder = tlist
+            v = self.tokens.get(aname)
+            if v is None:
+                continue
+            if not type0:
+                ret[aname] = v
+            elif type0 in (list,tuple): # tuple→str, hopefully
+                if len(remainder) != 1 or remainder[0] is not str:
+                    raise NotImplementedError('TODO')
+                ret[aname] = v
+            elif remainder: # wtf!??!
+                raise NotImplementedError('TODO')
+            else:
+                applicable_objs = [ o for o in objs if isinstance(o, type0) ]
+                if isinstance(v, (list,tuple)):
+                    o = list()
+                    for x in v:
+                        o += list_match(x, applicable_objs)
+                else:
+                    o = list_match(v, applicable_objs)
+                ret[aname] = o
+        return ret
+
+    def evaluate(self, *a, **kw):
+        return safe_execute(self.func, *a, **kw)
 
 class MethodArgsRouter(MethodRouter):
     def hints(self):
