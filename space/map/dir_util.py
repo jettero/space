@@ -103,6 +103,6 @@ def move_string_to_dirs(moves_str):
             yield tok.value
         c = 1
 
-DIR_STRING = re.compile(r'^(?:\d*(NE|SE|NW|SW|[nsewNSEW])|[\s,]+)+$')
+DIR_STRING = re.compile(r'^(?:\d*(NE|SE|NW|SW|[nsewNSEW]|(?i:north|south|east|west))[\s,]*)+$')
 def is_direction_string(moves_str):
     return bool(DIR_STRING.match(moves_str))
