@@ -59,6 +59,7 @@ class RouteHint(namedtuple('RouteHint', ['fname', 'func', 'hlist'])):
         return f'RH({self.fname})«{hl}»'
 
     def fill(self, objs):
+        log.debug(' filling %s using objs=%s tok=%s', self, objs, self.tokens)
         ret = dict()
         for aname,tlist in self.hlist:
             type0,*remainder = tlist
