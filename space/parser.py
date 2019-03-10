@@ -64,7 +64,7 @@ class PSNode:
                     sr += ' → ??'
         else:
             sr = f'PSN[{self.score}]<{self.verb}>'
-        if self.kid  is not None:
+        if self.kid is not None:
             sr += f'\n {repr(self.kid)}'
         if self.next is not None:
             sr += f'\n{repr(self.next)}'
@@ -154,7 +154,7 @@ class PState:
             f'objs:   {self.objs}',
             f'states: {st}',
             f'bool:   {bool(self)}',
-            f'winner: {self.winner.verb} → {self.winner.do_args}',
+            f'winner: {self.winner.verb} → {self.winner.do_args}' if self.winner else 'winner: no',
         ]
         return '\n  '.join(kv)
 
@@ -202,33 +202,30 @@ class PState:
         if self:
             mr = MethodArgsRouter(self.me, f'do_{self.winner.verb.name}')
             self.me.active = True
+            log.debug("invoking %s(**%s) with active living %s", mr, self.winner.do_args, self.me)
             mr(**self.winner.do_args)
             self.me.active = False
+        else:
+            log.error("tried to invoke an untrue pstate: %s", self)
 
 class Parser:
     def parse(self, me, text_input):
+        log.debug('parsing "%s" for %s', text_input, me)
         pstate = PState(me, text_input)
         if pstate.states is None:
             from space.map.dir_util import is_direction_string
             if is_direction_string(text_input):
-                pstate = PState(me, f'move {text_input}')
+                text_input = f'move {text_input}'
+                log.debug(' parsing "%s" instead', text_input)
+                pstate = PState(me, text_input)
         if pstate.states is None:
-            raise SyntaxError('Huh?')
+            return pstate
         self.plan(pstate)
         self.evaluate(pstate)
         return pstate
 
-    def evaluate(self, pstate):
-        for item in pstate.iter_filled:
-            item.evaluate()
-
-        for item in sorted(pstate.iter_can_do, key=lambda x: 0 - x.score):
-            pstate.winner = item
-            break
-
     def plan(self, pstate):
         for verb in pstate.iter_verbs:
-            log.debug('plan() verb=%s', verb)
             mr = MethodArgsRouter(pstate.me, f'can_{verb.name}')
             for rhint in mr.hints():
                 log.debug(" rhint=%s", rhint)
@@ -249,3 +246,15 @@ class Parser:
                 log.debug('preprocess tokens for %s; %s --> %s', rhint, tokens, pp_tok)
                 rhint.tokens = pp_tok
                 pstate.add_rhint(verb, rhint)
+
+    def evaluate(self, pstate):
+        log.debug('evaluating pstate')
+        for item in pstate.iter_filled:
+            log.debug('%s .evaluate()', item)
+            item.evaluate()
+
+        for item in sorted(pstate.iter_can_do, key=lambda x: 0 - x.score):
+            log.debug('%s is the winner', item)
+            pstate.winner = item
+            break
+

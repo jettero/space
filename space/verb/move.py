@@ -17,9 +17,8 @@ class Action(Verb):
     def preprocess_tokens(self, me, **tokens):
         tokens = super().preprocess_tokens(me, **tokens)
         if 'moves' in tokens:
-            moves = ' '.join( tokens['moves'] )
+            moves = ' '.join( tokens.pop('moves') )
             if is_direction_string(moves):
                 tokens['moves'] = tuple(move_string_to_dirs(moves))
-            else:
-                del tokens['moves']
+            log.debug('%s -> %s', moves, tokens.get('moves') )
         return tokens
