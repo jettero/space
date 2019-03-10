@@ -23,7 +23,7 @@ class TargetError(SyntaxError):
     pass
 
 class PSNode:
-    kid = fname = rhint = None
+    can_do = do_args = kid = fname = rhint = None
 
     def __init__(self, verb, *more):
         self.verb = verb
@@ -79,11 +79,16 @@ class PSNode:
             self.kid.fill(objs)
 
     def evaluate(self):
-        self.can_do, self.do_args = self.rhint.evaluate(**self.filled)
+        res = self.can_do, tmp_kwargs = self.rhint.evaluate(**self.filled)
+        self.do_args = dict(**self.filled)
+        self.do_args.update(tmp_kwargs)
         log.debug('%s evaluate(): can_do=%s do_args=%s', self.short, self.can_do, self.do_args)
+        return res
 
     @property
     def score(self):
+        if self.can_do is True:
+            return 2 + (len(self.do_args)/100)
         if self.rhint:
             for hli in self.rhint.hlist:
                 if hli.aname not in self.filled:
@@ -123,15 +128,19 @@ class PSNode:
             yield from self.next
 
 class PState:
-    states = tokens = None
+    winner = states = tokens = None
 
     def __init__(self, me, text_input):
         self.me = me
-        self.init(text_input)
+        self.tokens = shlex.split(text_input)
+        self.vtok   = self.tokens.pop(0)
+        fv = find_verb(self.vtok)
+        if fv:
+            self.states = PSNode(*fv)
+        self.filled = False
         self.vmap = me.location.map.visicalc_submap(me)
         self.objs = [ o for o in self.vmap.objects ]
         self.filled = False
-        self.eval_ok = list()
 
     def __repr__(self):
         self.fill()
@@ -143,13 +152,10 @@ class PState:
             f'tokens: {self.tokens}',
             f'objs:   {self.objs}',
             f'states: {st}',
+            f'bool:   {bool(self)}',
+            f'winner: {self.winner.verb} → {self.winner.do_args}',
         ]
         return '\n  '.join(kv)
-
-    def init(self, text_input):
-        self.tokens = shlex.split(text_input)
-        self.states = PSNode(*find_verb(self.tokens.pop(0)))
-        self.filled = False
 
     def add_rhint(self, verb, rhint):
         log.debug('add_rhint(%s, %s)', verb.name, rhint)
@@ -157,48 +163,70 @@ class PState:
         self.filled = False
 
     def fill(self):
-        if self.filled or not self.states:
-            return
-        log.debug('filling PState')
-        self.filled = True
-        self.states.fill(self.objs)
+        if self.states is not None:
+            if self.filled or not self.states:
+                return
+            log.debug('filling PState')
+            self.filled = True
+            self.states.fill(self.objs)
 
     def __iter__(self):
-        self.fill()
-        if self.states:
-            for item in self.states:
+        if self.states is not None:
+            self.fill()
+            if self.states:
+                for item in self.states:
+                    yield item
+
+    def iter_lb(self, lower_bound=1):
+        for item in self:
+            if item.score >= lower_bound:
                 yield item
 
     @property
-    def final(self):
-        self.fill()
-        return self.states.winner
+    def iter_filled(self):
+        yield from self.iter_lb(lower_bound=1)
 
     @property
-    def verb(self):
-        return self.final.verb
+    def iter_can_do(self):
+        yield from self.iter_lb(lower_bound=2)
+
+    @property
+    def iter_verbs(self):
+        yield from self.states.verbs
+
+    def __bool__(self):
+        return self.winner is not None and self.winner.can_do
+
+    def __call__(self):
+        if self:
+            mr = MethodArgsRouter(self.me, f'do_{self.winner.verb.name}')
+            self.me.active = True
+            mr(**self.winner.do_args)
+            self.me.active = False
 
 class Parser:
     def parse(self, me, text_input):
         pstate = PState(me, text_input)
-        if not pstate.verb:
+        if pstate.states is None:
             from space.map.dir_util import is_direction_string
             if is_direction_string(text_input):
-                pstate.init(f'move {text_input}')
-        log.debug('parse(%s, "%s"): %s', me, text_input, pstate)
+                pstate = PState(me, f'move {text_input}')
+        if pstate.states is None:
+            raise SyntaxError('Huh?')
         self.plan(pstate)
-        log.debug('after plan(): %s', pstate)
         self.evaluate(pstate)
         return pstate
 
-    def evaluate(self, pstate, lower_bound=1):
-        for i in pstate:
-            if i.score >= lower_bound:
-                log.debug('%s passed lower_bound=%d', i.short, lower_bound)
-                i.evaluate()
+    def evaluate(self, pstate):
+        for item in pstate.iter_filled:
+            item.evaluate()
+
+        for item in sorted(pstate.iter_can_do, key=lambda x: 0 - x.score):
+            pstate.winner = item
+            break
 
     def plan(self, pstate):
-        for verb in pstate.states.verbs:
+        for verb in pstate.iter_verbs:
             log.debug('plan() verb=%s', verb)
             mr = MethodArgsRouter(pstate.me, f'can_{verb.name}')
             for rhint in mr.hints():
@@ -218,4 +246,3 @@ class Parser:
                             pos += 1
                 rhint.tokens = verb.preprocess_tokens(pstate.me, **tokens)
                 pstate.add_rhint(verb, rhint)
-        return pstate
