@@ -137,6 +137,7 @@ class PState:
         fv = find_verb(self.vtok)
         if fv:
             self.states = PSNode(*fv)
+        log.debug('new Pstate() vtok=%s (verbs=%s) tokens=%s', self.vtok, fv, self.tokens)
         self.filled = False
         self.vmap = me.location.map.visicalc_submap(me)
         self.objs = [ o for o in self.vmap.objects ]
@@ -244,5 +245,7 @@ class Parser:
                         elif pos < end:
                             tokens[ihint.aname].append(pstate.tokens[pos])
                             pos += 1
-                rhint.tokens = verb.preprocess_tokens(pstate.me, **tokens)
+                pp_tok = verb.preprocess_tokens(pstate.me, **tokens)
+                log.debug('preprocess tokens for %s; %s --> %s', rhint, tokens, pp_tok)
+                rhint.tokens = pp_tok
                 pstate.add_rhint(verb, rhint)
