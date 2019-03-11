@@ -4,10 +4,12 @@ import logging
 import random
 
 from ..obj import baseobj
-from ..container import Containable, Container, ContainerError
+from ..container import Containable, Container
 from .cell import Cell, MapObj, Wall
 from .dir_util import convert_pos, DIRS, DDIRS
 from .util import LineSeg, Box, Bounds
+
+import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
@@ -36,6 +38,10 @@ class Map(baseobj):
         r = ['   ' + ''.join([ f' {i} ' for i,_ in enumerate(self.cells[0]) ])] \
           + [ f'{i:2} ' + l for i,l in enumerate(self.colorized_text_drawing.splitlines()) ]
         return '\n'.join(r)
+
+    def clear_tags(self):
+        for p,c in self.iter_type():
+            c.tags.clear()
 
     def unobstructed_distance(self, obj1, obj2):
         ''' assuming there are no obstructions at all, compute the distance between two objects '''
@@ -168,7 +174,7 @@ class Map(baseobj):
             try:
                 c.add_item(item)
                 return
-            except ContainerError: # thing is already there
+            except E.ContainerError: # thing is already there
                 pass
             retries -= 1
         raise ValueError(f'not sure how to insert {item}')

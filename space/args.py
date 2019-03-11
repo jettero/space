@@ -3,6 +3,7 @@
 import inspect
 import logging
 from collections import namedtuple
+import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
@@ -195,9 +196,6 @@ def introspect_args(fn, *iargs, **ikwargs):
 
     return FAK(filled, ra, rkw)
 
-class UnfilledTypeError(TypeError):
-    pass
-
 def safe_execute(fn, *a, **kw):
     filled, a, kw = introspect_args(fn, *a, **kw)
     log.debug(' … filled=%s safe_execute(%s, *%s, **kw=%s)', filled, fn, a, kw)
@@ -207,5 +205,5 @@ def safe_execute(fn, *a, **kw):
         if not filled:
             # we should probably use raise UTE() from e here, but we want the
             # missing vars in the error for testing if nothing else
-            raise UnfilledTypeError(f'safe_execute args failed to fill fn={fn}: {e}')
+            raise E.UnfilledArgumentError(f'safe_execute args failed to fill fn={fn}: {e}')
         raise

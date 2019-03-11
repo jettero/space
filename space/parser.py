@@ -5,6 +5,7 @@ import shlex
 
 from .verb import load_verbs
 from .router import MethodArgsRouter
+import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
@@ -54,6 +55,9 @@ class PSNode:
         return f'PSN[{self.score}]<{self.verb}>'
 
     def __repr__(self):
+        return self.short
+
+    def __str__(self):
         if self.fname:
             sr = f'PSN[{self.score}]<{self.verb}:{self.fname}>'
             for hli in self.rhint.hlist:
@@ -65,9 +69,9 @@ class PSNode:
         else:
             sr = f'PSN[{self.score}]<{self.verb}>'
         if self.kid is not None:
-            sr += f'\n {repr(self.kid)}'
+            sr += f'\n {str(self.kid)}'
         if self.next is not None:
-            sr += f'\n{repr(self.next)}'
+            sr += f'\n{str(self.next)}'
         return sr
 
     def fill(self, objs):
@@ -79,7 +83,8 @@ class PSNode:
             self.kid.fill(objs)
 
     def evaluate(self):
-        res = self.can_do, tmp_kwargs = self.rhint.evaluate(**self.filled)
+        res = self.rhint.evaluate(**self.filled)
+        self.can_do, tmp_kwargs = res
         self.do_args = dict(**self.filled)
         self.do_args.update(tmp_kwargs)
         log.debug('%s evaluate(): can_do=%s do_args=%s', self.short, self.can_do, self.do_args)
@@ -143,9 +148,45 @@ class PState:
         self.objs = [ o for o in self.vmap.objects ]
         self.filled = False
 
+    @property
+    def high_score_state(self):
+        return self.states.winner
+
+    @property
+    def high_score_verb(self):
+        try:
+            return self.high_score_state.verb
+        except AttributeError:
+            pass
+
+    @property
+    def high_score_args(self):
+        try:
+            return self.high_score_state.do_args
+        except AttributeError:
+            pass
+
+    @property
+    def error(self):
+        try:
+            return self.high_score_args.get('error')
+        except (AttributeError, TypeError):
+            pass
+
+    @property
+    def short(self):
+        r = f'{bool(self)}'
+        hss = self.high_score_state
+        if hss:
+            r += f'/{hss.short}'
+        return r
+
     def __repr__(self):
+        return f'PState({self.short})'
+
+    def __str__(self):
         self.fill()
-        st = repr(self.states).splitlines()
+        st = str(self.states).splitlines()
         st = '\n          '.join(st)
         kv = [
             f'PState:',
@@ -207,6 +248,9 @@ class PState:
             self.me.active = False
         else:
             log.error("tried to invoke an untrue pstate: %s", self)
+            e = self.error
+            if isinstance(e, Exception):
+                raise e
 
 class Parser:
     def parse(self, me, text_input):

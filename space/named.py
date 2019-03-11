@@ -94,6 +94,9 @@ class Tags(Serial):
         n._c = None if self._c is None else set(self._c) # pylint: disable=protected-access
         return n
 
+    def clear(self):
+        self._a.clear()
+
     def add(self, tag):
         tag = str(tag)
         if self._c is not None:

@@ -16,9 +16,6 @@ class Containable(Named, Size):
         Named.__init__(self)
         Size.__init__(self, mass=mass, volume=volume)
 
-class ContainerError(Exception):
-    pass
-
 class CapacityMeta:
     class Meta:
         pass
@@ -102,15 +99,15 @@ class Container(Containable, CapacityMeta):
 
     def accept(self, item):
         if item is self:
-            raise ContainerError(f'{item} cannot contain iteself')
+            raise E.ContainerError(f'{item} cannot contain iteself')
         if not isinstance(item, Containable):
-            raise ContainerError(f'{item} is not containable')
+            raise E.ContainerError(f'{item} is not containable')
         if item in self._items:
-            raise ContainerError(f'{item} is already in {self}')
+            raise E.ContainerError(f'{item} is already in {self}')
         if (self.remaining_capacity - item.size) < 0:
-            raise ContainerError(f"{item} won't fit in {self}")
+            raise E.ContainerCapacityError(f"{item} won't fit in {self}")
         if self.accept_types and not isinstance(item, self.accept_types):
-            raise ContainerError(f'{item} is the wrong type')
+            raise E.ContainerTypeError(f'{item} is the wrong type')
         return True
 
     def __len__(self):
@@ -138,5 +135,5 @@ class Slot(Container):
         self.add_item(v)
     def accept(self, item):
         if self._items:
-            raise ContainerError(f'{self} is occupied by {self._items[0]}')
+            raise E.ContainerError(f'{self} is occupied by {self._items[0]}')
         return super().accept(item)

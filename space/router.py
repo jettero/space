@@ -6,6 +6,7 @@ import types
 from collections import namedtuple
 
 from .args import safe_execute, introspect_args, introspect_hints
+import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
@@ -86,7 +87,10 @@ class RouteHint(namedtuple('RouteHint', ['fname', 'func', 'hlist'])):
         return ret
 
     def evaluate(self, *a, **kw):
-        return safe_execute(self.func, *a, **kw)
+        try:
+            return safe_execute(self.func, *a, **kw)
+        except E.UnfilledArgumentError:
+            return False, {}
 
 class MethodArgsRouter(MethodRouter):
     def hints(self):

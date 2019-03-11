@@ -5,13 +5,15 @@ import space.exceptions as E
 
 from ..vv        import VV
 from ..obj       import baseobj
-from ..container import Containable, ContainerError
+from ..container import Containable
 from ..damage    import Damage, Kinetic
 from ..roll      import Roll, AttrChoices
 
 from .gender import Unknown
 from .stats  import Sci, Dip, Mar, Eng, Mor, HitPoints, ClassRank, ExperiencePoints, Initiative
 from .slots  import PackSlot, Slots
+
+import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +33,7 @@ class HasShell:
         if v is None:
             self._shell = v
         if not isinstance(v, BaseShell):
-            raise E.SpaceTypeError(f'{v} is not a shell')
+            raise E.STypeError(f'{v} is not a shell')
         self._shell = v
 
     def tell(self, msg):
@@ -58,7 +60,7 @@ class CanMove:
                     continue
             except AttributeError:
                 return False, {'error': "there's something in the way" }
-            except ContainerError as e:
+            except E.ContainerError as e:
                 return False, {'error': e}
         return True, {'moves': moves}
 
@@ -243,7 +245,7 @@ class Living(Containable, HasShell, CanMove, baseobj):
     def receive_item(self, item):
         c = self.pack
         if c is None:
-            raise E.SpaceTypeError(f'{self} does not have a default container')
+            raise E.STypeError(f'{self} does not have a default container')
         c.add_item(item)
 
     def do(self, input_text):

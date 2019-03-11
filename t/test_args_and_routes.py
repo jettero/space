@@ -4,9 +4,11 @@
 import logging
 import pytest
 
-from space.args import safe_execute, UnfilledTypeError
+from space.args import safe_execute
 from space.router import MethodNameRouter
 from collections import deque
+
+import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
@@ -92,7 +94,7 @@ def test_f3():
     assert safe_execute(f3, 1, y=2,z=3) == {'x':1, 'y':2, 'z':3}
 
 def test_icky_f1():
-    with pytest.raises(UnfilledTypeError, match=r"'x'.*'y'.*'z'"):
+    with pytest.raises(E.UnfilledArgumentError, match=r"'x'.*'y'.*'z'"):
         safe_execute(f1)
-    with pytest.raises(UnfilledTypeError, match=r"'x'.*'y'.*'z'"):
+    with pytest.raises(E.UnfilledArgumentError, match=r"'x'.*'y'.*'z'"):
         safe_execute(f1, z=3)

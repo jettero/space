@@ -7,7 +7,8 @@ import pytest
 from space.living    import Human
 from space.parser    import Parser
 from space.map       import Room
-from space.container import ContainerError
+
+import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
@@ -36,18 +37,17 @@ def bystander(people):
 
 def test_attack_parse(me, target, room):
     p = Parser()
-    verb, kw = p.parse(me, 'attack jaime', verb_exec=False)
-    assert verb.name == 'attack'
-    assert kw['target'] == target
+    pstate = p.parse(me, 'attack jaime')
+    assert pstate.winner.verb.name == 'attack'
+    assert pstate.winner.do_args.get('target') == target
 
 def test_attack_exec(me, target, room):
     p = Parser()
     hp1 = target.hp
-    p.parse(me, 'attack jaime')
+    p.parse(me, 'attack jaime')()
     hp2 = target.hp
     assert hp2 < hp1
 
-@pytest.mark.xfail(strict=True)
 def test_move_parse(me, room):
     p = Parser()
     dt = {
@@ -59,46 +59,47 @@ def test_move_parse(me, room):
     room[7,7] = me
     for d,sl in dt.items():
         for s in sl:
-            try:
-                verb, kw = p.parse(me, f'move {s}', verb_exec=False)
-            except SyntaxError as e:
-                verb, kw = None, {'error': str(e)}
-            assert 'moves' in kw and kw['moves'] == (d,)
-            assert verb and verb.name == 'move'
+            pstate = p.parse(me, f'move {s}')
+            assert bool(pstate)
+            assert pstate.winner.do_args.get('moves') == (d,)
+            assert pstate.winner.verb.name == 'move'
 
 def test_move(me, target, room):
     p = Parser()
     assert me.location.pos == (2,3)
-    p.parse(me, 'move north')
+    p.parse(me, 'move north')()
     assert me.location.pos == (2,2)
-    p.parse(me, 'move east')
+    p.parse(me, 'move east')()
     assert me.location.pos == (3,2)
-    with pytest.raises(ContainerError) as ce:
-        p.parse(me, 'move south')
-    assert f'{target}' in str(ce)
+    pstate = p.parse(me, 'move s')
+    assert 'is already there' in str(pstate.error)
+    with pytest.raises(E.ContainerError):
+        pstate()
     assert me.location.pos == (3,2)
 
 def test_naked_dir_move_cmds(me, bystander, room):
     p = Parser()
-    verb, kw = p.parse(me, 'move 2sse', False,False)
-    assert verb.name == 'move'
-    assert kw['words'] == '2sse'
+    pstate = p.parse(me, 'move 2sse')
+    tsse = ('s','s','s','e')
+    assert pstate
+    assert pstate.high_score_verb.name == 'move'
+    assert pstate.high_score_args.get('moves') == tsse
 
-    verb, kw = p.parse(me, 'move shit', False,False)
-    assert verb.name == 'move'
-    assert kw['words'] == 'shit'
+    pstate = p.parse(me, 'move shit')
+    assert not pstate
+    assert pstate.high_score_verb.name == 'move'
+    assert pstate.high_score_args == None
 
-    verb, kw = p.parse(me, '2sse', False, False)
-    assert verb.name == 'move'
-    assert kw['words'] == '2sse'
+    pstate = p.parse(me, '2sse')
+    assert pstate
+    assert pstate.high_score_verb.name == 'move'
+    assert pstate.high_score_args.get('moves') == tsse
 
-    with pytest.raises(SyntaxError):
-        verb, kw = p.parse(me, 'shit', False, False)
+    tssep = tsse + ('n','s','e','w')
+    pstate = p.parse(me, 'move 2sse nsew')
+    assert pstate.high_score_verb.name == 'move'
+    assert pstate.high_score_args.get('moves') == tssep
 
-    verb, kw = p.parse(me, 'move 2sse nsew', False,False)
-    assert verb.name == 'move'
-    assert kw['words'] == '2sse nsew'
-
-    verb, kw = p.parse(me, '2sse nsew', False,False)
-    assert verb.name == 'move'
-    assert kw['words'] == '2sse nsew'
+    pstate = p.parse(me, '2sse nsew')
+    assert pstate.high_score_verb.name == 'move'
+    assert pstate.high_score_args.get('moves') == tssep

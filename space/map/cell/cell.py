@@ -1,8 +1,10 @@
 # coding: utf-8
 
 from .base import MapObj
-from ...container import Container, INFINITY, ContainerError
+from ...container import Container, INFINITY
 from ...living import Living
+
+import space.exceptions as E
 
 class Cell(MapObj, Container):
     _override = None
@@ -21,7 +23,7 @@ class Cell(MapObj, Container):
     def accept(self, item):
         for item in self:
             if isinstance(item, Living):
-                raise ContainerError(f'{item} is already there')
+                raise E.ContainerError(f'{item} is already there')
         return True
 
     @property
