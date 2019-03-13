@@ -203,6 +203,9 @@ class Living(Containable, HasShell, CanMove, baseobj):
     def do_attack(self, target):
         self.attack(target)
 
+    def can_look(self):
+        return True, {}
+
     def do_look(self):
         from ..shell.message import MapMessage
         self.tell(MapMessage(self.location.map.visicalc_submap(self)))

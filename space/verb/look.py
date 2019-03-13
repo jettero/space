@@ -7,8 +7,3 @@ log = logging.getLogger(__name__)
 
 class Action(Verb):
     name = 'look'
-    form = [
-        'verb',
-      # 'verb word',
-      # 'verb "at" target',
-    ]

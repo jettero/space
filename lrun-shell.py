@@ -10,7 +10,7 @@ from space.living import Human
 from space.map.generate import generate as generate_map
 from space.item import Ubi
 
-from troom import a_map, o
+from t.troom import a_map, o
 
 c = sys.argv[1:]
 if not c:

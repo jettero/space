@@ -7,5 +7,4 @@ log = logging.getLogger(__name__)
 
 class Action(Verb):
     name = 'attack'
-    form = 'verb LIVING'
-    nick = 'attack kill hit'.split()
+    nick = 'attack kill hit lacerate'.split()

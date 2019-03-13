@@ -18,7 +18,7 @@ def find_verb(x):
     v = VERBS.get(x)
     if v:
         return [ v ]
-    return [ v for n,v in VERBS.items() if n.startswith(x) ]
+    return [ v for n,v in VERBS.items() if v.match(x) ]
 
 class TargetError(SyntaxError):
     pass

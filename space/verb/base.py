@@ -11,28 +11,20 @@ class VerbError(TargetError):
 
 class Verb:
     name = 'verb'
-    form = None
     nick = None
 
     def __init__(self):
-        self.grammars = list()
+        if self.name == 'verb':
+            self.name = self.__module__.split('.')[-1]
         if not self.nick:
             self.nick = [ self.name ]
         if self.name not in self.nick:
             self.nick.insert(0, self.name)
-        if isinstance(self.form, str):
-            self.form = [ self.form ]
-        if len(self.nick) == 1:
-            self.vword = f'"{self.nick[0]}"'
-        else:
-            vnames = ' | '.join([ f'"{n}"' for n in self.nick ])
-            self.vword = f'_{self.name}_word'
-            self.grammars.append( f'!{self.vword}: {vnames}' )
-        verb_re = '|'.join(['verb'] + self.nick)
-        verb_re = re.compile(rf'^(?:{verb_re})\b')
-        self.form = ' | '.join([ verb_re.sub(self.vword, f) for f in self.form ])
-        self.rule_name = f'{self.name}'
-        self.grammars.append(f'!{self.rule_name}: {self.form}')
+
+    def match(self, tok):
+        for i in self.nick:
+            if i.startswith(tok):
+                return True
 
     def __repr__(self):
         return f'Verb({self.name})'

@@ -7,7 +7,6 @@ class IntentionalQuit(Exception):
 
 class Action(Verb):
     name = 'quit'
-    form = 'verb'
 
     def execute(self, me):
         raise IntentionalQuit()
