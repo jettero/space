@@ -138,7 +138,7 @@ class PState:
     def __init__(self, me, text_input):
         self.me = me
         self.tokens = shlex.split(text_input)
-        self.vtok   = self.tokens.pop(0)
+        self.vtok   = self.tokens.pop(0) if text_input else ''
         fv = find_verb(self.vtok)
         if fv:
             self.states = PSNode(*fv)
