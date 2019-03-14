@@ -33,5 +33,5 @@ setup(name='space',
     cmdclass         = {'test': PyTest},
     packages         = find_packages(),
     setup_requires   = [ 'setuptools_scm' ],
-    install_requires = [ 'lark-parser' ],
+    install_requires = [ 'lark-parser', 'pint' ],
 )
