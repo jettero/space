@@ -11,5 +11,4 @@ p
 *.orig
 *.rej
 *.log
-requirements.txt
-setup.txt
+pip-install
