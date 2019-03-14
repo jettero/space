@@ -11,3 +11,4 @@ p
 *.orig
 *.rej
 *.log
+requirements.txt
