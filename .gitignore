@@ -12,3 +12,4 @@ p
 *.rej
 *.log
 requirements.txt
+setup.txt
