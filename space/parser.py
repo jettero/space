@@ -107,10 +107,12 @@ class PSNode:
     @property
     def winner(self):
         r = self
+        rs = r.score
         for item in (self.kid, self.next):
             try:
                 w = item.winner
-                if w.score > r.score:
+                ws = w.score
+                if ws > rs:
                     r = w
             except AttributeError:
                 pass
@@ -237,6 +239,10 @@ class PState:
         yield from self.states.verbs
 
     def __bool__(self):
+        # XXX: we shouldn't be true when there's more than one winner with the high score
+        # XXX: we shouldn't parse true when we have remaining unused tokens
+        # XXX: if we get an error (eg, attack stupid when stupid is too far away)
+        #      then the parse should be true, but with an error
         return self.winner is not None and self.winner.can_do
 
     def __call__(self):
@@ -267,6 +273,13 @@ class Parser:
         self.plan(pstate)
         self.evaluate(pstate)
         return pstate
+
+    def next_words(self, me, text_input):
+        ''' try to guess what words will fit next '''
+        # XXX: we only consider the very first token, needs work
+        pstate = self.parse(me, text_input)
+        for v in pstate.iter_verbs:
+            yield from v.nick
 
     def plan(self, pstate):
         for verb in pstate.iter_verbs:
@@ -301,4 +314,3 @@ class Parser:
             log.debug('%s is the winner', item)
             pstate.winner = item
             break
-
