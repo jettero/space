@@ -1,6 +1,6 @@
 
 A_PY := $(shell find . -type f -name \*.py)
-T_PY := $(wildcard t/*.py)
+T_PY := $(wildcard t/test_*.py)
 
 default: test
 
