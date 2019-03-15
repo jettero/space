@@ -18,6 +18,8 @@ class PyTest(TestCommand):
         errno = pytest.main(shlex.split(self.pytest_args))
         sys.exit(errno)
 
+mods = ['lark-parser', 'pint']
+
 setup(name='space',
     use_scm_version = {
         'write_to': 'space/version.py',
@@ -29,9 +31,9 @@ setup(name='space',
     author           = 'Paul Miller',
     author_email     = 'paul@jettero.pl',
     url              = 'https://github.com/jettero/space/',
-    tests_require    = ['pytest',],
+    tests_require    = ['pytest',] + mods,
     cmdclass         = {'test': PyTest},
     packages         = find_packages(),
     setup_requires   = [ 'setuptools_scm' ],
-    install_requires = [ 'lark-parser', 'pint' ],
+    install_requires = mods,
 )

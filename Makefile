@@ -11,6 +11,7 @@ help:
 	python setup.py --help-commands
 
 requirements.txt: setup.py
+	pip install -U pip pip-tools
 	pip-compile -o $@ $<
 
 .pip-install: requirements.txt
