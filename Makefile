@@ -4,6 +4,12 @@ T_PY := $(wildcard t/test_*.py)
 
 default: test
 
+venv:
+	virtualenv venv
+
+venv-test: venv
+	+ rm -vf .setup-test; . venv/bin/activate && make --no-print-directory test
+
 test: .setup-test
 build dist: .setup-bdist
 	@ ls -haltr dist/space-*.tar.gz
