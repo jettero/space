@@ -11,4 +11,4 @@ p
 *.orig
 *.rej
 *.log
-pip-install
+.pip-*

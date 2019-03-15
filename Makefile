@@ -13,11 +13,11 @@ help:
 requirements.txt: setup.py
 	pip-compile -o $@ $<
 
-pip-install: requirements.txt
+.pip-install: requirements.txt
 	@ [ -f $@ ] && rm -v $@; true
 	pip install --upgrade -r $< && touch $@
 
-.setup-test: $(A_PY) pip-install
+.setup-test: $(A_PY) .pip-install
 .setup-build: .setup-test
 .setup-bdist: .setup-test
 
