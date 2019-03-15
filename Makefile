@@ -10,15 +10,15 @@ build dist: .setup-bdist
 help:
 	python setup.py --help-commands
 
-requirements.txt: setup.py
-	pip install -U pip pip-tools
-	pip-compile -o $@ $<
+# requirements.txt: setup.py
+#     pip install -U pip pip-tools
+#     pip-compile -o $@ $<
 
-.pip-install: requirements.txt
-	@ [ -f $@ ] && rm -v $@; true
-	pip install --upgrade -r $< && touch $@
+# .pip-install: requirements.txt
+#     @ [ -f $@ ] && rm -v $@; true
+#     pip install --upgrade -r $< && touch $@
 
-.setup-test: $(A_PY) .pip-install
+.setup-test: $(A_PY) # .pip-install
 .setup-build: .setup-test
 .setup-bdist: .setup-test
 
