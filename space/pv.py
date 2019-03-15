@@ -227,7 +227,7 @@ def add_binops(cls, *op):
             except TypeError as e:
                 return PV(v)
             except Exception as e:
-                raise Exception(f'op={op} error (ccls)') from e
+                raise Exception(f'op={op} error (ccls={ccls} v={v})') from e
         return _inner
     for i in op:
         setattr(cls, f'__{i}__', _helper(i))
