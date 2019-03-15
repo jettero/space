@@ -7,8 +7,14 @@ default: test
 venv:
 	virtualenv venv
 
+# Ran into a problem where pint worked one way on one computer and a totally
+# different way on another. Turns out, I did something to pint on my dev
+# machine so the pv.py works there, but not anywhere else.
+# Problem is easy to reproduce by just testing in a venv. WTF DID I DO??
 venv-test: venv
-	+ rm -vf .setup-test; . venv/bin/activate && make --no-print-directory test
+	+ rm -vf .setup-test; \
+        . venv/bin/activate \
+        && make --no-print-directory test
 
 test: .setup-test
 build dist: .setup-bdist
