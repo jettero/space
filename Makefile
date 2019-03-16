@@ -16,9 +16,11 @@ venv/bin/python: Makefile
 # different way on another. Turns out, I did something to pint on my dev
 # machine so the pv.py works there, but not anywhere else.
 # Problem is easy to reproduce by just testing in a venv. WTF DID I DO??
-vt vtest venv-test: venv
+vtd venv-test-debug: venv
 	. venv/bin/activate \
         && venv/bin/python -m pytest --log-cli-level debug
+vt venv-test: venv
+	. venv/bin/activate && venv/bin/python -m pytest
 
 test: .setup-test
 build dist: .setup-bdist
