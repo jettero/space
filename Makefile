@@ -4,17 +4,21 @@ T_PY := $(wildcard t/test_*.py)
 
 default: test
 
-venv:
+venv: venv/bin/python
+
+venv/bin/python: Makefile
 	virtualenv venv
+	venv/bin/pip install -U pip
+	venv/bin/pip install -U pytest setuptools_scm
+	venv/bin/pip install .
 
 # Ran into a problem where pint worked one way on one computer and a totally
 # different way on another. Turns out, I did something to pint on my dev
 # machine so the pv.py works there, but not anywhere else.
 # Problem is easy to reproduce by just testing in a venv. WTF DID I DO??
-venv-test: venv
-	+ rm -vf .setup-test; \
-        . venv/bin/activate \
-        && make --no-print-directory test
+vt vtest venv-test: venv
+	. venv/bin/activate \
+        && venv/bin/python -m pytest --log-cli-level debug
 
 test: .setup-test
 build dist: .setup-bdist
@@ -22,9 +26,9 @@ build dist: .setup-bdist
 help:
 	python setup.py --help-commands
 
-# requirements.txt: setup.py
-#     pip install -U pip pip-tools
-#     pip-compile -o $@ $<
+requirements.txt: setup.py
+	pip install -U pip pip-tools
+	pip-compile -o $@ $<
 
 # .pip-install: requirements.txt
 #     @ [ -f $@ ] && rm -v $@; true
