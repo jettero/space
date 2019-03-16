@@ -18,7 +18,10 @@ class PyTest(TestCommand):
         errno = pytest.main(shlex.split(self.pytest_args))
         sys.exit(errno)
 
-mods = ['lark-parser', 'pint']
+mods = [
+    'lark-parser',
+    'pint'
+]
 
 setup(name='space',
     use_scm_version = {
