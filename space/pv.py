@@ -1,5 +1,6 @@
 # coding: utf-8
 
+import copy
 import operator
 import logging
 
@@ -41,9 +42,9 @@ class PV(PVMeta):
         if isinstance(expression, (int,float)):
             return expression * cls.zero.units
         if _is_qty(expression):
-            return expression.copy()
+            return copy.copy(expression)
         if isinstance(expression, PV):
-            return expression._q.copy() # pylint: disable=protected-access
+            return copy.copy(expression._q) # pylint: disable=protected-access
         raise TypeError(f'unable to quantify_expression({repr(expression)})')
 
     @classmethod
