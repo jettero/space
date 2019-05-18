@@ -71,6 +71,10 @@ class BaseShell:
         self.receive_text(msg)
 
     def pre_parse_kludges(self, line):
+        # XXX: this is supposed to look for a single good match and pretend to
+        # use the verb, but it broke with the most recent parser changes
+        return line
+
         # XXX: this fix should probably be configurable from shell to shell
         # maybe by override? depending on the shell?
         v0,*rest = line.split(' ', 1)

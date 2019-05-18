@@ -9,7 +9,13 @@ def mk_lots(cls, c=1000, *a, **kw):
     lots = [ cls(*a, **kw) for _ in range(c) ]
     print("stored %d items in 'lots'", len(lots))
 
+class STFU(logging.Filter):
+    def filter(self, record):
+        return '/space/' in record.pathname
 logging.basicConfig(level=logging.DEBUG)
+for h in logging.root.handlers:
+    h.addFilter(STFU())
+del STFU; del h
 
 from space.nico import nico
 from space.vv import VV

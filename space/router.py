@@ -14,7 +14,7 @@ class MethodRouter:
     def __init__(self, obj, top, multi=False, callback=None, dne_ok=True):
         self.top   = top
         self.multi = multi
-        self.obj = weakref.proxy(obj)
+        self.obj = obj if isinstance(obj, weakref.ProxyTypes) else weakref.proxy(obj)
         self.callback = callback
         self.dne_ok = dne_ok
         self.dir = tuple( m for m in dir(obj) if m.startswith(top) )

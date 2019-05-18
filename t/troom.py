@@ -15,11 +15,13 @@ def gen_troom():
     a_map.cellify_partitions()
 
     od = dict()
-    a_map[1,1] = od['me']      = Human('Paul Miller', 'Paul')
+    a_map[8,1] = od['me']      = Human('Paul Miller', 'Paul')
     a_map[4,9] = od['ubi']     = Ubi()
-    a_map[5,5] = od['stupid']  = Human('Stupid Rapist')
+    a_map[1,2] = od['stupid']  = Human('Stupid Rapist')
     a_map[8,3] = od['dig_dug'] = Human('Dig Dug')
     o = nico(**od)
+
+    o.me.active = True
 
     return a_map, o
 

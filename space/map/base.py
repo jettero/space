@@ -504,7 +504,8 @@ class Map(baseobj):
         if bnds.y > actual_bnds.y: bnds.y -= 1
         if bnds.X < actual_bnds.X: bnds.X += 1
         if bnds.Y < actual_bnds.Y: bnds.Y += 1
-        log.debug('visicalc_submap bounds=[%s: %s]', bnds, tuple(bnds))
+        log.debug('visicalc_submap actual-bounds=[%s: %s] submap-bounds=[%s: %s]',
+            actual_bnds, tuple(actual_bnds), bnds, tuple(bnds))
         return MapView(self, bounds=bnds)
 
 class MapClique(set):
@@ -533,23 +534,35 @@ class MapView(Map):
         bnds = self.bounds
         return [ [ self.a_map.cells[j][i] for i in bnds.x_iter ] for j in bnds.y_iter ]
 
+    def iter_type(self, *a, **kw):
+        bnds = self.bounds
+        for p,cell in self.a_map.iter_type(*a, **kw):
+            if bnds.contains(p):
+                yield p,cell
+    # iter_cells() uses iter_type(), so it's already fixed too
+
     @property
     def cells(self):
         cells = self._cells()
+        bnds  = self.bounds
+        def _fake_none(p):
+            qi,qj = (p[0]-bnds.x, p[1]-bnds.y)
+            #log.debug('_fake_none(%s) -> (%s,%s)', p, qi,qj)
+            cells[qj][qi] = None
         if self._filter is True:
-            for (i,j) in self.bounds.xy_iter:
-                cell = cells[j][i]
+            for cell in self.iter_cells(of_type=Cell):
                 if cell is None or 'can_see' in cell.tags:
                     continue
-                if isinstance(cell, Wall):
-                    ok = False
-                    for _,ncell in cell.iter_neighbors(dirs=DDIRS):
-                        if ncell is not None and 'can_see' in ncell.tags:
-                            ok = True
-                            break
-                    if ok:
-                        continue
-                cells[j][i] = None
+                _fake_none(cell.pos)
+            for cell in self.iter_cells(of_type=Wall):
+                ok = False
+                for _,ncell in cell.iter_neighbors(dirs=DDIRS):
+                    if ncell is not None and 'can_see' in ncell.tags:
+                        ok = True
+                        break
+                if ok:
+                    continue
+                _fake_none(cell.pos)
         elif callable(self._filter):
             raise Exception('TODO')
         return cells
