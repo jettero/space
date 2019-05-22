@@ -45,7 +45,7 @@ class PSNode:
         cur = self.verb_state(verb)
         while cur.kid is not None:
             cur = cur.kid
-        cur.kid = self.__class__(self.verb)
+        cur.kid = self.__class__(cur.verb)
         return cur.kid
 
     def add_rhint(self, verb, rhint):
