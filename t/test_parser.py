@@ -103,3 +103,12 @@ def test_naked_dir_move_cmds(me, bystander, room):
     pstate = p.parse(me, '2sse nsew')
     assert pstate.high_score_verb.name == 'move'
     assert pstate.high_score_args.get('moves') == tssep
+
+
+def test_irritating_psnode_issue(me, room):
+    p = Parser()
+    pstate = p.parse(me, '')
+    assert pstate.states
+    for psn in pstate.states:
+        if psn.fname:
+            assert psn.verb.name in psn.fname
