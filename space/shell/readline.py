@@ -15,7 +15,9 @@ class Shell(BaseShell):
     def startup(self, init=None):
         readline.parse_and_bind('tab: complete')
         readline.set_completer(self.complete)
-        self.reconfigure_logging(filename='shell.log', level=logging.DEBUG)
+        self.reconfigure_logging(filename='shell.log',
+            format='%(asctime)s %(name)17s %(levelname)5s %(message)s',
+            level=logging.DEBUG)
 
         if isinstance(init, (tuple,list)):
             for cmd in init:
