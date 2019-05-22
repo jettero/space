@@ -1,11 +1,22 @@
 # coding: utf-8
 
+import re
 import readline
 import logging
 
 from .base import BaseShell, IntentionalQuit
 
 log = logging.getLogger(__name__)
+
+class KeywordFilter(logging.Filter):
+    def __init__(self, *name_filters):
+        self.name_filters = [ re.compile(x) for x in name_filters ]
+
+    def filter(self, record):
+        for nf in self.name_filters:
+            if nf.search( record.name ):
+                return False
+        return True
 
 class Shell(BaseShell):
     _logging_opts = None
@@ -64,6 +75,9 @@ class Shell(BaseShell):
         self._logging_opts = { k:v for k,v in mydl(kw, self._logging_opts) }
         logging.root.handlers = []
         logging.basicConfig(**self._logging_opts)
+        kwf = KeywordFilter('space.args') # XXX: should be configurable
+        for handler in logging.root.handlers:
+            handler.addFilter(kwf)
 
     def internal_command(self, line):
         if line.startswith('/'):
