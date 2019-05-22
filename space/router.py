@@ -27,6 +27,17 @@ class MethodRouter:
             return tuple( self[i] for i in idx )
         return self.dir[idx]
 
+    @property
+    def stringified(self):
+        base = self.obj.__repr__() # repr(obj) won't work (weakref.proxy)
+        if len(self.dir) == 1:
+            return f'{base}.{self.dir[0]}'
+        return f'{base}.({"|".join(self.dir)})'
+
+    def __repr__(self):
+        return f'MethodRouter{{{self.stringified}}}'
+    __str__ = __repr__
+
 class FFAK(namedtuple('FFAK', ['func', 'filled', 'args', 'kwargs'])):
     _base_order = 1000
     def __bool__(self):
@@ -109,6 +120,10 @@ class MethodArgsRouter(MethodRouter):
     def ordered_fill(self, *a, **kw):
         for ffak in sorted(self.fill(*a, **kw), key=lambda x: x.order):
             yield ffak
+
+    def __repr__(self):
+        return f'MethodArgsRouter{{{self.stringified}}}'
+    __str__ = __repr__
 
     def __call__(self, *a, **kw):
         rr = [True, kw]

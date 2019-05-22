@@ -307,7 +307,7 @@ class Parser:
     def evaluate(self, pstate):
         log.debug('evaluating pstate')
         for item in pstate.iter_filled:
-            log.debug('%s .evaluate()', item)
+            log.debug('evaluate() -> %s', item)
             item.evaluate()
 
         for item in sorted(pstate.iter_can_do, key=lambda x: 0 - x.score):

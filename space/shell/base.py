@@ -98,6 +98,7 @@ class BaseShell:
             if txt:
                 try:
                     pstate = self.parser.parse(self.owner, txt)
+                    #log.debug('%s = parser.parse(%s, %s)', repr(pstate), self.owner, txt)
                     pstate()
                 except IntentionalQuit:
                     raise
