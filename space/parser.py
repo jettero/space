@@ -22,9 +22,6 @@ def find_verb(x):
         return [ v ]
     return [ v for n,v in VERBS.items() if v.match(x) ]
 
-class TargetError(SyntaxError):
-    pass
-
 class PSNode:
     can_do = do_args = kid = fname = rhint = None
 
@@ -37,7 +34,7 @@ class PSNode:
         cur = self
         while cur.verb is not verb:
             if cur.next is None:
-                raise Exception(f'{verb} not found in {self}')
+                raise E.InternalParseError(f'{verb} not found in {self}')
             cur = cur.next
         return cur
 
@@ -267,7 +264,8 @@ class PState:
             log.error("tried to invoke an untrue pstate: %s", self)
             e = self.error
             if isinstance(e, Exception):
-                raise e
+                raise E.ParseError(e) from e
+            raise E.ParseError(e)
 
 class Parser:
     def parse(self, me, text_input):

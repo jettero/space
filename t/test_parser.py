@@ -73,7 +73,7 @@ def test_move(me, target, room):
     assert me.location.pos == (3,2)
     pstate = p.parse(me, 'move s')
     assert 'is already there' in str(pstate.error)
-    with pytest.raises(E.ContainerError):
+    with pytest.raises(E.ParseError):
         pstate()
     assert me.location.pos == (3,2)
 
@@ -105,7 +105,16 @@ def test_naked_dir_move_cmds(me, bystander, room):
     assert pstate.high_score_args.get('moves') == tssep
 
 
-def test_irritating_psnode_issue(me, room):
+def test_extra_args_fail(me, room):
+    p = Parser()
+    pstate = p.parse(me, 'look')
+    assert bool(pstate) is True
+    pstate = p.parse(me, 'look at things')
+    assert bool(pstate) is False
+    assert 'at' in pstate.error
+    assert 'things' in pstate.error
+
+def test_pstate_nodes(me, room):
     V = find_verb(False)
     p = Parser()
     pstate = p.parse(me, '')

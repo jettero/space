@@ -2,11 +2,11 @@
 
 import re
 import logging
-from ..parser import TargetError
+import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
-class VerbError(TargetError):
+class VerbError(E.TargetError):
     pass
 
 class Verb:

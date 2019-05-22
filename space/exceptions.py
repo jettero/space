@@ -33,3 +33,12 @@ class ContainerTypeError(ContainerError):
 
 class CapacityError(ContainerError):
     pass
+
+class ParseError(SyntaxError, SExceptionMixin):
+    pass
+
+class InternalParserError(Exception):
+    pass
+
+class TargetError(ParseError):
+    pass
