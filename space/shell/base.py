@@ -98,8 +98,10 @@ class BaseShell:
             if txt:
                 try:
                     pstate = self.parser.parse(self.owner, txt)
-                    #log.debug('%s = parser.parse(%s, %s)', repr(pstate), self.owner, txt)
-                    pstate()
+                    if pstate:
+                        pstate()
+                    else:
+                        self.receive_text(f'error: {pstate.error}')
                 except IntentionalQuit:
                     raise
                 except Exception as e: # pylint: disable=broad-except

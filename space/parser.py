@@ -89,6 +89,9 @@ class PSNode:
 
     def evaluate(self):
         res = self.rhint.evaluate(**self.filled)
+        # NOTE: can_do is the results of can_whatever(), which also returns
+        # further args for do_whatever(); sometimes the do_args may contain an
+        # error if we can't can_whatever()
         self.can_do, tmp_kwargs = res
         self.do_args = dict(**self.filled)
         self.do_args.update(tmp_kwargs)
@@ -143,7 +146,8 @@ class PState:
     winner = states = tokens = None
 
     def __init__(self, me, text_input):
-        self.me = me
+        self.me     = me
+        self.orig   = text_input
         self.tokens = shlex.split(text_input)
         self.vtok   = self.tokens.pop(0) if text_input else ''
         fv = find_verb(self.vtok)
@@ -176,9 +180,11 @@ class PState:
     @property
     def error(self):
         try:
-            return self.high_score_args.get('error')
+            e = self.high_score_args.get('error')
+            return f'unable to "{self.orig}": {e}'
         except (AttributeError, TypeError):
             pass
+        return f'unable to understand "{self.orig}"'
 
     @property
     def short(self):
