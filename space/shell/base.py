@@ -97,7 +97,8 @@ class BaseShell:
         for txt in txts:
             if txt:
                 try:
-                    self.parser.parse(self.owner, txt)
+                    pstate = self.parser.parse(self.owner, txt)
+                    pstate()
                 except IntentionalQuit:
                     raise
                 except Exception as e: # pylint: disable=broad-except
