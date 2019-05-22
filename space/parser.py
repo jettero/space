@@ -87,7 +87,7 @@ class PSNode:
         self.can_do, tmp_kwargs = res
         self.do_args = dict(**self.filled)
         self.do_args.update(tmp_kwargs)
-        log.debug('%s evaluate(): can_do=%s do_args=%s', self.short, self.can_do, self.do_args)
+        log.debug('[PSNode] %s.evaluate() → can_do=%s do_args=%s', self.short, self.can_do, self.do_args)
         return res
 
     @property
@@ -144,7 +144,7 @@ class PState:
         fv = find_verb(self.vtok)
         if fv:
             self.states = PSNode(*fv)
-        log.debug('new Pstate() vtok=%s (verbs=%s) tokens=%s', self.vtok, fv, self.tokens)
+        log.debug('[PState] new PState() vtok=%s (verbs=%s) tokens=%s', self.vtok, fv, self.tokens)
         self.filled = False
         self.vmap = me.location.map.visicalc_submap(me)
         self.objs = [ o for o in self.vmap.objects ]
@@ -202,7 +202,7 @@ class PState:
         return '\n  '.join(kv)
 
     def add_rhint(self, verb, rhint):
-        log.debug('add_rhint(%s, %s)', verb.name, rhint)
+        log.debug('[PState] add_rhint(%s, %s)', verb.name, rhint)
         self.states.add_rhint(verb, rhint)
         self.filled = False
 
@@ -210,7 +210,7 @@ class PState:
         if self.states is not None:
             if self.filled or not self.states:
                 return
-            log.debug('filling PState')
+            log.debug('[PState] filling PState')
             self.filled = True
             self.states.fill(self.objs)
 
@@ -249,7 +249,7 @@ class PState:
         if self:
             mr = MethodArgsRouter(self.me, f'do_{self.winner.verb.name}')
             self.me.active = True
-            log.debug("invoking %s(**%s) with active living %s", mr, self.winner.do_args, self.me)
+            log.debug("[PState] invoking %s(**%s) with active living %s", mr, self.winner.do_args, self.me)
             mr(**self.winner.do_args)
             self.me.active = False
         else:
@@ -260,13 +260,13 @@ class PState:
 
 class Parser:
     def parse(self, me, text_input):
-        log.debug('parsing "%s" for %s', text_input, me)
+        log.debug('[Parser] parsing "%s" for %s', text_input, me)
         pstate = PState(me, text_input)
         if pstate.states is None:
             from space.map.dir_util import is_direction_string
             if is_direction_string(text_input):
                 text_input = f'move {text_input}'
-                log.debug(' parsing "%s" instead', text_input)
+                log.debug('[Parser] parsing "%s" instead', text_input)
                 pstate = PState(me, text_input)
         if pstate.states is None:
             return pstate
@@ -285,7 +285,7 @@ class Parser:
         for verb in pstate.iter_verbs:
             mr = MethodArgsRouter(pstate.me, f'can_{verb.name}')
             for rhint in mr.hints():
-                log.debug(" rhint=%s", rhint)
+                log.debug("[Parser] rhint=%s", rhint)
                 tokens = dict()
                 pos = 0
                 end = len(pstate.tokens)
@@ -300,17 +300,18 @@ class Parser:
                             tokens[ihint.aname].append(pstate.tokens[pos])
                             pos += 1
                 pp_tok = verb.preprocess_tokens(pstate.me, **tokens)
-                log.debug('preprocess tokens for %s; %s --> %s', rhint, tokens, pp_tok)
+                log.debug('[Parser] preprocess tokens for %s; %s --> %s', rhint, tokens, pp_tok)
                 rhint.tokens = pp_tok
                 pstate.add_rhint(verb, rhint)
 
     def evaluate(self, pstate):
-        log.debug('evaluating pstate')
+        log.debug('[Parser] evaluating pstate')
         for item in pstate.iter_filled:
-            log.debug('evaluate() -> %s', item)
+            log.debug('[Parser] %s.evaluate()', item)
             item.evaluate()
 
         for item in sorted(pstate.iter_can_do, key=lambda x: 0 - x.score):
-            log.debug('%s is the winner', item)
+            log.debug('[Parser] %s is the winner', item)
             pstate.winner = item
             break
+        log.debug('[Parser] pstate evaluation result:\n%s', pstate)
