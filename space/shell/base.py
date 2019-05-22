@@ -71,24 +71,8 @@ class BaseShell:
         self.receive_text(msg)
 
     def pre_parse_kludges(self, line):
-        # XXX: this is supposed to look for a single good match and pretend to
-        # use the verb, but it broke with the most recent parser changes
-        return line
-
-        # XXX: this fix should probably be configurable from shell to shell
-        # maybe by override? depending on the shell?
-        v0,*rest = line.split(' ', 1)
-        c = set()
-        for w in self.parser.verb_words:
-            if v0 == w:
-                break
-            if w.startswith(v0):
-                c.add(w)
-        if len(c) == 1:
-            c = list(c)[0]
-            if rest:
-                return f'{c} {rest[0]}'
-            return c
+        # this used to try to find tokens like 'l' and make them into 'look'
+        # that's all internal to the parser now though
         return line
 
     def do(self, input_text):
