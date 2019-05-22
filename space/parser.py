@@ -33,14 +33,16 @@ class PSNode:
         self.next = self.__class__(*more) if more else None
         self.filled = dict()
 
-    def new_kid(self, verb):
+    def verb_state(self, verb):
         cur = self
-        if verb not in find_verb(False):
-            raise Exception(f'new_kid(verb) requires a Verb argument, given verb={verb}')
         while cur.verb is not verb:
             if cur.next is None:
                 raise Exception(f'{verb} not found in {self}')
             cur = cur.next
+        return cur
+
+    def new_kid(self, verb):
+        cur = self.verb_state(verb)
         while cur.kid is not None:
             cur = cur.kid
         cur.kid = self.__class__(self.verb)

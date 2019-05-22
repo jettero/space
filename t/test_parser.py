@@ -5,7 +5,7 @@ import logging
 import pytest
 
 from space.living    import Human
-from space.parser    import Parser
+from space.parser    import Parser, find_verb
 from space.map       import Room
 
 import space.exceptions as E
@@ -106,9 +106,15 @@ def test_naked_dir_move_cmds(me, bystander, room):
 
 
 def test_irritating_psnode_issue(me, room):
+    V = find_verb(False)
     p = Parser()
     pstate = p.parse(me, '')
-    assert pstate.states
-    for psn in pstate.states:
+
+    for v in V:
+        cur = pstate.states.verb_state(v)
+        assert cur is not None
+        assert cur.verb is v
+
+    for psn in pstate.states: # iterate all verbs and kids
         if psn.fname:
             assert psn.verb.name in psn.fname
