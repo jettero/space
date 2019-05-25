@@ -21,9 +21,10 @@ class Cell(MapObj, Container):
         MapObj.__init__(self, mobj=mobj, pos=pos)
 
     def accept(self, item):
-        for item in self:
-            if isinstance(item, Living):
-                raise E.ContainerError(f'{item} is already there')
+        if isinstance(item, Living):
+            for other in self:
+                if isinstance(other, Living):
+                    raise E.ContainerError(f'{other} is already there')
         return True
 
     @property
