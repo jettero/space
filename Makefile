@@ -46,3 +46,5 @@ requirements.txt: setup.py
 
 clean:
 	git clean -dfx
+
+egg: .setup-bdist_egg
