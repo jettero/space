@@ -35,7 +35,7 @@ class Map(baseobj):
     def __str__(self):
         if not self.cells:
             return ''
-        r = ['   ' + ''.join([ f' {i} ' for i,_ in enumerate(self.cells[0]) ])] \
+        r = ['   ' + ''.join([ f'{i:2d} ' for i,_ in enumerate(self.cells[0]) ])] \
           + [ f'{i:2} ' + l for i,l in enumerate(self.colorized_text_drawing.splitlines()) ]
         return '\n'.join(r)
 
