@@ -474,29 +474,34 @@ class Map(baseobj):
         for c in self.fast_voxel(pos1, pos2, bad_type=Wall):
             c.visible = True
 
-    def visicalc(self, whom):
+    def visicalc(self, whom, maxdist=None):
         c1 = self[whom]
         if not isinstance(c1, Cell):
             raise ValueError(f'{whom} is not on the map apparently')
-        cells = set( self.iter_cells() ) - set([c1])
+        cells = set(self.iter_cells()) - set([c1])
         c1.visible = True
         for c in cells:
             c.visible = False
-            c.concealed = True
         while cells:
             loop_cell = cells.pop()
             self._visicalc(c1.pos, loop_cell.pos)
+        if maxdist:
+            if isinstance(maxdist, int):
+                maxdist = c1.width * maxdist
+            for c in self.iter_cells():
+                if c is c1:
+                    continue
+                if c.visible:
+                    if LineSeg(c1.pos, c.pos).distance > maxdist:
+                        c.visible = False
 
     def visicalc_submap(self, whom, maxdist=None):
-        self.visicalc(whom)
+        self.visicalc(whom, maxdist=maxdist)
         wlp = whom.location.pos
         bnds = Bounds(*(wlp * 2))
-        if not maxdist or maxdist < 1:
-            maxdist = 0
         for p, cell in self:
             try:
-                d = LineSeg(wlp, p).distance if maxdist else 0
-                if cell.visible and d <= maxdist:
+                if cell.visible:
                     if p[0] < bnds.x: bnds.x = p[0]
                     if p[0] > bnds.X: bnds.X = p[0]
                     if p[1] < bnds.y: bnds.y = p[1]

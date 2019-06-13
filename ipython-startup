@@ -42,9 +42,8 @@ from troom import a_map, o
 # p = Parser()
 # mmr = srt.MethodArgsRouter(o.me, 'can_move', multi=True)
 
-v_map = None
 def vmap(maxdist=5):
-    global v_map
     v_map =  a_map.visicalc_submap(o.me, maxdist=maxdist)
+    print(a_map)
+    print(v_map)
     return v_map
-vmap()
