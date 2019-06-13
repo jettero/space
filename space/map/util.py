@@ -13,6 +13,15 @@ def _check_cells(*pos):
     for i in pos:
         yield _check_cell(i)
 
+def test_maxdist(maxdist):
+    if not maxdist:
+        return lambda x,y: True
+    if isinstance(maxdist, int):
+        maxdist = Length(Cell.Meta.width) * maxdist
+    def the_test(x,y):
+        return LineSeg(x,y).distance <= maxdist
+    return the_test
+
 class LineSeg:
     ''' adds properties to a two-tuple of points '''
 

@@ -8,7 +8,7 @@ from ..obj import baseobj
 from ..container import Containable, Container
 from .cell import Cell, MapObj, Wall
 from .dir_util import convert_pos, DIRS, DDIRS
-from .util import LineSeg, Box, Bounds
+from .util import LineSeg, Box, Bounds, test_maxdist
 
 import space.exceptions as E
 
@@ -486,13 +486,12 @@ class Map(baseobj):
             loop_cell = cells.pop()
             self._visicalc(c1.pos, loop_cell.pos)
         if maxdist:
-            if isinstance(maxdist, int):
-                maxdist = c1.width * maxdist
+            maxdist = test_maxdist(maxdist)
             for c in self.iter_cells():
                 if c is c1:
                     continue
                 if c.visible:
-                    if LineSeg(c1.pos, c.pos).distance > maxdist:
+                    if not maxdist(c1.pos, c.pos):
                         c.visible = False
 
     def visicalc_submap(self, whom, maxdist=None):
@@ -509,10 +508,11 @@ class Map(baseobj):
             except AttributeError:
                 pass
         actual_bnds = self.bounds
-        if bnds.x > actual_bnds.x: bnds.x -= 1
-        if bnds.y > actual_bnds.y: bnds.y -= 1
-        if bnds.X < actual_bnds.X: bnds.X += 1
-        if bnds.Y < actual_bnds.Y: bnds.Y += 1
+        maxdist = test_maxdist(maxdist)
+        if bnds.x > actual_bnds.x and maxdist(wlp, (bnds.x-1, wlp[1])): bnds.x -= 1
+        if bnds.y > actual_bnds.y and maxdist(wlp, (wlp[0], bnds.y-1)): bnds.y -= 1
+        if bnds.X < actual_bnds.X and maxdist(wlp, (bnds.X+1, wlp[1])): bnds.X += 1
+        if bnds.Y < actual_bnds.Y and maxdist(wlp, (wlp[0], bnds.Y+1)): bnds.Y += 1
         log.debug('visicalc_submap actual-bounds=[%s: %s] submap-bounds=[%s: %s]',
             actual_bnds, tuple(actual_bnds), bnds, tuple(bnds))
         return MapView(self, bounds=bnds)
