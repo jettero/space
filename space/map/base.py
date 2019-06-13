@@ -545,6 +545,12 @@ class MapView(Map):
                 yield p,cell
     # iter_cells() uses iter_type(), so it's already fixed too
 
+    def realpos(self,x,y):
+        return x+self.bounds.x, y+self.bounds.y
+
+    def get(self, x,y):
+        return self.a_map.get(*self.realpos(x,y))
+
     @property
     def cells(self):
         cells = self._cells()
