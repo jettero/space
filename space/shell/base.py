@@ -78,6 +78,7 @@ class BaseShell:
     def do(self, input_text):
         input_text = self.pre_parse_kludges(input_text)
         txts = re.split(r'\s*;\s*', input_text)
+        p0 = self.owner.location.pos
         for txt in txts:
             if txt:
                 try:
@@ -91,3 +92,5 @@ class BaseShell:
                 except Exception as e: # pylint: disable=broad-except
                     log.exception('during input: %s', input_text)
                     self.receive_text(f'error: {e}')
+        if self.owner.location.pos != p0:
+            self.owner.do('look')
