@@ -131,6 +131,9 @@ class Bounds:
             return range(0,-1)
         return range(self.x, self.X+1)
 
+    def __getitem__(self, i):
+        return tuple(self)[i]
+
     def __iter__(self):
         for i in 'xyXY':
             yield getattr(self, i)
