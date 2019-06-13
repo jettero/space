@@ -135,8 +135,10 @@ class Bounds:
         return tuple(self)[i]
 
     def __iter__(self):
-        for i in 'xyXY':
-            yield getattr(self, i)
+        yield self.x
+        yield self.y
+        yield self.X
+        yield self.Y
 
     def __str__(self):
         return f'{self.XX}x{self.YY}'
