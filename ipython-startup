@@ -39,5 +39,7 @@ import sys
 sys.path.insert(0, 't')
 from troom import a_map, o
 
-p = Parser()
-mmr = srt.MethodArgsRouter(o.me, 'can_move', multi=True)
+# p = Parser()
+# mmr = srt.MethodArgsRouter(o.me, 'can_move', multi=True)
+
+vmap = a_map.visicalc_submap(o.me)
