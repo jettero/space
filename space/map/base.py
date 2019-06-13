@@ -2,6 +2,7 @@
 
 import logging
 import random
+from collections import namedtuple
 
 from ..obj import baseobj
 from ..container import Containable, Container
@@ -486,13 +487,16 @@ class Map(baseobj):
             loop_cell = cells.pop()
             self._visicalc(c1.pos, loop_cell.pos)
 
-    def visicalc_submap(self, whom):
+    def visicalc_submap(self, whom, maxdist=None):
         self.visicalc(whom)
         wlp = whom.location.pos
         bnds = Bounds(*(wlp * 2))
+        if not maxdist or maxdist < 1:
+            maxdist = 0
         for p, cell in self:
             try:
-                if cell.visible:
+                d = LineSeg(wlp, p).distance if maxdist else 0
+                if cell.visible and d <= maxdist:
                     if p[0] < bnds.x: bnds.x = p[0]
                     if p[0] > bnds.X: bnds.X = p[0]
                     if p[1] < bnds.y: bnds.y = p[1]
