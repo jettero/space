@@ -86,31 +86,32 @@ MapObj.box = property(lambda x: Box(x.pos))
 
 class Bounds:
     x = y = X = Y = None
-    XX = YY = 0
 
     def __init__(self, *a):
         if not a or a[0] is None:
             return
         if len(a) == 4:
             self.x, self.y, self.X, self.Y = a
-            self.recompute()
         elif len(a) == 1:
             cells = a[0].cells if hasattr(a[0], 'cells') else a[0]
             if cells and cells[0]:
                 self.x = self.y = 0
                 self.X = max([ len(row) for row in cells ]) - 1
                 self.Y = len(cells) - 1
-            self.recompute()
         else:
             raise ValueError('Bounds(cells) or Bounds(x,y,X,Y)')
 
-    def recompute(self):
-        if None in (self.x, self.y, self.X, self.Y):
-            self.x = self.y = self.X = self.Y = None
-            self.XX = self.YY = 0
-        else:
-            self.XX = 1 + (self.X - self.x)
-            self.YY = 1 + (self.Y - self.y)
+    @property
+    def XX(self):
+        if None in (self.x, self.X):
+            return 0
+        return 1 + (self.X - self.x)
+
+    @property
+    def YY(self):
+        if None in (self.y, self.Y):
+            return 0
+        return 1 + (self.Y - self.y)
 
     @property
     def xy_iter(self):
@@ -138,7 +139,7 @@ class Bounds:
         return f'{self.XX}x{self.YY}'
 
     def __repr__(self):
-        return f'Bounds({str(self)})'
+        return f'Bounds(x={self.x}, y={self.y}, X={self.X}, Y={self.Y}, XX={self.XX}, YY={self.YY})'
 
     def _in(self, x,y):
         if x is not None and self.x is not None and self.x <= x <= self.X and self.y <= y <= self.Y:
