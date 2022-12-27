@@ -2,12 +2,12 @@
 
 BUILD_INVENTORY := $(shell find space/ -type f -name \*.py) setup.cfg pyproject.toml
 
-space.egg-info/PKG-INFO: $(BUILD_INVENTORY)
+space.egg-info/PKG-INFO: $(BUILD_INVENTORY) reqs
 	python -m build
 
 build: space.egg-info/PKG-INFO
 
-test:
+test: reqs
 	pytest t
 
 clean:
