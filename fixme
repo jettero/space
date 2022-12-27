@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-pylint -dall -e fixme space t
