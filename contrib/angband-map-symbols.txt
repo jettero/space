@@ -44,7 +44,7 @@ Features that block line of sight
 Monsters
 --------
 
-=====   =================== =====  ==================================== 
+=====   =================== =====  ====================================
 '$'     Creeping Coins      ','    Mushroom Patch
 'a'     Giant Ant           'A'    Ainu
 'b'     Giant Bat           'B'    Bird

@@ -56,4 +56,3 @@ fi
 if [ -z "$SKIP_LINT$NOLINT$NO_LINT" ]
 then py_files | boring_filter | xargs -r pylint -d fixme || exit 1
 fi
-
