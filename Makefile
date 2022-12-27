@@ -1,5 +1,8 @@
 
 
+build:
+	python -m build
+
 test:
 	pytest t
 

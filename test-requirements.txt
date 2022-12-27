@@ -3,6 +3,8 @@
 pytest
 pytest-pythonpath
 
-pylint
 
+# not really required for testing, but helpful to have around
+pylint
 pre-commit
+build

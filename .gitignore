@@ -5,6 +5,7 @@
 /mods
 
 __pycache__
+*.egg-info
 *.pyc
 *.orig
 *.rej
