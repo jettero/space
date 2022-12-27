@@ -4,3 +4,5 @@ pytest
 pytest-pythonpath
 
 pylint
+
+pre-commit
