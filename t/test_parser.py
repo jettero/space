@@ -107,8 +107,15 @@ def test_naked_dir_move_cmds(me, bystander, room):
 
 def test_extra_args_fail(me, room):
     p = Parser()
+
+    pstate = p.parse(me, 'move around stuff')
+    assert bool(pstate) is False
+    assert 'around' in pstate.error
+    assert 'stuff' in pstate.error
+
     pstate = p.parse(me, 'look')
     assert bool(pstate) is True
+
     pstate = p.parse(me, 'look at things')
     assert bool(pstate) is False
     assert 'at' in pstate.error
