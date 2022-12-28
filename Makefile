@@ -1,4 +1,5 @@
 
+default: test
 
 BUILD_INVENTORY := $(shell find space/ -type f -name \*.py) setup.cfg pyproject.toml
 
