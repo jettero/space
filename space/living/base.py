@@ -204,8 +204,11 @@ class Living(Containable, HasShell, CanMove, baseobj):
         self.attack(target)
 
     def can_look(self):
-        # XXX: this is 'look' ... what about 'look at john snow' ?
+        # XXX: this accepts any amount of words after 'look'
         return True, {}
+
+    def can_look_living(self):
+        return (False, {'error': "XXX: this should work sometimes"})
 
     def do_look(self):
         from ..shell.message import MapMessage
