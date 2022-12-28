@@ -248,7 +248,8 @@ class PState:
 
     def __bool__(self):
         # XXX: we shouldn't be true when there's more than one winner with the high score
-        # XXX: we shouldn't parse true when we have remaining unused tokens
+        # XXX: we shouldn't parse true when we have remaining unused tokens; we
+        #      don't really track which self.tokens are consumed though
         # XXX: if we get an error (eg, attack stupid when stupid is too far away)
         #      then the parse should be true, but with an error
         return self.winner is not None and self.winner.can_do
@@ -292,7 +293,9 @@ class Parser:
 
     def plan(self, pstate):
         for verb in pstate.iter_verbs:
-            mr = MethodArgsRouter(pstate.me, f'can_{verb.name}')
+            mn = f'can_{verb.name}'
+            mr = MethodArgsRouter(pstate.me, mn)
+            log.debug('[Parser] plan(%s)', mn)
             for rhint in mr.hints():
                 log.debug("[Parser] rhint=%s", rhint)
                 tokens = dict()
@@ -308,8 +311,11 @@ class Parser:
                         elif pos < end:
                             tokens[ihint.aname].append(pstate.tokens[pos])
                             pos += 1
+                if pos < end:
+                    log.debug('[Parser] rejecting rhint=%s due to extra unmatched tokens=%s', rhint, pstate.tokens[pos:])
+                    continue
                 pp_tok = verb.preprocess_tokens(pstate.me, **tokens)
-                log.debug('[Parser] preprocess tokens for %s; %s --> %s', rhint, tokens, pp_tok)
+                log.debug('[Parser] preprocess tokens for rhint=%s; tokens=%s --> pp_tok=%s', rhint, tokens, pp_tok)
                 rhint.tokens = pp_tok
                 pstate.add_rhint(verb, rhint)
 
