@@ -31,7 +31,7 @@ def test_recompute():
     assert b.YY == 11
 
     b.x = 5
-    b.recompute()
+    # b.recompute() # this was removed a while ago
 
     assert b.XX == (10-5) + 1
     assert b.YY == (10-0) + 1
