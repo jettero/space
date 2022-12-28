@@ -8,7 +8,7 @@ space.egg-info/PKG-INFO: $(BUILD_INVENTORY) reqs
 
 build: space.egg-info/PKG-INFO
 
-test: reqs
+test:
 	pytest t
 
 clean:
