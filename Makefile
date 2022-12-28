@@ -8,6 +8,9 @@ space.egg-info/PKG-INFO: $(BUILD_INVENTORY) reqs
 
 build: space.egg-info/PKG-INFO
 
+dtest debug-test dt:
+	pytest t --log-cli-level debug
+
 test:
 	pytest t
 

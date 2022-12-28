@@ -3,6 +3,9 @@
 pytest
 pytest-pythonpath
 
+# not used yet, but should be
+pydot
+hypothesis
 
 # not really required for testing, but helpful to have around
 pylint
