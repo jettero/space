@@ -204,6 +204,7 @@ class Living(Containable, HasShell, CanMove, baseobj):
         self.attack(target)
 
     def can_look(self):
+        # XXX: this is 'look' ... what about 'look at john snow' ?
         return True, {}
 
     def do_look(self):
