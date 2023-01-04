@@ -2,7 +2,7 @@
 # pylint: disable=invalid-name,redefined-outer-name
 
 from space.pv import PV
-from space.dn import DN, DescriptiveNumber
+from space.dn import DN, DescriptiveNumber # DescriptiveNumber = DN
 from space.roll import Roll
 
 class D(DN):
