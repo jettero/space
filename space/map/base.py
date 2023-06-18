@@ -106,7 +106,7 @@ class Map(baseobj):
         text_drawing = self._text_drawing()
 
         last_color    = ''
-        boring_color  = {'fg': 234}
+        boring_color  = {'fg': 240}
         neutral_color = {'fg': 254}
         can_see_color = {'bg': 17}
         rst = '\x1b[m'
