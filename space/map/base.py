@@ -495,10 +495,10 @@ class Map(baseobj):
                         c.visible = False
 
     def maxdist_submap(self, whom, maxdist=None):
-        # not at all sure why we have to do visicalc before computing the
-        # submap this way but without it the map appears blank
+        # have to visicalc so we mark cells visible/not-visible correctly
         self.visicalc(whom, maxdist=maxdist)
 
+        # we don't actually use the visicalc to bound the map view though
         wlp = whom.location.pos
         actual_bnds = self.bounds
         bnds = Bounds(wlp[0]-maxdist, wlp[1]-maxdist, wlp[0]+maxdist, wlp[1]+maxdist)
