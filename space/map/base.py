@@ -494,6 +494,18 @@ class Map(baseobj):
                     if not maxdist(c1.pos, c.pos):
                         c.visible = False
 
+    def maxdist_submap(self, whom, maxdist=None):
+        # not at all sure why we have to do visicalc before computing the
+        # submap this way but without it the map appears blank
+        self.visicalc(whom, maxdist=maxdist)
+
+        wlp = whom.location.pos
+        actual_bnds = self.bounds
+        bnds = Bounds(wlp[0]-maxdist, wlp[1]-maxdist, wlp[0]+maxdist, wlp[1]+maxdist)
+        log.debug('maxdist_submap actual-bounds=[%s: %s] submap-bounds=[%s: %s]',
+            actual_bnds, tuple(actual_bnds), bnds, tuple(bnds))
+        return MapView(self, bounds=bnds)
+
     def visicalc_submap(self, whom, maxdist=None):
         self.visicalc(whom, maxdist=maxdist)
         wlp = whom.location.pos
