@@ -540,8 +540,17 @@ class MapView(Map):
             the copy may be bounded, and can be filtered without ruining the
             actual cell array in self.a_map
         '''
-        bnds = self.bounds
-        return [ [ self.a_map.cells[j][i] for i in bnds.x_iter ] for j in bnds.y_iter ]
+        vb = self.bounds
+        ab = self.a_map.bounds
+        return [ [ self.a_map.cells[j][i] if ab.x <= i <= ab.X and ab.y <= j <= ab.Y else None for i in vb.x_iter ] for j in vb.y_iter ]
+
+        # note: we used to do the below, but we changed it 2023-06-19 to
+        # faciliate genearting submaps of a specific size, even if the submap
+        # would span outside the map.
+        #
+        #   bnds = self.bounds
+        #   return [ [ self.a_map.cells[j][i] for i in bnds.x_iter ] for j in bnds.y_iter ]
+
 
     def iter_type(self, *a, **kw):
         bnds = self.bounds
