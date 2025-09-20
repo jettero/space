@@ -1,0 +1,6 @@
+2.vis1.ap
+^\.git
+^\.todo
+make_svg
+MANIFEST.SKIP
+run_grmed_local.sh
