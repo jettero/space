@@ -29,7 +29,7 @@ import space.living as liv
 import space.item as sitem
 import space.roll as sroll
 import space.map as smap
-from space.map.generate import generate as smapgen
+from space.map.generate import *
 import space.find as sfind
 
 import space.map.dir_util as dutil
