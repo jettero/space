@@ -9,8 +9,9 @@ over straightness/loops/pruning, prefer rdc.generate.
 """
 
 import logging
+import random
 
-from ..cell import Wall
+from ..cell import Wall, Cell
 
 from .rdropper import generate_rooms
 #from .base import sparse
@@ -39,6 +40,48 @@ def generate(x=50, y=50, rsz='2d4+1', rsparse='1d10+3'):
     # add corridors until all rooms in {visited} are connected
     # but first, these annoying bugs in cellify_partitions
 
-    #a_map.condense()
-    #a_map.strip_useless_walls()
+    # Open doors along corridors with a bias, then reconstruct walls
+    open_doors_along_corridors(a_map, prob=0.6, max_doors_per_room=2)
+    reconstruct_walls(a_map)
+    a_map.condense()
+    a_map.strip_useless_walls()
     return a_map
+
+def reconstruct_walls(a_map):
+    nonetype = type(None)
+    to_wall = []
+    for (i,j), c in a_map:
+        if isinstance(c, Cell):
+            for dd,(dx,dy) in {'n':(0,-1),'s':(0,1),'e':(1,0),'w':(-1,0),
+                               'ne':(1,-1),'nw':(-1,-1),'se':(1,1),'sw':(-1,1)}.items():
+                p = (i+dx, j+dy)
+                if not a_map.in_bounds(*p):
+                    continue
+                q = a_map[p]
+                if isinstance(q, nonetype):
+                    to_wall.append(p)
+    for p in to_wall:
+        a_map[p] = Wall(mobj=a_map, pos=p)
+
+def open_doors_along_corridors(a_map, prob=0.6, max_doors_per_room=2):
+    opened = {}
+    for (i,j), w in a_map:
+        if not isinstance(w, Wall):
+            continue
+        for d,(dx,dy) in {'n':(0,-1),'s':(0,1),'e':(1,0),'w':(-1,0)}.items():
+            p1 = (i+dx,j+dy)
+            p2 = (i-dx,j-dy)
+            if not (a_map.in_bounds(*p1) and a_map.in_bounds(*p2)):
+                continue
+            c1 = a_map[p1]
+            c2 = a_map[p2]
+            # open only when one side is room-interior Cell and the other is corridor Cell
+            if isinstance(c1, Cell) and isinstance(c2, Cell):
+                cnt = opened.get(p1,0) + opened.get(p2,0)
+                if cnt >= max_doors_per_room:
+                    continue
+                if random.random() <= prob:
+                    a_map[i,j] = Cell(mobj=a_map, pos=(i,j))
+                    opened[p1] = opened.get(p1,0) + 1
+                    opened[p2] = opened.get(p2,0) + 1
+                    break
