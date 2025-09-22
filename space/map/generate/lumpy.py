@@ -1,5 +1,12 @@
-# coding: utf-8
+"""
+Lumpy Room Grower
 
+Starts from a seed room and grows by attaching rooms to exposed walls while
+respecting map bounds. Optionally cellifies partitions between rooms.
+
+Produces organic clusters; not focused on corridor networks. Prefer rdc for
+room+hallway layouts.
+"""
 import random
 import logging
 
