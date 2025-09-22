@@ -1,4 +1,12 @@
-# coding: utf-8
+"""
+Boxed-in Rooms Generator
+
+Lays out rooms via rdropper.generate_rooms, then carves corridors from room
+edges using a biased random walk until a target sparseness is reached.
+
+Useful for compact room clusters with connecting hallways. For finer control
+over straightness/loops/pruning, prefer rdc.generate.
+"""
 
 import logging
 
