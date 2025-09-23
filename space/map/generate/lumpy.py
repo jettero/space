@@ -30,7 +30,7 @@ def generate(x=20, y=20, rsz='1d4+1', rooms='3d4', cellify_partitions=True):
     retries = 10
     rooms = roll(rooms)
     while rooms > 0:
-        walls = [ x for x in m.iter_locations(Wall) if x.has_neighbor(of_type=Cell) ]
+        walls = [ w for _, w in m.iter_type(Wall) if w.has_neighbor(of_type=Cell) ]
         while True:
             cw = random.choice(walls)
             cx,cy = cw.pos
