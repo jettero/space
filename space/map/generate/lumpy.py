@@ -17,6 +17,14 @@ from ..room import Room
 log = logging.getLogger(__name__)
 
 def generate(x=20, y=20, rsz='1d4+1', rooms='3d4', cellify_partitions=True):
+    """Generate a lumpy cluster of rooms.
+
+    Args:
+        x, y: Max map bounds.
+        rsz: Room size roll (e.g., '1d4+1').
+        rooms: Number of rooms to add (roll or int).
+        cellify_partitions: If True, open short wall partitions.
+    """
     rsz = Roll(rsz)
     m = Room(rsz.roll(), rsz.roll())
     retries = 10

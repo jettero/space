@@ -19,6 +19,11 @@ from .rdropper import generate_rooms
 log = logging.getLogger(__name__)
 
 def generate(x=50, y=50, rsz='2d4+1', rsparse='1d10+3'):
+    """Generate boxed-in rooms with corridors.
+
+    Uses rdropper to place rooms, cellifies short partitions, then carves
+    corridors and reconstructs walls.
+    """
     a_map = generate_rooms(x=x, y=y, rsz=rsz, rsparse=rsparse)
     a_map.cellify_partitions()
 

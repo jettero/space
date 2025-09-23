@@ -32,6 +32,15 @@ def _boxes_too_close(box1, box2, min_gap=1):
     return not (X1 < x2 or X2 < x1 or Y1 < y2 or Y2 < y1)
 
 def generate_rooms(x=50, y=50, rsz='2d4+2', rsparse='1d10+3', cellify_partitions=True, min_gap=1):
+    """Drop rectangular rooms until sparse.
+
+    Args:
+        x, y: Map bounds.
+        rsz: Room size roll.
+        rsparse: Target sparseness.
+        cellify_partitions: If True, open short partitions.
+        min_gap: Minimum gap between room boxes.
+    """
     rsparse = sparse(rsparse)
     rsz = Roll(rsz)
     a_map = Map(x,y)

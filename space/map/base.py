@@ -300,6 +300,16 @@ class Map(baseobj):
         return partitions
 
     def cellify_partitions(self, wmin=1, wmax=None, laps=2):
+        """Convert partition walls into floor cells.
+
+        Replaces contiguous runs of walls that partition open areas with
+        `Cell` tiles, effectively opening short passages/doorways.
+
+        Args:
+            wmin: Minimum qualifying wall-run length.
+            wmax: Optional maximum wall-run length.
+            laps: Repeat passes to catch newly exposed partitions.
+        """
         for _ in range(laps):
             for wall in self.identify_partitions(wmin=wmin, wmax=wmax):
                 self[ wall.pos ] = Cell()
