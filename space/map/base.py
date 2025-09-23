@@ -312,9 +312,19 @@ class Map(baseobj):
         """
         for _ in range(laps):
             for wall in self.identify_partitions(wmin=wmin, wmax=wmax):
-                # prefer Corridor to tag these openings as hallways
-                from .cell import Corridor
-                self[ wall.pos ] = Corridor()
+                # Decide Floor vs Corridor based on immediate neighbors:
+                # If all 4 cardinal neighbors are None/Wall/Floor, treat as room smoothing -> Floor
+                # Otherwise (touches any non-Floor Cell), treat as corridor opening -> Corridor
+                from .cell import Floor, Corridor
+                i,j = wall.pos
+                neighbors = [(i+1,j),(i-1,j),(i,j+1),(i,j-1)]
+                ok_room = True
+                for p in neighbors:
+                    c = self[p] if self.in_bounds(*p) else None
+                    if not (c is None or isinstance(c, Wall) or isinstance(c, Floor)):
+                        ok_room = False
+                        break
+                self[ wall.pos ] = Floor() if ok_room else Corridor()
 
     @property
     def sparseness(self):
