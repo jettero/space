@@ -386,6 +386,8 @@ def generate(x=50, y=50, rsz='2d4+1', rsparse='1d10+3',
     # Prune excessive dead-ends that don't terminate at a room door
     prune_deadends(a_map, keep_door_depth=prune_keep_i)
     a_map.strip_useless_walls()
+    # Add doors where corridors meet rooms
+    a_map.place_doors()
     a_map.condense()
     return a_map
 

@@ -48,6 +48,8 @@ def generate(x=50, y=50, rsz='2d4+1', rsparse='1d10+3'):
     # Open doors along corridors with a bias, then reconstruct walls
     open_doors_along_corridors(a_map, prob=0.6, max_doors_per_room=2)
     reconstruct_walls(a_map)
+    # Add doors where corridors meet rooms
+    a_map.place_doors()
     a_map.condense()
     a_map.strip_useless_walls()
     return a_map

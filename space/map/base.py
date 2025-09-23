@@ -7,6 +7,7 @@ from collections import namedtuple
 from ..obj import baseobj
 from ..container import Containable, Container
 from .cell import Cell, Floor, Corridor, MapObj, Wall
+from .cell import Door
 from .dir_util import convert_pos, DIRS, DDIRS
 from .util import LineSeg, Box, Bounds, test_maxdist
 
@@ -107,6 +108,7 @@ class Map(baseobj):
 
         last_color    = ''
         boring_color  = {'fg': 240}
+        door_color    = {'fg': 130}  # brown/dark orange
         neutral_color = {'fg': 254}
         can_see_color = {'bg': 17}
         rst = '\x1b[m'
@@ -127,9 +129,12 @@ class Map(baseobj):
                     last_color = _assign_color(i,j)
                     continue
                 color = dict()
-                color.update(
-                    boring_color if isinstance(cell, Wall) or cell.abbr == '.' else neutral_color
-                )
+                if isinstance(cell, Door):
+                    color.update(door_color)
+                else:
+                    color.update(
+                        boring_color if isinstance(cell, Wall) or cell.abbr == '.' else neutral_color
+                    )
                 if 'can_see' in cell.tags:
                     color.update(can_see_color)
                 last_color = _assign_color(i,j, **color)
@@ -325,6 +330,40 @@ class Map(baseobj):
                         ok_room = False
                         break
                 self[ wall.pos ] = Floor() if ok_room else Corridor()
+
+    def place_doors(self):
+        """Add `Door` where corridors meet rooms with side walls.
+
+        Rule: For a wall-aligned threshold, if one side is `Corridor` and
+        the opposite side is `Floor`, and the two perpendicular neighbors are
+        `Wall`, replace the threshold cell with a `Door`.
+        """
+        for (i,j), cell in self:
+            if not isinstance(cell, Cell):
+                continue
+            n = self[i, j-1] if self.in_bounds(i, j-1) else None
+            s = self[i, j+1] if self.in_bounds(i, j+1) else None
+            e = self[i+1, j] if self.in_bounds(i+1, j) else None
+            w = self[i-1, j] if self.in_bounds(i-1, j) else None
+
+            def is_wall(x):
+                return isinstance(x, Wall)
+            def is_floor(x):
+                return isinstance(x, Floor)
+            def is_corr(x):
+                return isinstance(x, Corridor)
+
+            # Vertical doorway: corridor west/east, floor other side; walls north/south
+            if is_wall(n) and is_wall(s):
+                if (is_corr(w) and is_floor(e)) or (is_floor(w) and is_corr(e)):
+                    self[i,j] = Door(mobj=self, pos=(i,j))
+                    continue
+
+            # Horizontal doorway: corridor north/south, floor other side; walls east/west
+            if is_wall(w) and is_wall(e):
+                if (is_corr(n) and is_floor(s)) or (is_floor(n) and is_corr(s)):
+                    self[i,j] = Door(mobj=self, pos=(i,j))
+                    continue
 
     @property
     def sparseness(self):

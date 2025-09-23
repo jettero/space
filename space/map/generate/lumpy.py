@@ -46,6 +46,7 @@ def generate(x=20, y=20, rsz='1d4+1', rooms='3d4', cellify_partitions=True):
                 if cellify_partitions:
                     m.cellify_partitions()
                 m.strip_useless_walls()
+                m.place_doors()
                 retries = 10
                 log.debug('added %s at (%d,%d)', repr(r), px, py)
                 rooms -= 1
