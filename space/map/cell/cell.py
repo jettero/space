@@ -6,9 +6,12 @@ from ...living import Living
 
 import space.exceptions as E
 
+# various symbols for floor/corridor, etc
+# ■□◦◆◇◌᛭᛫܀⁘⁙⸬
+
 class Cell(MapObj, Container):
     _override = None
-    a = '.'
+    a = '□'
 
     class Meta:
         height = '10ft'
@@ -40,21 +43,30 @@ class Cell(MapObj, Container):
     def abbr(self, v):
         self._override = v
 
+    @property
+    def is_cell(self):
+        return True
+
+    @property
+    def is_floor(self):
+        return False
+
+    @property
+    def is_corridor(self):
+        return False
+
 
 class Floor(Cell):
     """Room floor cell (same render as Cell)."""
-    pass
-
+    a = '·'
+    @property
+    def is_floor(self):
+        return True
 
 class Corridor(Cell):
     """Corridor/hallway floor cell (same render as Cell)."""
-    pass
+    a = '܀'
 
-
-# Helpers
-def is_room(cell):
-    return isinstance(cell, Floor)
-
-
-def is_corridor(cell):
-    return isinstance(cell, Corridor)
+    @property
+    def is_corridor(self):
+        return True
