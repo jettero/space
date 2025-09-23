@@ -6,7 +6,7 @@ from collections import namedtuple
 
 from ..obj import baseobj
 from ..container import Containable, Container
-from .cell import Cell, MapObj, Wall
+from .cell import Cell, Floor, Corridor, MapObj, Wall
 from .dir_util import convert_pos, DIRS, DDIRS
 from .util import LineSeg, Box, Bounds, test_maxdist
 
@@ -303,7 +303,7 @@ class Map(baseobj):
         """Convert partition walls into floor cells.
 
         Replaces contiguous runs of walls that partition open areas with
-        `Cell` tiles, effectively opening short passages/doorways.
+        `Corridor` tiles, effectively opening short passages/doorways.
 
         Args:
             wmin: Minimum qualifying wall-run length.
@@ -312,7 +312,9 @@ class Map(baseobj):
         """
         for _ in range(laps):
             for wall in self.identify_partitions(wmin=wmin, wmax=wmax):
-                self[ wall.pos ] = Cell()
+                # prefer Corridor to tag these openings as hallways
+                from .cell import Corridor
+                self[ wall.pos ] = Corridor()
 
     @property
     def sparseness(self):

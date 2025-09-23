@@ -11,7 +11,7 @@ over straightness/loops/pruning, prefer rdc.generate.
 import logging
 import random
 
-from ..cell import Wall, Cell
+from ..cell import Wall, Cell, Corridor
 
 from .rdropper import generate_rooms
 #from .base import sparse
@@ -86,7 +86,7 @@ def open_doors_along_corridors(a_map, prob=0.6, max_doors_per_room=2):
                 if cnt >= max_doors_per_room:
                     continue
                 if random.random() <= prob:
-                    a_map[i,j] = Cell(mobj=a_map, pos=(i,j))
+                    a_map[i,j] = Corridor(mobj=a_map, pos=(i,j))
                     opened[p1] = opened.get(p1,0) + 1
                     opened[p2] = opened.get(p2,0) + 1
                     break

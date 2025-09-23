@@ -39,3 +39,22 @@ class Cell(MapObj, Container):
     @abbr.setter
     def abbr(self, v):
         self._override = v
+
+
+class Floor(Cell):
+    """Room floor cell (same render as Cell)."""
+    pass
+
+
+class Corridor(Cell):
+    """Corridor/hallway floor cell (same render as Cell)."""
+    pass
+
+
+# Helpers
+def is_room(cell):
+    return isinstance(cell, Floor)
+
+
+def is_corridor(cell):
+    return isinstance(cell, Corridor)

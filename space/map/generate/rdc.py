@@ -21,7 +21,7 @@ legacy style.
 import random
 import logging
 
-from ..cell import Cell, Wall
+from ..cell import Cell, Corridor, Floor, Wall
 from ..dir_util import translate_dir
 
 from .base import sparse
@@ -52,7 +52,7 @@ def add_corridor(a_map, max_steps=200, inertia=4, turn_prob=0.15):
         log.debug('add_corridor: no suitable wall seed found; skipping')
         return
     pos = seed.pos
-    a_map[pos] = Cell(mobj=a_map, pos=pos)
+    a_map[pos] = Corridor(mobj=a_map, pos=pos)
     log.debug('add_corridor: seeding corridor at %s', pos)
 
     def ok_target(q):
@@ -104,7 +104,7 @@ def add_corridor(a_map, max_steps=200, inertia=4, turn_prob=0.15):
             ndir = random.choice(cand)
             straight_left = inertia - 1
         pos = translate_dir(ndir, pos)
-        a_map[pos] = Cell(mobj=a_map, pos=pos)
+        a_map[pos] = Corridor(mobj=a_map, pos=pos)
         log.debug('add_corridor: carved to %s dir=%s', pos, ndir)
         d = ndir
         # stop if we hit a junction (>=2 open neighbors)
@@ -138,12 +138,12 @@ def reconstruct_walls(a_map):
         # If any opposite neighbors are both Cells, open this wall
         if (a_map.in_bounds(i+1,j) and a_map.in_bounds(i-1,j)
             and isinstance(a_map[i+1,j], Cell) and isinstance(a_map[i-1,j], Cell)):
-            a_map[i,j] = Cell(mobj=a_map, pos=(i,j))
+            a_map[i,j] = Corridor(mobj=a_map, pos=(i,j))
             log.debug('reconstruct_walls: removed E/W split wall at (%d,%d)', i, j)
             continue
         if (a_map.in_bounds(i,j+1) and a_map.in_bounds(i,j-1)
             and isinstance(a_map[i,j+1], Cell) and isinstance(a_map[i,j-1], Cell)):
-            a_map[i,j] = Cell(mobj=a_map, pos=(i,j))
+            a_map[i,j] = Corridor(mobj=a_map, pos=(i,j))
             log.debug('reconstruct_walls: removed N/S split wall at (%d,%d)', i, j)
             continue
 
@@ -222,17 +222,17 @@ def connect_disconnected_rooms(a_map):
                     # try one more step; if outside is not a room interior, carve 1-cell corridor
                     p2 = translate_dir(d, p)
                     if a_map.in_bounds(*p2) and not isinstance(a_map[p2], Cell):
-                        a_map[ex, ey] = Cell(mobj=a_map, pos=(ex, ey))
-                        a_map[p] = Cell(mobj=a_map, pos=p)
+                        a_map[ex, ey] = Corridor(mobj=a_map, pos=(ex, ey))
+                        a_map[p] = Corridor(mobj=a_map, pos=p)
                         log.debug('connect_disconnected_rooms: fallback door at %s dir=%s', (ex,ey), d)
                         reconstruct_walls(a_map)
                         used_doors.add((ex,ey))
                         break
             continue
         # open door at the room edge and carve the path
-        a_map[ex,ey] = Cell(mobj=a_map, pos=(ex,ey))
+        a_map[ex,ey] = Corridor(mobj=a_map, pos=(ex,ey))
         for p in path:
-            a_map[p] = Cell(mobj=a_map, pos=p)
+            a_map[p] = Corridor(mobj=a_map, pos=p)
         log.debug('connect_disconnected_rooms: carved %d cells from %s to corridor', len(path), (ex,ey))
         used_doors.add((ex,ey))
         reconstruct_walls(a_map)
@@ -310,7 +310,7 @@ def ensure_room_connectivity(a_map):
             if not a_map.in_bounds(*p):
                 return False
             if not isinstance(a_map[p], Cell):
-                a_map[p] = Cell(mobj=a_map, pos=p)
+                a_map[p] = Corridor(mobj=a_map, pos=p)
         return True
 
     # Iteratively connect components until one remains

@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from .cell import Cell, Wall
+from .cell import Cell, Floor, Wall
 from .base import Map
 
 class Room(Map):
@@ -16,4 +16,4 @@ class Room(Map):
             self[hx,j] = Wall()
         for i in range(1,hx):
             for j in range(1,hy):
-                self[i,j] = Cell()
+                self[i,j] = Floor()

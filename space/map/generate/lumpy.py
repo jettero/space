@@ -11,7 +11,7 @@ import random
 import logging
 
 from ...roll import Roll, roll
-from ..cell import Wall, Cell
+from ..cell import Wall, Cell, Floor
 from ..room import Room
 
 log = logging.getLogger(__name__)
