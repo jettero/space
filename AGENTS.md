@@ -9,6 +9,9 @@
 
 ## Build, Test, and Development Commands
 - `make` or `make test` — run test suite (`pytest t`).
+- Parallel runs: prefer using available CPUs instead of a fixed `-j`.
+  - Examples: `make test -j"$(nproc)"` (Linux), `make test -j"$(sysctl -n hw.ncpu)"` (macOS), or set `-j16` if you know your core count.
+  - Avoid small fixed values like `-j2` on multi-core machines.
 - `pre-commit run --all-files` — run linters/formatters (pylint, black, hooks).
 - `python -m build` — build sdist/wheel (also via `make build`) when cutting releases.
 - `pip install -Ur test-requirements.txt` — install test-only deps if needed (`make reqs`).
