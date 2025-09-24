@@ -10,6 +10,31 @@ import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
+"""Method routing mechanics (developer notes)
+
+Purpose
+- Find and invoke the most appropriate ``can_<verb>_*`` or ``do_<verb>_*``
+  method on an object, based on available argument names/values.
+
+Components
+- ``MethodRouter``: collects method names with a common prefix.
+- ``MethodArgsRouter``: builds ``RouteHint`` entries from function signatures
+  and yields filled call candidates (``FFAK``) using ``introspect_args``.
+- ``MethodNameRouter``: prefers the longest suffix match from available method
+  names using underscore-separated segments.
+- ``RouteHint``: signature + tokens + filling logic for object/name
+  resolution.
+- ``FFAK``: a filled function+args+kwargs tuple with a sortable order.
+
+Selection strategy
+- Name variant selection prefers longest suffixes that are satisfied by the
+  provided keyword keys (``MethodNameRouter.longest_prefix``).
+- Argument filling favors named kwargs over positionals and respects type
+  annotations or parameter-name heuristics (see ``space/args.py``).
+- When ``multi=True``, multiple candidates may be invoked in order; otherwise
+  the first compatible candidate returns.
+"""
+
 class MethodRouter:
     def __init__(self, obj, top, multi=False, callback=None, dne_ok=True):
         self.top   = top
