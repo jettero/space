@@ -4,7 +4,7 @@
 __all__ = ['a_map', 'o']
 
 def gen_troom():
-    from space.map.room import Room
+    from space.map import Room, Wall, Door
     from space.living import Human
     from space.item import Ubi
     from space.nico import nico
@@ -13,6 +13,9 @@ def gen_troom():
     a_map[3,2] = Room(5,7)
     a_map[7,0] = Room(3,4)
     a_map.cellify_partitions()
+    a_map[8,2] = Door()
+    a_map[9,2] = Wall()
+    a_map[9,1] = Wall()
 
     od = dict()
     a_map[8,1] = od['me']      = Human('Paul Miller', 'Paul')

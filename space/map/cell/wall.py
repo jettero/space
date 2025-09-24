@@ -2,6 +2,7 @@
 
 from .base import MapObj, DDIRS
 from .cell import Cell
+from .door import Door
 
 class Wall(MapObj):
     _override = None
@@ -23,7 +24,7 @@ class Wall(MapObj):
         ccnt = 0
         for d in 'nsew':
             dc = self.mpos(d)
-            if isinstance(dc, Wall):
+            if isinstance(dc, (Wall,Door)):
                 check = 'ns' if d in 'ew' else 'ew'
                 for c in check:
                     if dc.dtype(c, Cell) or self.dtype(c, Cell):

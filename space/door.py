@@ -2,6 +2,7 @@
 
 from .obj import baseobj
 
+# ■□◦◆◇◌᛭᛫܀⁘⁙⸬
 
 class CanOpen:
     open: bool = False
@@ -17,7 +18,6 @@ class CanOpen:
 
 
 class Door(CanOpen, baseobj):
-    a = '/'
     s = 'a door'
     l = 'a simple door'
 
@@ -29,4 +29,4 @@ class Door(CanOpen, baseobj):
 
     @property
     def abbr(self):
-        return '/' if self.open else '+'
+        return '□' if self.open else '■'
