@@ -18,7 +18,8 @@ The whole point of using setup.cfg and pyproject.toml instead of setup.py is so
 to allow different tools to evolve in place of setuptools (which never wanted to
 be in the scripting business in the first place apparently).
 
-There's actually a [whole matrix](https://wiki.python.org/moin/ConfigurationAndBuildTools) of build tools.
+There's actually a [whole
+matrix](https://wiki.python.org/moin/ConfigurationAndBuildTools) of build tools.
 There's a similar
 [matrix](https://wiki.python.org/moin/PythonTestingToolsTaxonomy) of testing
 tools as well.
