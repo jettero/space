@@ -1,125 +1,68 @@
-Parser, Verbs, and Living Objects
+Constructing Verbs
 
-- Goal: explain how free‑text input like "attack jaime" or "2sse" becomes a
-  routed method call on the player (a Living object), with arguments resolved to
-in‑world objects or directions.
+- Goal: focus on building verbs and how they interact with actors (Livings).
+  Parser internals and scoring live near the code in `space/parser.py` as
+developer notes.
 
-Core Pieces
-- Parser: `space/parser.py`
-- Verbs: `space/verb/*` with base in `space/verb/base.py`
-- Router: `space/router.py` and `space/args.py`
-- Living objects: `space/living/*` (notably `space/living/base.py`)
-- Object matching: `space/obj.py`
+Core Pieces for Verbs
+- Base class: `space/verb/base.py: Verb`
+- Implementations: `space/verb/<name>.py` exposing `Action(Verb)`
+- Actor methods: `can_<verb>_*` and `do_<verb>_*` on the acting object (often
+  `space/living/base.py: Living`)
 
-High‑Level Flow
-- Input comes in as a string and is tokenized by `shlex.split`.
-- The first token selects a verb (with fuzzy/prefix matching against each verb’s
-  nicknames). If no verb matches and the input is a direction string (e.g.,
-`2sse`), it is rewritten as `move <dirs>`.
-- The parser builds a plan of possible method routes for the chosen verb on the
-  acting Living (“me”), using the router to discover `can_<verb>` variants and
-their argument hints.
-- Tokens are preprocessed by the Verb (e.g., expand directions) and then filled
-  into hinted arguments by scanning visible in‑map objects and applying
-type/annotation rules.
-- Each candidate route is evaluated by calling the `can_<verb>` method, which
-  must return `(bool, kwargs)`. Truthy candidates become executable, with
-accumulated `do_args`.
-- The highest‑scoring candidate becomes the winner. Calling the PState then
-  invokes `do_<verb>` with `do_args`.
+ Verbs
+- `name`: canonical verb name (defaults to module name; e.g., `attack`).
+- `nick`: optional list of aliases; prefix matches are accepted (e.g., `att` →
+  `attack`). You do not need to specify `nick = ['look']` (or similar) when the
+  verb has no extra aliases — the canonical `name` is always recognized. If you
+  do provide `nick`, include `name` only when you also add actual aliases.
+- `preprocess_tokens(me, **tokens)`: normalize token dict before routing.
+  Example: `move.Action` converts direction strings like `"2sse"` into a
+  tuple `("s","s","s","e")` under the `moves` key.
+- Helpers: `Verb.can()` and `Verb.do()` delegate to the actor’s
+  `parse_can/parse_do`.
+- Discovery: each module under `space/verb/` exports an `Action(Verb)` class;
+  `space/verb/__init__.py:load_verbs()` instantiates them and the parser picks
+  among them by `name`/`nick`.
 
-Verbs
-- Class: `space/verb/base.py: Verb`
-  - `name`: canonical verb (defaults to module name; e.g., `attack`).
-  - `nick`: list of recognized aliases/prefixes. `match()` accepts prefixes
-    (`att` → `attack`).
-  - `preprocess_tokens(me, **tokens)`: optional normalization step (e.g.,
-    turning `"nsew"` into a tuple of moves). See `space/verb/move.py`.
-  - `can()` / `do()`: convenience wrappers around the Living’s `parse_can` /
-    `parse_do` machinery.
-- Implementations live under `space/verb/` and expose an `Action` class
-  (discovered by `space/verb/__init__.py:load_verbs`). Examples:
-  - move: converts direction strings to canonical move tuples.
-  - attack, look, open: basic verbs with names/aliases.
+Actor Side (Living)
+- Implement capability methods on the actor that will execute the verb.
+- Pattern: `can_<verb>_<specifics>(...) -> (bool, dict)` and
+  `do_<verb>_<specifics>(...) -> None`.
+  - The `can_...` method validates and may enrich arguments (e.g., resolve
+    targets). Return `(False, {"error": "message"})` to produce a user error.
+  - The `do_...` method performs the action with validated args.
+- Naming controls routing specificity: longer suffixes win. For example,
+  `can_move_obj_words` is chosen over `can_move_words` when both fit.
+- Examples in `space/living/base.py`:
+  - Movement: `can_move_words`, `do_move_words`, and `can_move_obj_words`.
+  - Attack: `can_attack_living`, `do_attack`.
+  - Look: `can_look`, `do_look`.
 
-Living Objects and Capabilities
-- Base: `space/living/base.py: Living`
-  - Provides verb implementations via `can_<verb>` and `do_<verb>` methods.
-  - Movement (`CanMove` mixin):
-    - `can_move_words(self, *moves, obj:Containable=None)` validates a path and
-      returns `(True, {"moves": moves})` or `(False, {"error": ...})`.
-    - `do_move_words(self, *moves)` executes the movement.
-    - Object‑move variants (e.g., `can_move_obj_words`, `do_move_obj_words`)
-      allow moving another contained object; the router chooses the longest
-matching name.
-  - Combat:
-    - `can_attack_living(self, living)`: resolves nearest match within range and
-      returns either `(True, {"target": <Living>})` or `(False, {"error":
-...})`.
-    - `do_attack(self, target)`: applies damage and sends messages.
-  - Look:
-    - `can_look(self)`: currently accepts any extra words; `do_look` renders the
-      visible submap and a confirmation message.
+Hints and Argument Resolution
+- The system derives argument expectations for your `can_...` methods:
+  - Use annotations to specify types or predicates (e.g., `target: Living`).
+  - Without annotations, names drive inference: `obj*` → `Containable`,
+    `living*`/`target*` → `Living`, otherwise `str`.
+- For multi-word/free-form tails, accept a varargs parameter (e.g., `*moves`)
+  which the verb’s `preprocess_tokens` can convert (see `move`).
+- Matching by name/id leverages `baseobj.parse_match` (tokens from `short`,
+  `long`, class name, and `abbr`).
 
-Routing and Argument Inference
-- Method discovery: `MethodArgsRouter` and `MethodNameRouter`
-  (`space/router.py`).
-  - `MethodArgsRouter(obj, "can_<verb>")`: yields `RouteHint`s for each matching
-    method on the object. Hints include parameter names and expected types.
-  - `MethodNameRouter(obj, "do_<verb>")`: chooses the most specific method name
-    based on provided keyword segments (e.g., `do_move_obj_words` over
-`do_move_words`).
-- Hint generation: `space/args.py:introspect_hints(fn)`
-  - Inspects parameters and annotations to build `IntroHint`s. Heuristics:
-    - `*args` gets type `tuple`.
-    - If annotated, use that type/predicate/regexp.
-    - Otherwise infer by name: `obj*` → `Containable`, `living*`/`target*` →
-      `Living`, else `str`.
-- Token filling: `RouteHint.fill(objs)`
-  - Uses the preprocessed token dict and the visible objects `pstate.objs` (from
-    `me.location.map.visicalc_submap(me)`) to resolve types:
-    - For object types, matches by `obj.parse_match()` (see below), returning
-      lists for plural tokens or a single match as applicable.
-    - For tuples/lists, preserves sequences.
-- Safe execution: `space/args.py:safe_execute(fn, *a, **kw)`
-  - Finds a compatible `(args, kwargs)` via `introspect_args` and calls the
-    function. If insufficient, raises `UnfilledArgumentError` which the parser
-treats as “not filled yet”.
-
-Parsing State and Scoring
-- `PState(me, text)`: holds tokens, verb candidates, visible objects, assembled
-  `PSNode`s and final winner.
-  - `PSNode`: one node per verb and per candidate `can_...` method; tracks
-    filled args, evaluated status, and links to siblings/children.
-  - Filling: `PState.plan()` attaches `RouteHint`s for each `can_<verb>` and
-    stores preprocessed tokens on them. `PSNode.fill()` computes concrete
-argument values from tokens and visible objects.
-  - Evaluation: `PSNode.evaluate()` calls `can_...()`; sets `can_do` and merges
-    additional kwargs into `do_args`.
-  - Scoring: `PSNode.score`
-    - 2.x for `can_do == True` (higher if more args present), 1 when all hinted
-      args are filled but not yet permitted, else 0 with fractional propagation
-across children to prefer deeper matches.
-  - Winner: highest score across the node tree. `bool(PState)` is True only when
-    there is a winner and it’s allowed (`can_do`).
-  - Error: `PState.error` builds a user message either from the best candidate’s
-    `error` kwarg or a generic “unable to understand”. Extra tokens that didn’t
-fit cause planning to reject that hint, surfacing in error text (see tests).
+Execution Path (Brief)
+- Parser picks the verb by `name`/`nick`, collects hints from `can_...`
+  methods, fills tokens to arguments, then calls the best `do_...`.
+  Implementation details and scoring are documented inline in
+  `space/parser.py` for maintainers.
 
 Object Matching
-- `space/obj.py: baseobj.parse_match(txt, id_=None)`
-  - Accepts an id prefix/suffix match or token prefix match against the object’s
-    token set:
-    - Tokens come from `short`, `long`, class name, and `abbr`.
-    - Single‑character abbreviations are case‑sensitive.
+- `baseobj.parse_match(txt, id_=None)` matches by id prefix/suffix or by token
+  prefix. Single‑character abbreviations are case‑sensitive.
 
 Execution
-- `Parser.parse(me, text)` returns a `PState`.
-- Calling the `PState` invokes the winning `do_<verb>` via `MethodArgsRouter`
-  with `do_args`. The actor’s `active` flag is set for the duration (affects map
-glyph).
-- If there is no winning candidate or a `can_...` produced an error, invoking
-  raises `E.ParseError` with the message from `PState.error`.
+- `Parser.parse(me, text)` returns a `PState`. Calling it runs the selected
+  `do_<verb>` on the actor with validated arguments, or raises `E.ParseError` on
+  failure.
 
 Examples
 - Move by direction string:
@@ -131,6 +74,48 @@ Examples
     `living` param → `RouteHint.fill()` picks nearest matching Living in range →
 `can_attack_living()` returns `(True, {"target": <Living>})` →
 `do_attack(target)` applies damage.
+
+Concrete Construction Examples
+
+Attack
+```
+# space/verb/attack.py
+from .base import Verb
+
+class Action(Verb):
+    name = 'attack'
+    nick = 'attack kill hit'.split()
+
+# actor side (e.g., on Living)
+def can_attack_living(self, living):
+    # resolve a valid nearby target from a list of Living matches
+    # return (True, { 'target': best }) or (False, { 'error': '...' })
+    ...
+
+def do_attack(self, target):
+    # perform the attack
+    ...
+```
+
+Look
+```
+# space/verb/look.py
+from .base import Verb
+
+class Action(Verb):
+    name = 'look'
+
+# actor side (e.g., on Living)
+def can_look(self):
+    return True, {}
+
+def do_look(self):
+    # render surroundings / map
+    ...
+```
+
+Note: The built-in "move" verb uses shortcut direction parsing and is not a
+great minimal example, so it is omitted here.
 
 Adding New Verbs
 - Create `space/verb/<name>.py` with an `Action(Verb)` subclass. Optionally
