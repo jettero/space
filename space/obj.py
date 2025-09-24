@@ -14,6 +14,7 @@ class baseobj: # pylint: disable=invalid-name
     @property
     def owner(self):
         return self._owner
+
     @owner.setter
     def owner(self, v):
         if v is not None:
