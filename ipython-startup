@@ -40,11 +40,17 @@ import sys
 sys.path.insert(0, 't')
 from troom import a_map, o
 
-# p = Parser()
-# mmr = srt.MethodArgsRouter(o.me, 'can_move', multi=True)
+P = Parser()
+mmr = srt.MethodArgsRouter(o.me, 'can_move', multi=True)
 
 def vmap(maxdist=5):
     v_map = a_map.visicalc_submap(o.me, maxdist=maxdist)
     print(a_map)
     print(v_map)
     return v_map
+
+def p(cmd):
+    ps = P.parse(o.me, cmd)
+    if not ps:
+        return ps
+    return ps()
