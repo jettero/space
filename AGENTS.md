@@ -79,3 +79,6 @@
  - Do not add conversational or meta comments in code. Comments must be about
    the code itself, not about prior discussion or rationale external to the
    codebase.
+ - We favor TDD: add a failing test first, then implement the minimal
+   code to make it pass. Keep tests focused, deterministic, and aligned with
+   the current map/verb conventions.
