@@ -74,5 +74,8 @@
 - Prefer surgical changes; don’t refactor broadly unless asked.
 - Respect `pytest.ini` settings; use `rg` for repo scans; read files in
   ≤250-line chunks.
- - Only add code comments when they materially improve clarity. Avoid
-   redundant or obvious comments; keep necessary comments short and direct.
+- Only add code comments when they materially improve clarity. Avoid
+  redundant or obvious comments; keep necessary comments short and direct.
+ - Do not add conversational or meta comments in code. Comments must be about
+   the code itself, not about prior discussion or rationale external to the
+   codebase.
