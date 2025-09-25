@@ -1,23 +1,17 @@
 # coding: utf-8
 
 from .cell import Cell
-from ...container import Container
+from ...door import Door as BaseDoor
 import space.exceptions as E
 
-class Door(Cell):
+class Door(BaseDoor, Cell):
     # Map cell door with open/locked/stuck semantics. Renders like a cell when occupied.
     s = 'a door'
     l = 'a simple door'
 
-    open: bool = False
-    locked: bool = False
-    stuck: bool = False
-
     def __init__(self, *items, mobj=None, pos=None, open=False, locked=False, stuck=False):
         Cell.__init__(self, *items, mobj=mobj, pos=pos)
-        self.open = bool(open)
-        self.locked = bool(locked)
-        self.stuck = bool(stuck)
+        BaseDoor.__init__(self, open=open, locked=locked, stuck=stuck)
 
     @property
     def abbr(self):
@@ -27,11 +21,10 @@ class Door(Cell):
         return '□' if self.open else '■'
 
     def can_open(self):
-        ok = not self.open and not self.locked and not self.stuck
-        return ok, {}
+        return BaseDoor.can_open(self)
 
     def do_open(self):
-        self.open = True
+        BaseDoor.do_open(self)
 
     def accept(self, item):
         if not self.open:
