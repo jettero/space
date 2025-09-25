@@ -32,6 +32,13 @@ def test_mmr_pa(a_map, objs, mmr):
     assert n(obj_also) == ['can_move_obj_words', 'can_move_words']
 
 def test_can_move(a_map, objs, mmr):
-    assert mmr(moves=('s',)) == (True,  {'moves': ('s',)})
+    ok, ctx = mmr(moves=('s',))
+    assert ok is False
+    assert ctx.get('moves') == ('s',)
     assert mmr(moves=('n',)) == (False, {'moves': ('n',)})
     assert mmr(obj=objs.ubi, moves=('n',)) == (True, {'obj': objs.ubi, 'moves': ('n',)})
+
+    door_cell.do_open()
+    ok, ctx = mmr(moves=('s',))
+    assert ok is True
+    assert ctx.get('moves') == ('s',)
