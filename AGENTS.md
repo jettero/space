@@ -82,3 +82,11 @@
  - We favor TDD: add a failing test first, then implement the minimal
    code to make it pass. Keep tests focused, deterministic, and aligned with
    the current map/verb conventions.
+
+## Current Agent Environment
+- Approval policy: `on-request`.
+- Filesystem sandbox: `read-only`.
+- Network access: `restricted`.
+
+These constraints apply to tool calls and edits. Request approval to perform
+actions that require elevated permissions or writing outside allowed scopes.
