@@ -3,6 +3,11 @@
 from .base import Living
 from .gender import Male, Female
 from .slots import BeltSlot, HandSlot, LegsSlot, TorsoSlot, HeadSlot, FeetSlot
+from .door import Door
+
+class CanOpen:
+    def can_open_obj(self, obj:Door):
+        return (False, {'error': "XXX: this should work sometimes"})
 
 class Humanoid(Living):
     s = l = 'humanoid'
