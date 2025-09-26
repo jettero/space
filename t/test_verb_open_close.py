@@ -65,4 +65,25 @@ def test_open_door_and_move_through_it(me, a_map):
     p_move()
     assert me.location.pos == (8, 2)
 
+def test_close_door_blocks_again(me, a_map):
+    p = Parser()
 
+    # Open the door and move south
+    p_open = p.parse(me, 'open door')
+    assert p_open and p_open.winner.verb.name == 'open'
+    p_open()
+    p_move = p.parse(me, 'move south')
+    assert p_move and p_move.winner.verb.name == 'move'
+    p_move()
+    assert me.location.pos == (8, 2)
+
+    # Close the door from the south side
+    p_close = p.parse(me, 'close door')
+    assert p_close and p_close.winner.verb.name == 'close'
+    p_close()
+
+    p_back = p.parse(me, 'move north')
+    assert not p_back
+    assert 'door is closed' in p_back.error
+    with pytest.raises(E.ParseError, match=r"door is closed"):
+        p_back()

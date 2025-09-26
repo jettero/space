@@ -40,3 +40,17 @@ class Door(baseobj):
 
     def do_open(self):
         self.open = True
+
+    def can_close(self):
+        """Return (ok, meta) for closing the door."""
+        ok = self.open and not self.stuck
+        meta = {}
+        if not ok:
+            if not self.open:
+                meta['reason'] = 'already-closed'
+            elif self.stuck:
+                meta['reason'] = 'stuck'
+        return ok, meta
+
+    def do_close(self):
+        self.open = False

@@ -56,6 +56,21 @@ class Humanoid(Living):
     class Choices(Living.Choices):
         gender = (Male, Female,)
 
+    # Closing helpers
+    def can_close_obj(self, obj:Door):
+        if not isinstance(obj, Door):
+            return False, {'reason': 'not-a-door'}
+        return obj.can_close()
+
+    def can_close_word_obj(self, word:str, obj:Door):
+        ok, meta = self.can_close_obj(obj)
+        if not ok and 'word' not in meta:
+            meta = {**meta, 'word': word}
+        return ok, meta
+
+    def do_close_obj(self, obj:Door):
+        obj.do_close()
+
 class Human(Humanoid):
     s = l = 'human'
     d = 'a human'
