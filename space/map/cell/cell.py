@@ -11,7 +11,7 @@ import space.exceptions as E
 
 class Cell(MapObj, Container):
     _override = None
-    a = '□'
+    a = '◦'
 
     class Meta:
         height = '10ft'
@@ -34,7 +34,7 @@ class Cell(MapObj, Container):
     def abbr(self):
         if self._override is not None:
             return self._override
-        bi = self.biggest_item
+        bi = self.biggest_item(filter=Living)
         if bi is None:
             return self.a
         return bi.abbr

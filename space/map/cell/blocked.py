@@ -13,29 +13,34 @@ class BlockedCell(Corridor):
         Container._add_item(self, Door(attached=True))
 
     @property
-    def abbr(self):
+    def door(self):
         for it in self:
-            if isinstance(it, Door):
-                return '□' if it.open else '■'
-        return super().abbr
+            if isinstance(it, Door) and it.attached:
+                return it
 
     @property
     def has_door(self):
-        for it in self:
-            if isinstance(it, Door) and it.attached:
-                return True
-        return False
+        return bool(self.door)
 
     def accept(self, item):
         if isinstance(item, Living):
-            for it in self:
-                if isinstance(it, Door) and not it.open:
-                    raise E.ContainerError('the door is closed')
+            if door := self.door:
+                if door.closed:
+                    raise E.ContainerError(f'the {door} is closed')
         return super().accept(item)
 
     def do_open(self):
-        """Open the attached Door inside this blocked cell, if present."""
-        for it in self:
-            if isinstance(it, Door) and it.attached:
+        if door := self.door:
+            if door.closed:
                 it.do_open()
                 return
+            raise E.ContainerError(f'the {door} is already open')
+        raise E.ContainerError(f'there is no door to open')
+
+    def do_close(self):
+        if door := self.door:
+            if door.open:
+                it.do_close()
+                return
+            raise E.ContainerError(f'the {door} is already closed')
+        raise E.ContainerError(f'there is no door to close')

@@ -8,6 +8,8 @@ from .router import MethodNameRouter
 log = logging.getLogger(__name__)
 
 # all mud objects get this ancestor
+# most objects you can pick up or put in a room should also get Containable
+# you're probably looking for space/stdobj.py
 class baseobj: # pylint: disable=invalid-name
     _owner = None
 

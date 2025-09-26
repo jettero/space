@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from .obj import baseobj
+from .stdobj import StdObj
 
-class Door(baseobj):
+class Door(StdObj):
     s = 'door'
     a = '+'
 

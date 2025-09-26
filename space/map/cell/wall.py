@@ -3,7 +3,6 @@
 from .base import MapObj, DDIRS
 from .cell import Cell
 from .blocked import BlockedCell
-from .door import Door
 
 class Wall(MapObj):
     _override = None
