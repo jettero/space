@@ -98,6 +98,11 @@
   code to make it pass. Keep tests focused, deterministic, and aligned with
   the current map/verb conventions.
 
+## Git Usage Policy
+
+- Using `git diff` and `git log` for context is encouraged.
+- Do not run `git commit`, `git add`, or `git reset` from the agent under any circumstances.
+
 ## Python Version & Style Notes
 
 - Target runtime: Python 3.8+ semantics, but avoid modern annotation syntax in
