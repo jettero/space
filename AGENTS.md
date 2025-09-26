@@ -102,6 +102,9 @@
 
 - Using `git diff` and `git log` for context is encouraged.
 - Do not run `git commit`, `git add`, or `git reset` from the agent under any circumstances.
+- Do not use `git mv`. Just move files with `mv`; I will manage the repo myself
+- in general, you're welcome to use git to gain insight into the code, but you
+  may only do so in a read only fashion
 
 ## Python Version & Style Notes
 
