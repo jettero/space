@@ -14,11 +14,11 @@ def gen_troom():
     a_map[3,2] = Room(5,7)
     a_map[7,0] = Room(3,4)
     a_map.cellify_partitions()
-    a_map[8,2] = BlockedCell()
+    a_map[8,2] = bc = BlockedCell()
     a_map[9,2] = Wall()
     a_map[9,1] = Wall()
 
-    od = dict()
+    od = {'door': bc.door}
     a_map[8,1] = od['me']      = Human('Paul Miller', 'Paul')
     a_map[4,9] = od['ubi']     = Ubi()
     a_map[1,2] = od['stupid']  = Human('Stupid Rapist')

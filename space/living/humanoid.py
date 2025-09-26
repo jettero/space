@@ -34,6 +34,7 @@ class Humanoid(Living):
 
     def can_open_word(self, word:str):
         # Only accept known directions here as modifiers; otherwise reject.
+        # XXX: this should be exactly as flexible as move and it should include SW, NE, etc
         w = (word or '').lower()
         if w in ('n','s','e','w','north','south','east','west'):
             return True, {'word': word}

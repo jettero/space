@@ -50,3 +50,12 @@ def mor(objs):
 
 def test_mor_dir(mor):
     assert set(mor.dir) == set(['can_open_obj', 'can_open_word', 'can_open_word_obj'])
+
+def test_mor_kw(a_map, objs, mor):
+    word_only = mor.fill(word="south")
+    word_obj = mor.fill(word="south", obj=objs.door)
+    obj_only = mor.fill(obj=objs.door)
+
+    assert n(word_only) == ['can_open_word']
+    assert n(word_obj) == ['can_open_obj', 'can_open_word', 'can_open_word_obj']
+    assert n(obj_only) == ['can_open_obj']
