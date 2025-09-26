@@ -14,7 +14,7 @@ def n(ffak_list):
 def mmr(objs):
     return MethodArgsRouter(objs.me, 'can_move', multi=True)
 
-def test_troom1(mmr):
+def test_mmr_dir(mmr):
     assert set(mmr.dir) == set(['can_move_words', 'can_move_obj_words'])
 
 def test_mmr_kw(a_map, objs, mmr):
@@ -43,3 +43,10 @@ def test_can_move(a_map, objs, mmr):
     ok, ctx = mmr(moves=('s',))
     assert ok is True
     assert ctx.get('moves') == ('s',)
+
+@pytest.fixture
+def mor(objs):
+    return MethodArgsRouter(objs.me, 'can_open', multi=True)
+
+def test_mor_dir(mor):
+    assert set(mor.dir) == set(['can_open_obj', 'can_open_word', 'can_open_word_obj'])

@@ -25,22 +25,20 @@ class BlockedCell(Corridor):
     def accept(self, item):
         if isinstance(item, Living):
             if door := self.door:
-                if door.closed:
+                if not door.open:
                     raise E.ContainerError(f'the {door} is closed')
         return super().accept(item)
 
     def do_open(self):
         if door := self.door:
-            if door.closed:
-                it.do_open()
-                return
+            if not door.open:
+                return door.do_open()
             raise E.ContainerError(f'the {door} is already open')
         raise E.ContainerError(f'there is no door to open')
 
     def do_close(self):
         if door := self.door:
             if door.open:
-                it.do_close()
-                return
+                return door.do_close()
             raise E.ContainerError(f'the {door} is already closed')
         raise E.ContainerError(f'there is no door to close')

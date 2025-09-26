@@ -13,7 +13,7 @@ class Door(StdObj):
     stuck: bool = False
 
     # Whether this door is attached to a cell (not portable/removable)
-    attached = False
+    attached: bool = False
 
     def __init__(self, *items, open=False, locked=False, stuck=False, attached=False, **kw):
         super().__init__(*items, **kw)

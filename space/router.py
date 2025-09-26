@@ -94,14 +94,7 @@ class RouteHint(namedtuple('RouteHint', ['fname', 'func', 'hlist'])):
                         o += list_match(x, applicable_objs)
                 else:
                     o = list_match(v, applicable_objs)
-                # If nothing matched and expected a str (like a direction word),
-                # preserve the original token so can_* handlers can reason on it.
-                if not o and isinstance(v, (list,tuple)):
-                    ret[aname] = v
-                elif not o and isinstance(v, str):
-                    ret[aname] = v
-                else:
-                    ret[aname] = o
+                ret[aname] = o
         return ret
 
     def evaluate(self, *a, **kw):
