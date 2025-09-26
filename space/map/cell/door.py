@@ -15,13 +15,8 @@ class Door(BaseDoor, Cell):
         BaseDoor.__init__(self, open=open, locked=locked, stuck=stuck)
 
     @property
-    def abbr(self):
-        bi = self.biggest_item
-        if bi is not None:
-            return bi.abbr
+    def a(self):
         return '□' if self.open else '■'
-
-    # Opening semantics live in BaseDoor (space/door.py).
 
     def accept(self, item):
         if not self.open:
