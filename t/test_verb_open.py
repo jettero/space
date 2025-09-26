@@ -47,7 +47,7 @@ def test_open_exec_closed_door_blocks_then_allows_move(me, a_map):
     # Opening the door should succeed (no exception on call)
     p_open = p.parse(me, 'open door')
     assert p_open and p_open.winner.verb.name == 'open'
-    p_open()  # do not assert effects beyond no exception; implementation TBD
+    p_open()
 
     # After opening, moving south should now succeed
     p_move = p.parse(me, 'move south')
