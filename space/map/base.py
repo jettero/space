@@ -332,12 +332,6 @@ class Map(baseobj):
                 self[ wall.pos ] = Floor() if ok_room else Corridor()
 
     def place_doors(self):
-        """Add `Door` where corridors meet rooms with side walls.
-
-        Rule: For a wall-aligned threshold, if one side is `Corridor` and
-        the opposite side is `Floor`, and the two perpendicular neighbors are
-        `Wall`, replace the threshold cell with a `Door`.
-        """
         for (i,j), cell in self:
             if not isinstance(cell, Cell):
                 continue
@@ -356,13 +350,13 @@ class Map(baseobj):
             # Vertical doorway: corridor west/east, floor other side; walls north/south
             if is_wall(n) and is_wall(s):
                 if (is_corr(w) and is_floor(e)) or (is_floor(w) and is_corr(e)):
-                    self[i,j] = Door(mobj=self, pos=(i,j))
+                    self[i,j] = BlockedCell()
                     continue
 
             # Horizontal doorway: corridor north/south, floor other side; walls east/west
             if is_wall(w) and is_wall(e):
                 if (is_corr(n) and is_floor(s)) or (is_floor(n) and is_corr(s)):
-                    self[i,j] = Door(mobj=self, pos=(i,j))
+                    self[i,j] = BlockedCell()
                     continue
 
     @property

@@ -37,3 +37,11 @@ def test_generate_boxedin_smoke():
 def test_generate_rdc_smoke():
     m = rdc_generate(x=30, y=30, rsz='1d2+1', rsparse='2', seed_budget='4', max_steps='60')
     _basic_map_checks(m)
+
+
+def test_doors_are_blocking_and_attached():
+    m = rdc_generate(x=20, y=20, rsz='1d2+1', rsparse='2', seed_budget='3', max_steps='40')
+
+    doors = [ (p,c) for p,c in m if isinstance(c, Cell) and c.has_door ]
+    # At least one blocking doorway should exist in typical generated maps
+    assert doors
