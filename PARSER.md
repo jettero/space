@@ -64,6 +64,13 @@ Execution
   `do_<verb>` on the actor with validated arguments, or raises `E.ParseError` on
   failure.
 
+Testing Parse vs Execute Failures
+- Movement blocked by environment (e.g., closed door) typically produces a
+  falsey `PState` with `winner is None` and an explanatory `pstate.error`.
+- Tests should assert parse-time failures with `assert not pstate` and, when
+  calling the `PState`, use `pytest.raises(E.ParseError, match=...)` to verify
+  the message (e.g., `match=r"door is closed"`).
+
 Examples
 - Move by direction string:
   - Input: `"2sse"` → rewritten to `"move 2sse"` → `preprocess_tokens()` turns

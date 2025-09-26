@@ -50,6 +50,13 @@
 - Run `make test` before commits. Prefer small, verifiable changes; avoid
   unrelated fixes in the same patch.
 
+### Test Style
+- Prefer assertive code over comments; keep tests self-explanatory.
+- When asserting exceptions, use `pytest.raises(..., match=regex)` to check
+  the error message, not just the type.
+- For parse failures, assert `not pstate`, `pstate.winner is None`, and check
+  any available `pstate.error` text when relevant.
+
 ## Commit & Pull Request Guidelines
 - Commits: imperative subject line (<=72 chars); explain rationale when
   non-trivial.
