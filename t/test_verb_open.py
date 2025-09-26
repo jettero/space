@@ -13,26 +13,40 @@ def me(objs):
     return objs.me
 
 
-def test_open_parse_targets_door(me, a_map):
+def test_open_door(me, a_map):
     p = Parser()
     pstate = p.parse(me, 'open door')
     assert pstate
     assert pstate.winner.verb.name == 'open'
 
-def test_open_parse_targets_directional_south(me, a_map):
+def test_open_south_door(me, a_map):
     p = Parser()
     pstate = p.parse(me, 'open south door')
     assert pstate
     assert pstate.winner.verb.name == 'open'
 
-def test_open_parse_targets_directional_north_fails(me, a_map):
+def test_open_north_door_fail(me, a_map):
     p = Parser()
     pstate = p.parse(me, 'open north door')
     assert not pstate
-    with pytest.raises(E.ParseError) as excinfo:
+    with pytest.raises(E.ParseError, match=r"north|no .*door|can't|cannot|invalid|not.*exist"):
         pstate()
 
-def test_open_exec_closed_door_blocks_then_allows_move(me, a_map):
+def test_open_nonsense_fails(me, a_map):
+    p = Parser()
+    pstate = p.parse(me, 'open nothingburger')
+    assert not pstate
+    with pytest.raises(E.ParseError, match=r"nothingburger|no .*target|unknown|not .*found|invalid"):
+        pstate()
+
+def test_open_nonsense_door_fails(me, a_map):
+    p = Parser()
+    pstate = p.parse(me, 'open nothingburger door')
+    assert not pstate
+    with pytest.raises(E.ParseError, match=r"nothingburger|no .*target|unknown|not .*found|invalid"):
+        pstate()
+
+def test_open_door_and_move_through_it(me, a_map):
     p = Parser()
 
     pstate = p.parse(me, 'move south')
@@ -52,9 +66,3 @@ def test_open_exec_closed_door_blocks_then_allows_move(me, a_map):
     assert me.location.pos == (8, 2)
 
 
-def test_open_wrong_target_fails(me, a_map):
-    p = Parser()
-    pstate = p.parse(me, 'open nothingburger')
-    assert not pstate
-    with pytest.raises(E.ParseError):
-        pstate()

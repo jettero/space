@@ -57,6 +57,14 @@
 - For parse failures, assert `not pstate`, `pstate.winner is None`, and check
   any available `pstate.error` text when relevant.
 
+### Test Naming
+- Use concise, descriptive function names that encode input and outcome.
+- Positive parse cases: `test_open_door`, `test_open_south_door`.
+- Negative parse cases end with `_fail`/`_fails`:
+  `test_open_north_door_fail`, `test_open_nonsense_fails`.
+- Multi-step flows describe the sequence succinctly:
+  `test_open_door_and_move_through_it`.
+
 ## Commit & Pull Request Guidelines
 - Commits: imperative subject line (<=72 chars); explain rationale when
   non-trivial.
