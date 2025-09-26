@@ -1,6 +1,7 @@
 # coding: utf-8
 
 from .cell import Cell
+from ...container import Container
 from ...door import Door as BaseDoor
 import space.exceptions as E
 
@@ -20,11 +21,7 @@ class Door(BaseDoor, Cell):
             return bi.abbr
         return '□' if self.open else '■'
 
-    def can_open(self):
-        return BaseDoor.can_open(self)
-
-    def do_open(self):
-        BaseDoor.do_open(self)
+    # Opening semantics live in BaseDoor (space/door.py).
 
     def accept(self, item):
         if not self.open:

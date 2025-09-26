@@ -38,7 +38,8 @@ def test_can_move(a_map, objs, mmr):
     assert mmr(moves=('n',)) == (False, {'moves': ('n',)})
     assert mmr(obj=objs.ubi, moves=('n',)) == (True, {'obj': objs.ubi, 'moves': ('n',)})
 
-    door_cell.do_open()
+    # open the south door cell between rooms so moving south is allowed
+    a_map[8,2].do_open()
     ok, ctx = mmr(moves=('s',))
     assert ok is True
     assert ctx.get('moves') == ('s',)

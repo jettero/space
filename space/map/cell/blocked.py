@@ -22,7 +22,7 @@ class BlockedCell(Corridor):
     @property
     def has_door(self):
         for it in self:
-            if isinstance(it, Door) and getattr(it, 'attached', False):
+            if isinstance(it, Door) and it.attached:
                 return True
         return False
 
@@ -32,3 +32,10 @@ class BlockedCell(Corridor):
                 if isinstance(it, Door) and not it.open:
                     raise E.ContainerError('the door is closed')
         return super().accept(item)
+
+    def do_open(self):
+        """Open the attached Door inside this blocked cell, if present."""
+        for it in self:
+            if isinstance(it, Door) and it.attached:
+                it.do_open()
+                return
