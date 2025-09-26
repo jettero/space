@@ -7,7 +7,7 @@ from collections import namedtuple
 from ..obj import baseobj
 from ..container import Containable, Container
 from .cell import Cell, Floor, Corridor, MapObj, Wall
-from .cell import Door
+from .cell.blocked import BlockedCell
 from .dir_util import convert_pos, DIRS, DDIRS
 from .util import LineSeg, Box, Bounds, test_maxdist
 
@@ -129,7 +129,7 @@ class Map(baseobj):
                     last_color = _assign_color(i,j)
                     continue
                 color = dict()
-                if isinstance(cell, Door):
+                if isinstance(cell, BlockedCell) and cell.has_door:
                     color.update(door_color)
                 else:
                     color.update(

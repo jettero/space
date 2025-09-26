@@ -50,6 +50,9 @@ def vmap(maxdist=5):
     return v_map
 
 def p(cmd):
+    return P.parse(o.me, cmd)
+
+def do(cmd):
     ps = P.parse(o.me, cmd)
     if not ps:
         return ps

@@ -80,5 +80,12 @@
    the code itself, not about prior discussion or rationale external to the
    codebase.
  - We favor TDD: add a failing test first, then implement the minimal
-   code to make it pass. Keep tests focused, deterministic, and aligned with
-   the current map/verb conventions.
+  code to make it pass. Keep tests focused, deterministic, and aligned with
+  the current map/verb conventions.
+
+## Python Version & Style Notes
+
+- Target runtime: Python 3.8+ semantics, but avoid modern annotation syntax in
+  function signatures (no `def fn(...) -> T` or union `A | B`).
+- Prefer classic style definitions without return‑type annotations. Use docstrings
+  or comments for type hints where helpful.

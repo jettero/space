@@ -12,11 +12,15 @@ class Door(baseobj):
     locked: bool = False
     stuck: bool = False
 
-    def __init__(self, *items, open=False, locked=False, stuck=False, **kw):
+    # Whether this door is attached to a cell (not portable/removable)
+    attached = False
+
+    def __init__(self, *items, open=False, locked=False, stuck=False, attached=False, **kw):
         super().__init__(*items, **kw)
         self.open = bool(open)
         self.locked = bool(locked)
         self.stuck = bool(stuck)
+        self.attached = bool(attached)
 
     def can_open(self):
         """Return (ok, meta) describing whether the door can be opened.

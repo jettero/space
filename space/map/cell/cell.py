@@ -55,10 +55,15 @@ class Cell(MapObj, Container):
     def is_corridor(self):
         return False
 
+    @property
+    def has_door(self):
+        return False
+
 
 class Floor(Cell):
     """Room floor cell (same render as Cell)."""
     a = '·'
+
     @property
     def is_floor(self):
         return True
