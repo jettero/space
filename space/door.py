@@ -4,8 +4,9 @@
 from .stdobj import StdObj
 
 class Door(StdObj):
-    s = 'door'
     a = '+'
+    s = l = 'door'
+    d = "a door"
 
     # Basic open-state flags used by both objects and map cells.
     open: bool = False
@@ -23,10 +24,6 @@ class Door(StdObj):
         self.attached = bool(attached)
 
     def can_open(self):
-        """Return (ok, meta) describing whether the door can be opened.
-
-        Consumed by actors (e.g., Humanoid) and by map-cell wrappers.
-        """
         ok = not self.open and not self.locked and not self.stuck
         meta = {}
         if not ok:
@@ -42,7 +39,6 @@ class Door(StdObj):
         self.open = True
 
     def can_close(self):
-        """Return (ok, meta) for closing the door."""
         ok = self.open and not self.stuck
         meta = {}
         if not ok:

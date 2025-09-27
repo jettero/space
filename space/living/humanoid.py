@@ -1,45 +1,29 @@
 # coding: utf-8
 
+import logging
+import space.exceptions as E
+
 from .base import Living
 from .gender import Male, Female
 from .slots import BeltSlot, HandSlot, LegsSlot, TorsoSlot, HeadSlot, FeetSlot
 from ..door import Door
+
+log = logging.getLogger(__name__)
 
 class Humanoid(Living):
     s = l = 'humanoid'
     a = 'p'
     d = 'a humanoid'
 
-    # Opening helpers; for now only Door is supported.
-    def can_open_obj(self, obj:Door):
-        if not isinstance(obj, Door):
-            return False, {'reason': 'not-a-door'}
-        return obj.can_open()
+    def can_open_obj(self, obj):
+        log.debug('XXXXXXXXXXXXXXXX can_open_obj(%s)', obj)
+        for dist,targ in sorted([ (self.unit_distance_to(o), o) for o in obj ]):
+            log.debug('can_open_obj() considering %s at a distance of %s', targ, dist)
+        return (False, {'error': "What door?"})
+        #return (True, {'target': obj})
 
-    def can_open_word_obj(self, word:str, obj:Door):
-        # Only accept the door when direction matches an adjacent closed door.
-        # For now, require 'south' to match the southern doorway in troom.
-        w = word.lower() if isinstance(word, str) else ''
-        if w and w not in ('north','south','east','west','n','s','e','w'):
-            return False, {'error': f'unknown direction {word}'}
-        if w and w[0] == 'n':
-            return False, {'error': 'no north door'}
-        ok, meta = self.can_open_obj(obj)
-        if not ok and 'word' not in meta:
-            meta = {**meta, 'word': word}
-        return ok, meta
-
-    def do_open_obj(self, obj:Door):
+    def do_open_obj(self, obj):
         obj.do_open()
-
-    def can_open_word(self, word:str):
-        # Only accept known directions here as modifiers; otherwise reject.
-        # XXX: this should be exactly as flexible as move and it should include SW, NE, etc
-        w = (word or '').lower()
-        if w in ('n','s','e','w','north','south','east','west'):
-            return True, {'word': word}
-        return False, {'error': f'no such target: {word}'}
-
 
     class Slots(Living.Slots):
         class Meta(Living.Slots.Meta):
@@ -57,19 +41,12 @@ class Humanoid(Living):
     class Choices(Living.Choices):
         gender = (Male, Female,)
 
-    # Closing helpers
-    def can_close_obj(self, obj:Door):
+    def can_close_obj(self, obj):
         if not isinstance(obj, Door):
             return False, {'reason': 'not-a-door'}
         return obj.can_close()
 
-    def can_close_word_obj(self, word:str, obj:Door):
-        ok, meta = self.can_close_obj(obj)
-        if not ok and 'word' not in meta:
-            meta = {**meta, 'word': word}
-        return ok, meta
-
-    def do_close_obj(self, obj:Door):
+    def do_close_obj(self, obj):
         obj.do_close()
 
 class Human(Humanoid):
