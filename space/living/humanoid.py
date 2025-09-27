@@ -15,16 +15,6 @@ class Humanoid(Living):
     a = 'p'
     d = 'a humanoid'
 
-    def can_open_obj(self, obj:Door):
-        # XXX: how far can a humanoid reach and still interact with things? we need a better way to deal with this
-        # use 1.42 as "adjacent"
-        if self.unit_distance_to(obj) <= 1.42:
-            return obj.can_open()
-        return False, {'error': "What door?"}
-
-    def do_open_obj(self, obj):
-        obj.do_open()
-
     class Slots(Living.Slots):
         class Meta(Living.Slots.Meta):
             slots = Living.Slots.Meta.slots.copy()
@@ -41,12 +31,34 @@ class Humanoid(Living):
     class Choices(Living.Choices):
         gender = (Male, Female,)
 
-    def can_close_obj(self, obj):
-        if not isinstance(obj, Door):
-            return False, {'reason': 'not-a-door'}
-        return obj.can_close()
+    def can_open_obj(self, obj:Door):
+        # XXX: how far can a humanoid reach and still interact with things? we need a better way to deal with this
+        # use 1.42 as "adjacent"
+        ok,err = obj.can_open()
+        if ok:
+            if self.unit_distance_to(obj) <= 1.42:
+                return ok,err
+            else:
+                return False, {'error': f'{obj} is too far away'}
+        return False, {'error': "What door?"}
 
-    def do_close_obj(self, obj):
+    def do_open_obj(self, obj:Door):
+        log.debug("do_open_obj(%s)", obj)
+        obj.do_open()
+
+    def can_close_obj(self, obj:Door):
+        # XXX: how far can a humanoid reach and still interact with things? we need a better way to deal with this
+        # use 1.42 as "adjacent"
+        ok,err = obj.can_close()
+        if ok:
+            if self.unit_distance_to(obj) <= 1.42:
+                return ok,err
+            else:
+                return False, {'error': f'{obj} is too far away'}
+        return False, {'error': "What door?"}
+
+    def do_close_obj(self, obj:Door):
+        log.debug("do_sclose_obj(%s)", obj)
         obj.do_close()
 
 class Human(Humanoid):
