@@ -15,12 +15,12 @@ class Humanoid(Living):
     a = 'p'
     d = 'a humanoid'
 
-    def can_open_obj(self, obj):
-        log.debug('XXXXXXXXXXXXXXXX can_open_obj(%s)', obj)
-        for dist,targ in sorted([ (self.unit_distance_to(o), o) for o in obj ]):
-            log.debug('can_open_obj() considering %s at a distance of %s', targ, dist)
-        return (False, {'error': "What door?"})
-        #return (True, {'target': obj})
+    def can_open_obj(self, obj:Door):
+        # XXX: how far can a humanoid reach and still interact with things? we need a better way to deal with this
+        # use 1.42 as "adjacent"
+        if self.unit_distance_to(obj) <= 1.42:
+            return obj.can_open()
+        return False, {'error': "What door?"}
 
     def do_open_obj(self, obj):
         obj.do_open()

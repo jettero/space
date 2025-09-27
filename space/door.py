@@ -24,16 +24,13 @@ class Door(StdObj):
         self.attached = bool(attached)
 
     def can_open(self):
-        ok = not self.open and not self.locked and not self.stuck
-        meta = {}
-        if not ok:
-            if self.open:
-                meta['reason'] = 'already-open'
-            elif self.locked:
-                meta['reason'] = 'locked'
-            elif self.stuck:
-                meta['reason'] = 'stuck'
-        return ok, meta
+        if self.open:
+            return False, {'error': f'{self} is already open'}
+        if self.locked:
+            return False, {'error': f'{self} is locked'}
+        if self.stuck:
+            return False, {'error': f'{self} appears to be stuck'}
+        return True, {'target': self}
 
     def do_open(self):
         self.open = True
