@@ -16,6 +16,10 @@ class Door(StdObj):
     # Whether this door is attached to a cell (not portable/removable)
     attached: bool = False
 
+    @property
+    def abbr(self):
+        return '□' if self.open else '■'
+
     def __init__(self, *items, open=False, locked=False, stuck=False, attached=False, **kw):
         super().__init__(*items, **kw)
         self.open = bool(open)
