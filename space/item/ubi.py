@@ -1,8 +1,8 @@
 # coding: utf-8
 
-from space.container import Containable
+from space.stdobj import StdObj
 
-class Ubi(Containable):
+class Ubi(StdObj):
     a = '$'
     s = 'bauble'
     l = 'useless bauble'

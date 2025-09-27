@@ -25,11 +25,10 @@ class Named(Serial, baseobj):
         save = 'asld'
 
     def __init__(self, short=None, abbr=None, long=None):
-        super().__init__()
-        self.tokens = set()
-        if abbr:  self.abbr  = abbr
-        if short: self.short = short
-        if long:  self.long  = long
+        if abbr:  self.a = abbr
+        if short: self.s = short
+        if long:  self.l = long
+        self.tokens = self._tokenize()
 
     def __format__(self, spec):
         if spec in ('abbr','a'):

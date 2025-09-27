@@ -57,13 +57,12 @@ class baseobj: # pylint: disable=invalid-name
     def _tokenize(self):
         r = set()
         for i in ('short', 'long', 'cname'):
-            a = getattr(self, i, None)
-            if a:
+            if a := getattr(self, i, None):
                 for s in a.split():
                     t = s.strip(', ').lower()
                     r.add(t)
-        a = getattr(self, 'abbr', None)
-        r.add(a)
+        if a := getattr(self, 'abbr', None):
+            r.add(a)
         return r - set([None, ''])
 
     def parse_can(self, method, **kw):
@@ -86,7 +85,7 @@ class baseobj: # pylint: disable=invalid-name
         MethodNameRouter(self, f'do_{method}', multi=False, dne_ok=False)( **kw )
 
     def parse_match(self, txt, id_=None):
-        log.debug('%s .parse_match(%s, %s)', self, txt, id_)
+        log.debug('%s .parse_match(txt=%s, id=%s)', self, txt, id_)
         if id_ is not None:
             id1 = id_.lower()
             id2 = self.id

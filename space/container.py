@@ -4,16 +4,14 @@ from collections import deque
 
 from .pv import INFINITY
 from .size import Size
-from .named import Named
 
-class Containable(Named, Size):
+class Containable(Size):
     a = '~'
     s = 'obj'
     l = 'containable object'
 
     location = None
     def __init__(self, mass=None, volume=None):
-        Named.__init__(self)
         Size.__init__(self, mass=mass, volume=volume)
 
 class CapacityMeta:
@@ -42,7 +40,7 @@ class Container(Containable, CapacityMeta):
         volume_capacity = INFINITY
 
     def __init__(self, *items, mass_capacity=None, volume_capacity=None, mass=None, volume=None):
-        super().__init__(mass=mass, volume=volume)
+        Containable.__init__(self, mass=mass, volume=volume)
         self._capacity = self.Capacity(mass=mass_capacity, volume=volume_capacity)
         self._items = deque()
         self.add_items(*items)

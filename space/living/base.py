@@ -4,7 +4,7 @@ import logging
 import space.exceptions as E
 
 from ..vv        import VV
-from ..obj       import baseobj
+from ..stdobj    import StdObj
 from ..container import Containable
 from ..damage    import Damage, Kinetic
 from ..roll      import Roll, AttrChoices
@@ -83,7 +83,7 @@ class CanMove:
         log.debug('do_move_obj_words(%s, %s)', obj, moves)
         obj.move(*moves)
 
-class Living(Containable, HasShell, CanMove, baseobj):
+class Living(HasShell, CanMove, StdObj):
     health = gender = None # autoloaded from metaclass
     active = False
 
@@ -113,7 +113,7 @@ class Living(Containable, HasShell, CanMove, baseobj):
         health = lambda self: HitPoints('1d6+10')
 
     def __init__(self, long=None, short=None):
-        super().__init__()
+        StdObj.__init__(self, short=short, long=long)
         self.slots = self.Slots(self)
 
         if long:
