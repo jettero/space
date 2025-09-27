@@ -9,25 +9,6 @@ import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
-"""Parser architecture overview (developer notes)
-
-This module turns free-text input into routed method calls on the acting
-object (a Living).
-
-Public surface
-- ``Parser.parse()`` → returns a ``PState``
-- ``PState.__call__()`` → executes the winning ``do_<verb>``
-
-Internal pipeline
-- tokens → verbs → RouteHints → filled args → can_* evaluation → scoring →
-  winner → do_*.
-
-See also
-- For verb construction (nicknames, preprocessing, can_/do_ patterns), see
-  ``PARSER.md``. These notes are intentionally colocated with the code that
-  implements them.
-"""
-
 VERBS = None
 def find_verb(x):
     global VERBS
