@@ -39,6 +39,27 @@ Actor Side (Living)
   - Attack: `can_attack_living`, `do_attack`.
   - Look: `can_look`, `do_look`.
 
+Inventory-Oriented Verbs (get/drop)
+- For object-taking/placing verbs, prefer the `obj` parameter naming
+  convention to trigger StdObj matching without router changes:
+  - Use `can_get_obj(self, obj)` and `do_get(self, target)`.
+  - Use `can_drop_obj(self, obj)` and `do_drop(self, target)`.
+- Matching behavior and tips:
+  - Names starting with `obj` imply StdObj matching by default (see
+    `space/args.py:introspect_hints`). Do not modify router hinting to add
+    special cases.
+  - The parser considers visible objects in the actor’s vicinity. If you need
+    to target items you already hold (e.g., for `drop`), ensure inventory is
+    included by the parser logic (this project adds pack contents to the
+    matchable set in `space/parser.py`).
+  - For “get”, prefer selecting the nearest match within reach; also allow
+    picking up when standing on the same cell.
+
+Compound Commands and Directions
+- The shell supports semicolon-separated commands: `me.do('open door; 3s e')`.
+- Direction strings can be combined with counts and diagonals (see
+  `space/map/dir_util.py`): e.g., `sSW6s3w`.
+
 Hints and Argument Resolution
 - The system derives argument expectations for your `can_...` methods:
   - Use annotations to specify types or predicates (e.g., `target: Living`).

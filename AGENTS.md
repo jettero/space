@@ -94,9 +94,17 @@
  - Do not add conversational or meta comments in code. Comments must be about
    the code itself, not about prior discussion or rationale external to the
    codebase.
- - We favor TDD: add a failing test first, then implement the minimal
+- We favor TDD: add a failing test first, then implement the minimal
   code to make it pass. Keep tests focused, deterministic, and aligned with
   the current map/verb conventions.
+
+### Parser/Verb Tasks
+- Before implementing or modifying verbs, skim `PARSER.md` for naming and
+  routing conventions (e.g., `can_<verb>_obj` implies StdObj matching).
+- Prefer using the shell for compound commands in tests (e.g.,
+  `me.do('open door; sSW6s3w')`).
+- Do not change router hint logic in `space/args.py` to fit a single verb.
+  Instead, follow the parameter naming conventions described in `PARSER.md`.
 
 ## Maintainer Preferences (Session Learnings)
 
