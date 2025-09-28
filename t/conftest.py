@@ -8,6 +8,11 @@ class TRoom:
         import troom
         self.a_map, self.o = troom.gen_troom()
 
+class ERoom:
+    def __init__(self):
+        import eroom
+        self.e_map, self.o = eroom.gen_eroom()
+
 @pytest.fixture
 def troom():
     return TRoom()
@@ -19,3 +24,11 @@ def objs(troom):
 @pytest.fixture
 def a_map(troom):
     return troom.a_map
+
+@pytest.fixture
+def eroom():
+    return ERoom()
+
+@pytest.fixture
+def e_map(eroom):
+    return eroom.e_map
