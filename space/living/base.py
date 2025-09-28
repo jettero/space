@@ -90,6 +90,8 @@ class Living(HasShell, CanMove, StdObj):
     s = l = 'living'
     a = 'L'
     d = 'a living object'
+    # maximum interaction distance for adjacency-sensitive actions
+    reach = 1.42
 
     @property
     def abbr(self):
@@ -190,11 +192,10 @@ class Living(HasShell, CanMove, StdObj):
             return v.length
 
     def can_attack_living(self, living):
-        # XXX: weapons should have a range or reach or something; instead, we
-        # use 1.42 as "adjacent"
+        # choose nearest valid target within reach
         for dist,targ in sorted([ (self.unit_distance_to(o), o) for o in living ]):
             log.debug('can_attack_living() considering %s at a distance of %s', targ, dist)
-            if dist <= 1.42:
+            if dist <= self.reach:
                 log.debug('  … seems good, returning')
                 return (True, {'target': targ})
         log.debug('  … nothing seemed to match')

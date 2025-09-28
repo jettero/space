@@ -32,11 +32,10 @@ class Humanoid(Living):
         gender = (Male, Female,)
 
     def can_open_obj(self, obj:Door):
-        # XXX: how far can a humanoid reach and still interact with things? we need a better way to deal with this
-        # use 1.42 as "adjacent"
+        # check door interaction within reach
         ok,err = obj.can_open()
         if ok:
-            if self.unit_distance_to(obj) <= 1.42:
+            if self.unit_distance_to(obj) <= self.reach:
                 return ok,err
             else:
                 return False, {'error': f'{obj} is too far away'}
@@ -47,11 +46,10 @@ class Humanoid(Living):
         obj.do_open()
 
     def can_close_obj(self, obj:Door):
-        # XXX: how far can a humanoid reach and still interact with things? we need a better way to deal with this
-        # use 1.42 as "adjacent"
+        # check door interaction within reach
         ok,err = obj.can_close()
         if ok:
-            if self.unit_distance_to(obj) <= 1.42:
+            if self.unit_distance_to(obj) <= self.reach:
                 return ok,err
             else:
                 return False, {'error': f'{obj} is too far away'}
