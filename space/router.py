@@ -94,6 +94,7 @@ class RouteHint(namedtuple('RouteHint', ['fname', 'func', 'hlist'])):
                         o += list_match(x, applicable_objs)
                 else:
                     o = list_match(v, applicable_objs)
+                # sorting by distance is handled in MethodArgsRouter
                 ret[aname] = o
         return ret
 
@@ -112,6 +113,8 @@ class MethodArgsRouter(MethodRouter):
         return ret
 
     def fill(self, *a, **kw):
+        kw = { k:(tuple(sorted(v, key=lambda o: self.obj.unit_distance_to(o))) if isinstance(v, (list, tuple)) else v)
+               for k,v in kw.items() }
         for fname in self.dir:
             fak = introspect_args(getattr(self.obj, fname), *a, **kw)
             if fak.filled:

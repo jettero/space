@@ -182,7 +182,7 @@ class Living(HasShell, CanMove, StdObj):
             try:
                 op = self.location.map.find_obj(other).pos
             except AttributeError:
-                pass
+                op = None
         if op:
             return VV(*self.location.pos) - VV(*op)
 
@@ -192,10 +192,11 @@ class Living(HasShell, CanMove, StdObj):
             return v.length
 
     def can_attack_living(self, living):
-        # choose nearest valid target within reach
-        for dist,targ in sorted([ (self.unit_distance_to(o), o) for o in living ]):
+        # candidates are pre-sorted by router; pick first in reach
+        for targ in living:
+            dist = self.unit_distance_to(targ)
             log.debug('can_attack_living() considering %s at a distance of %s', targ, dist)
-            if dist <= self.reach:
+            if dist is not None and dist <= self.reach:
                 log.debug('  … seems good, returning')
                 return (True, {'target': targ})
         log.debug('  … nothing seemed to match')
