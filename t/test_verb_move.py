@@ -118,14 +118,14 @@ def test_exec_moves_final_position(e_map, eroom):
     ps()
     assert me.location.pos == (9, 15)
 
-    # 'SW' diagonal is (+1,+1) -> from (9,15) to (10,16)
+    # 'SW' diagonal applies 's' then 'w' -> from (9,15) to (8,16)
     ps = p.parse(me, 'SW')
     assert ps
     ps()
-    assert me.location.pos == (10, 16)
+    assert me.location.pos == (8, 16)
 
-    # 'sSW' -> south to (10,16), then diagonal to (11,17)
+    # 'sSW' -> south to (9,16)->(9,17), then diagonal to (7,18)
     ps = p.parse(me, 'sSW')
     assert ps
     ps()
-    assert me.location.pos == (11, 17)
+    assert me.location.pos == (7, 18)

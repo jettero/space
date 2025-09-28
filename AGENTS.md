@@ -98,6 +98,17 @@
   code to make it pass. Keep tests focused, deterministic, and aligned with
   the current map/verb conventions.
 
+## Maintainer Preferences (Session Learnings)
+
+- Small, clear fixes: proceed without asking; validate with focused tests.
+- Tests: prefer concise, targeted tests; avoid relying on complex fixtures
+  when simpler environment-specific fixtures exist (e.g., use `e_map` over
+  `a_map` for unobstructed movement).
+- Assertions: use `assert ps` for `PState` truthiness; avoid tuple messages
+  like `assert ps, ps.error`.
+- Comments: avoid adding comments unless necessary for code clarity; keep any
+  comments short and about the code only.
+
 ## Git Usage Policy
 
 - Using `git diff` and `git log` for context is encouraged.
