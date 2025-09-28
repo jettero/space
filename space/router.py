@@ -113,8 +113,14 @@ class MethodArgsRouter(MethodRouter):
         return ret
 
     def fill(self, *a, **kw):
-        kw = { k:(tuple(sorted(v, key=lambda o: self.obj.unit_distance_to(o))) if isinstance(v, (list, tuple)) else v)
-               for k,v in kw.items() }
+        from .stdobj import StdObj
+        def _should_sort_by_distance(v):
+            if isinstance(v, (list, tuple)) and v and isinstance(v[0], StdObj):
+                return True
+        kw = {
+            k: (tuple(sorted(v, key=lambda o: self.obj.unit_distance_to(o))) if _should_sort_by_distance(v) else v)
+            for k, v in kw.items()
+        }
         for fname in self.dir:
             fak = introspect_args(getattr(self.obj, fname), *a, **kw)
             if fak.filled:
