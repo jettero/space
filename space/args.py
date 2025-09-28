@@ -42,13 +42,15 @@ def filter_annotated_arg(name, item, annotation):
 
 class IntroHint(namedtuple('IntroHint', ['aname', 'tlist'])):
     def __repr__(self):
-        tl = '→'.join([ x.__name__ for x in self.tlist ])
-        return f'IH({self.aname})<{tl}>'
+        # mimic list-of-pairs form for readability in tests
+        tl = ', '.join([ x.__name__ for x in self.tlist ])
+        return f"('{self.aname}', [{tl}])"
 
 def introspect_hints(fn, add_kwonly=False):
     ''' try to guess the needed argument types for the given function '''
     from .container import Containable
     from .living import Living
+    from .stdobj import StdObj
     fas = inspect.getfullargspec(fn)
     todo = list(fas.args)
     if inspect.ismethod(fn):
@@ -66,7 +68,7 @@ def introspect_hints(fn, add_kwonly=False):
             ih.tlist.append(an)
         else:
             if ih.aname.startswith('obj'):
-                ih.tlist.append(Containable)
+                ih.tlist.append(StdObj)
             elif ih.aname.startswith('living') or ih.aname.startswith('target'):
                 ih.tlist.append(Living)
             else:

@@ -48,7 +48,7 @@ class CanMove:
             c = c.mpos(move)
             c.add_item(self)
 
-    def can_move_words(self, *moves, obj:Containable=None):
+    def can_move_words(self, *moves, obj:StdObj=None):
         is_moving = self if obj is None else obj
         if is_moving is None:
             is_moving = self
@@ -64,7 +64,7 @@ class CanMove:
                 return False, {'error': e}
         return True, {'moves': moves}
 
-    def can_move_obj_words(self, obj:Containable, *moves):
+    def can_move_obj_words(self, obj:StdObj, *moves):
         if not obj:
             return False, {'error': 'which object?'}
         # the method router calls longest first, so we have a chance to
