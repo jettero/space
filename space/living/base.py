@@ -254,8 +254,39 @@ class Living(HasShell, CanMove, StdObj):
     def receive_item(self, item):
         c = self.pack
         if c is None:
-            raise E.STypeError(f'{self} does not have a default container')
+            # auto-create a simple container in the pack slot
+            from ..item.packs import Sack
+            self.pack = Sack()
+            c = self.pack
         c.add_item(item)
 
     def do(self, input_text):
         self.shell.do(input_text)
+
+    # inventory interactions
+    def can_get_obj(self, obj):
+        # candidates are pre-sorted by distance; pick first in reach
+        for targ in obj:
+            dist = self.unit_distance_to(targ)
+            if dist is not None and dist <= self.reach:
+                return True, {'target': targ}
+        # if we're standing on the same cell, allow get even if distance>reach
+        for targ in obj:
+            if getattr(targ.location, 'pos', None) == getattr(self.location, 'pos', None):
+                return True, {'target': targ}
+        return False, {'error': "There's nothing like that nearby."}
+
+    def do_get(self, target):
+        # remove from current location and put into default container
+        self.receive_item(target)
+
+    def can_drop_obj(self, obj):
+        # dropping requires the item be in our pack
+        for targ in obj:
+            if targ.location is self.pack:
+                return True, {'target': targ}
+        return False, {'error': "You aren't holding that."}
+
+    def do_drop(self, target):
+        # drop onto current cell (a container)
+        self.location.add_item(target)
