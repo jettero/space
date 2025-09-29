@@ -27,7 +27,10 @@ def find_pkg(namespace):
         yield importlib.import_module(item.name)
 
 def find_by_classname(namespace, classname):
-    ''' e.g., find_by_classname('space.shell', 'Shell') '''
+    ''' e.g.,
+        find_by_classname('space.shell', 'Shell')
+        find_by_classname('space.verb', 'Action')
+    '''
     r = set()
     for m in find_pkg(namespace):
         try:
@@ -71,3 +74,8 @@ def name_classlist_by_classname(classlist, suffix=None, inject=None):
     if isinstance(inject, dict):
         inject.update(r)
     return r
+
+def find_verb_method(verb, method):
+    # XXX might this be more complicated later? for now, verbs are always here
+    # XXX should we find_by_classname('space.verb', 'Action') and go through the nics too?
+    return getattr(importlib.import_module(f'space.verb.{verb}').Action, method)
