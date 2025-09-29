@@ -214,8 +214,8 @@ class Living(HasShell, CanMove, StdObj):
 
     def do_look(self):
         from ..shell.message import MapMessage
-        self.tell(MapMessage(self.location.map.visicalc_submap(self)))
         self.tell('You look around.')
+        self.tell(MapMessage(self.location.map.visicalc_submap(self)))
 
     @property
     def hp(self):
@@ -340,6 +340,7 @@ class Living(HasShell, CanMove, StdObj):
         return True, {}
 
     def do_inventory(self):
+        self.tell('You inventory your stuff.')
         entries = []  # (slot_label, item_name, mass_str)
         # collect primary slot items
         for slot in self.slots:
