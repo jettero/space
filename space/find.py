@@ -4,15 +4,16 @@ import gc
 import pkgutil
 import importlib
 
-from .container import Containable
-
 def this_body():
     from .living.base import Living
     for obj in objects(Living):
         if obj.active:
             return obj
 
-def objects(of_types=Containable):
+def objects(of_types=None):
+    if of_types is None:
+        from .stdobj import StdObj
+        ob_types = StdObj
     for o in gc.get_objects():
         try:
             if isinstance(o, of_types):
