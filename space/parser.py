@@ -153,14 +153,7 @@ class PState:
         log.debug('[PState] new PState() vtok=%s (verbs=%s) tokens=%s', self.vtok, fv, self.tokens)
         self.filled = False
         self.vmap = me.location.map.visicalc_submap(me)
-        # visible objects plus inventory for object selection
-        inv = list()
-        try:
-            for it in me.pack:
-                inv.append(it)
-        except Exception:
-            pass
-        self.objs = [ o for o in self.vmap.objects ] + inv
+        self.objs = [ o for o in self.vmap.objects ] + me.inventory
         self.filled = False
 
     @property
