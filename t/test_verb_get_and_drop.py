@@ -29,8 +29,14 @@ def test_get_and_drop_bauble(me, a_map):
     assert ps and ps.winner.verb.name == 'get'
     ps()
 
-    # ensure it is now in our pack
-    assert any(getattr(i, 's', '') == 'bauble' for i in me.pack)
+    # ensure it is now carried (hands or pack)
+    # Slot properties expose the item directly (or None)
+    held = [i for i in (me.slots.left_hand, me.slots.right_hand) if i is not None]
+    in_pack = []
+    if me.pack is not None:
+        in_pack = list(me.pack)
+    names = [getattr(i, 's', '') for i in held + in_pack if i is not None]
+    assert 'bauble' in names
 
     # move a bit east, then drop it
     p.parse(me, '3e')()
@@ -38,5 +44,10 @@ def test_get_and_drop_bauble(me, a_map):
     assert ps and ps.winner.verb.name == 'drop'
     ps()
 
-    # verify it's no longer in our pack
-    assert not any(getattr(i, 's', '') == 'bauble' for i in me.pack)
+    # verify it's no longer carried in hands or pack
+    held = [i for i in (me.slots.left_hand, me.slots.right_hand) if i is not None]
+    in_pack = []
+    if me.pack is not None:
+        in_pack = list(me.pack)
+    names = [getattr(i, 's', '') for i in held + in_pack if i is not None]
+    assert 'bauble' not in names

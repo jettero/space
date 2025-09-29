@@ -15,8 +15,10 @@ class BeltSlot(PackSlot):
     pass
 
 class HandSlot(Slot):
-    # accept_types = (Equipable,Usable,Weapon,)
-    pass
+    # accept StdObj by default so hands can hold items
+    from ..stdobj import StdObj as _StdObj
+    accept_types = (_StdObj,)
+    del _StdObj
 
 class LegsSlot(Slot):
     # accept_types = (LegsWearable,)
@@ -37,7 +39,7 @@ class FeetSlot(Slot):
 
 class Slots:
     class Meta:
-        slots = {'pack': PackSlot}
+        slots = {'left hand': HandSlot, 'right hand': HandSlot, 'pack': PackSlot}
         default = 'pack'
 
     def __init_subclass__(cls):
@@ -69,3 +71,23 @@ class Slots:
         for priv_prop_name,a in self._slots.items():
             slot_name, slot_class = a
             setattr(self, priv_prop_name, slot_class(slot_name, owner))
+
+    def __iter__(self):
+        for priv_prop_name in self._slots:
+            yield getattr(self, priv_prop_name)
+
+    @property
+    def inventory(self):
+        items = []
+        for slot in self:
+            try:
+                for it in slot:
+                    items.append(it)
+                    try:
+                        for inner in it:
+                            items.append(inner)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+        return items
