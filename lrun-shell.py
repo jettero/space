@@ -14,6 +14,6 @@ from t.troom import a_map, o
 
 c = sys.argv[1:]
 if not c:
-    c = ['look']
+    c = ['open door; sSW6s2w; get bauble; look', 'inventory']
 
 ReadlineShell(owner=o.me, init=c).loop()
