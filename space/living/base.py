@@ -342,3 +342,9 @@ class Living(HasShell, CanMove, StdObj):
         return True, {}
 
     do_inventory = find_verb_method('inventory', 'do_inventory')
+
+    # sheet verb
+    def can_sheet(self):
+        return True, {}
+
+    do_sheet = find_verb_method('sheet', 'do_sheet')
