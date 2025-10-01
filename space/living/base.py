@@ -23,11 +23,6 @@ log = logging.getLogger(__name__)
 class HasShell:
     _shell = None
 
-    class Slots(Slots):
-        class Meta:
-            slots = {}
-            default = None
-
     @property
     def shell(self):
         if self._shell is None:
