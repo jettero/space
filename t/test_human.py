@@ -33,8 +33,6 @@ def test_slots():
     h.slots.pack = s
 
     assert h.slots.pack is s
-    assert h.slots.default is s
-    assert h.pack is s
 
     h.receive_item(u)
     assert u in s

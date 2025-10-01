@@ -27,7 +27,7 @@ class Humanoid(Living):
                 ('feet', FeetSlot),
                 ('pack', PackSlot),
             ])
-            default = 'pack'
+            default = 'right hand'
 
     class Choices(Living.Choices):
         gender = (Male, Female,)
@@ -36,14 +36,19 @@ class Humanoid(Living):
         for targ in obj:
             dist = self.unit_distance_to(targ)
             if dist <= self.reach:
-                hands = (self.slots.right_hand, self.slots.left_hand)
-                if any(h.accept(targ) for h in hands):
-                    return True, {'target': targ}
+                # the right_hand prop is effectively the contents of the right hand
+                # the _right_hand prop is the actual slot, so we can invoke accept()
+                hands = (self.slots._right_hand, self.slots._left_hand)
+                for h in hands:
+                    if h.accept(targ):
+                        return True, {'target': targ}
         return False, {'error': "There's nothing like that nearby."}
 
     def do_get(self, target):
-        for hand in (self.slots.right_hand, self.slots.left_hand):
-            hand.add_item(target)
+        for hand in (self.slots._right_hand, self.slots._left_hand):
+            if hand.accept(target):
+                hand.add_item(target)
+                return
 
     def can_drop_obj(self, obj):
         for targ in obj:

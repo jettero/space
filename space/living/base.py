@@ -242,24 +242,23 @@ class Living(HasShell, CanMove, StdObj):
             f'Health: {self.hp} / {self.health.abbr}',
         ])
 
-    @property
-    def pack(self):
-        return self.slots.default
-
-    @pack.setter
-    def pack(self, v):
-        self.slots.default = v
-
     def receive_item(self, item):
-        # try pack explicitly first if configured (maintains test expectations)
-        if self.slots.default:
-            if self.slots[self.slots.default].accept(item):
-                self.slots[self.slots.default].add_item(item)
-        # else add to the first slot that accepts it
+        try:
+            self.slots.pack.add_item(item)
+            return
+        except:
+            pass
+        try:
+            self.slots.default = item
+            return
+        except:
+            pass
         for slot in self.slots:
-            if slot.accept(item):
+            try:
                 slot.add_item(item)
-        # failing all that, just drop it on the floor I guess
+                return
+            except:
+                pass
         if item.location is not self.location:
             self.location.add_item(item)
 
