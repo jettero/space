@@ -101,11 +101,6 @@ class Living(HasShell, CanMove, StdObj):
             return '@'
         return super().abbr
 
-    class Slots(Slots):
-        class Meta:
-            slots = {'pack': PackSlot}
-            default = 'pack'
-
     class Choices(AttrChoices):
         _ordered = ('gender', 'height', 'mass')
 

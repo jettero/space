@@ -8,34 +8,39 @@ from ..container import Slot, Container
 log = logging.getLogger(__name__)
 PROP_NAME_RE = re.compile(r'[^\w\d]+')
 
+class HeadWearable:
+    "just a placeholder"
+class Belt:
+    "just a placeholder"
+class TorsoWearable:
+    "just a placeholder"
+class LegsWearable:
+    "just a placeholder"
+class FeetWearable:
+    "just a placeholder"
+
 class PackSlot(Slot):
     accept_types = (Container,)
 
 class BeltSlot(PackSlot):
-    # accept_types = (Belt,)
-    pass
+    accept_types = (Belt,)
 
 class HandSlot(Slot):
-    # accept StdObj by default so hands can hold items
     from ..stdobj import StdObj as _StdObj
     accept_types = (_StdObj,)
     del _StdObj
 
 class LegsSlot(Slot):
-    # accept_types = (LegsWearable,)
-    pass
+    accept_types = (LegsWearable,)
 
 class TorsoSlot(Slot):
-    # accept_types = (TorsoWearable,)
-    pass
+    accept_types = (TorsoWearable,)
 
 class HeadSlot(Slot):
-    # accept_types = (HeadWearable,)
-    pass
+    accept_types = (HeadWearable,)
 
 class FeetSlot(Slot):
-    # accept_types = (FeetWearable,)
-    pass
+    accept_types = (FeetWearable,)
 
 
 class Slots:
@@ -44,8 +49,8 @@ class Slots:
         slots = OrderedDict([
             ('head', HeadSlot),
             ('torso', TorsoSlot),
-            ('left hand', HandSlot),
             ('right hand', HandSlot),
+            ('left hand', HandSlot),
             ('legs', LegsSlot),
             ('feet', FeetSlot),
             ('pack', PackSlot),
