@@ -6,14 +6,26 @@ class Action(Verb):
     name = 'inventory'
 
     def do_inventory(self):
+        def box(title, body_lines, width=None):
+            inner = list(body_lines)
+            w = max([len(title)] + [len(s) for s in inner])
+            if width is not None:
+                w = max(w, width)
+            top = '+' + '-' * (w + 2) + '+'
+            title_line = '| ' + title.center(w) + ' |'
+            framed = [top, title_line, top]
+            for s in inner:
+                framed.append('| ' + s.ljust(w) + ' |')
+            framed.append(top)
+            return '\n'.join(framed)
+
         self.tell('You inventory your stuff.')
         entries = []  # (slot_label, item_name, mass_str)
         # collect primary slot items
         for slot in self.slots:
-            sname = getattr(slot, 's', '')
-            # drop a trailing ' slot' if present
-            if sname.endswith(' slot'):
-                sname = sname[:-5]
+            # Slot.s is a known attribute for Slots
+            sname = slot.s[:-5]
+            item = None
             try:
                 item = slot.item
             except Exception:
@@ -21,15 +33,16 @@ class Action(Verb):
             if item is None:
                 entries.append((sname, '', ''))
                 continue
-            iname = getattr(item, 'l', str(item))
-            imass = getattr(item, 'mass', None)
+            # StdObj provides .l and .mass for items; access directly
+            iname = item.l
+            imass = item.mass
             entries.append((sname, iname, f'{imass}' if imass is not None else ''))
             # include one-level contents if item is a container; indent label
             try:
                 contents = list(item)
                 for it in contents:
-                    sub = getattr(it, 'l', str(it))
-                    sm = getattr(it, 'mass', None)
+                    sub = it.l
+                    sm = it.mass
                     entries.append(('  ', sub, f'{sm}' if sm is not None else ''))
             except Exception:
                 pass
@@ -60,4 +73,4 @@ class Action(Verb):
             else:
                 line = f"{disp_label}{padding}{name.ljust(name_w)}  {wstr}"
             out.append(line.rstrip())
-        self.tell('\n'.join(out))
+        self.tell(box('Inventory', out))

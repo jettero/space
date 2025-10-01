@@ -98,6 +98,14 @@
   code to make it pass. Keep tests focused, deterministic, and aligned with
   the current map/verb conventions.
 
+### Robustness vs. Known Types
+- When implementing verbs that operate on known engine types (e.g., `Living`),
+  avoid defensive `getattr/hasattr` checks for attributes guaranteed by the
+  type (e.g., `level`, `xp`, `hp`, `gender`, `height`, `weight`, `initiative`).
+  If the parser allows invoking a verb on a player character, those attributes
+  exist. Prefer direct attribute access to keep code clear and fail fast on
+  actual programmer errors.
+
 ### Parser/Verb Tasks
 - Before implementing or modifying verbs, skim `PARSER.md` for naming and
   routing conventions (e.g., `can_<verb>_obj` implies StdObj matching).

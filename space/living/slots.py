@@ -39,7 +39,16 @@ class FeetSlot(Slot):
 
 class Slots:
     class Meta:
-        slots = {'left hand': HandSlot, 'right hand': HandSlot, 'pack': PackSlot}
+        # Display and iteration order: head → torso → hands → legs → feet → pack
+        slots = {
+            'head': HeadSlot,
+            'torso': TorsoSlot,
+            'left hand': HandSlot,
+            'right hand': HandSlot,
+            'legs': LegsSlot,
+            'feet': FeetSlot,
+            'pack': PackSlot,
+        }
         default = 'pack'
 
     def __init_subclass__(cls):
