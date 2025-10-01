@@ -3,6 +3,7 @@
 import logging
 import space.exceptions as E
 
+from .slots import Slots
 from .base import Living
 from .gender import Male, Female
 from .slots import BeltSlot, HandSlot, LegsSlot, TorsoSlot, HeadSlot, FeetSlot
@@ -15,18 +16,8 @@ class Humanoid(Living):
     a = 'p'
     d = 'a humanoid'
 
-    class Slots(Living.Slots):
-        class Meta(Living.Slots.Meta):
-            slots = Living.Slots.Meta.slots.copy()
-            slots.update({
-                'belt':       BeltSlot,
-                'left-hand':  HandSlot,
-                'right-hand': HandSlot,
-                'legs':       LegsSlot,
-                'torso':      TorsoSlot,
-                'head':       HeadSlot,
-                'feet':       FeetSlot,
-            })
+    class Slots(Slots):
+        pass
 
     class Choices(Living.Choices):
         gender = (Male, Female,)
