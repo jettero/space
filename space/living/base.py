@@ -186,7 +186,7 @@ class Living(HasShell, CanMove, StdObj):
 
     def unit_distance_to(self, other):
         v = self.unit_vect_to(other)
-        if v:
+        if v is not None:
             return v.length
         return INFINITY
 

@@ -35,6 +35,7 @@ class Humanoid(Living):
     def can_get_obj(self, obj):
         for targ in obj:
             dist = self.unit_distance_to(targ)
+            log.debug('%s.can_get_obj() considering %s at a distance of %s', self, targ, dist)
             if dist <= self.reach:
                 # the right_hand prop is effectively the contents of the right hand
                 # the _right_hand prop is the actual slot, so we can invoke accept()
