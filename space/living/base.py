@@ -4,6 +4,7 @@ import logging
 import space.exceptions as E
 
 from space.find import find_verb_method
+from space.pv import INFINITY
 
 from ..vv        import VV
 from ..stdobj    import StdObj
@@ -21,6 +22,11 @@ log = logging.getLogger(__name__)
 
 class HasShell:
     _shell = None
+
+    class Slots(Slots):
+        class Meta:
+            slots = {}
+            default = None
 
     @property
     def shell(self):
@@ -187,6 +193,7 @@ class Living(HasShell, CanMove, StdObj):
         v = self.unit_vect_to(other)
         if v:
             return v.length
+        return INFINITY
 
     def can_attack_living(self, living):
         # candidates are pre-sorted by router; pick first in reach
@@ -250,29 +257,18 @@ class Living(HasShell, CanMove, StdObj):
 
     def receive_item(self, item):
         # try pack explicitly first if configured (maintains test expectations)
-        if self.pack is not None:
-            try:
-                self.pack.add_item(item)
-                return
-            except Exception:
-                pass
+        if self.slots.default:
+            if self.slots[self.slots.default].accept(item):
+                self.slots[self.slots.default].add_item(item)
         # else add to the first slot that accepts it
         for slot in self.slots:
-            try:
+            if slot.accept(item):
                 slot.add_item(item)
-                return
-            except Exception:
-                pass
-        # finally, keep it in place but transfer ownership marker
+        # failing all that, just drop it on the floor I guess
         if item.location is not self.location:
             self.location.add_item(item)
 
     def accept(self, item):
-        """Return True if this Living can accept the item now.
-
-        Match the same order used by receive_item(): try pack first, then
-        other slots.
-        """
         if self.pack is not None:
             try:
                 if self.pack.accept(item):
@@ -294,51 +290,11 @@ class Living(HasShell, CanMove, StdObj):
     def do(self, input_text):
         self.shell.do(input_text)
 
-    # inventory interactions
-    def can_get_obj(self, obj):
-        # candidates are pre-sorted by distance; pick first in reach
-        for targ in obj:
-            dist = self.unit_distance_to(targ)
-            if dist is not None and dist <= self.reach:
-                return True, {'target': targ}
-        # if we're standing on the same cell, allow get even if distance>reach
-        for targ in obj:
-            if getattr(targ.location, 'pos', None) == getattr(self.location, 'pos', None):
-                return True, {'target': targ}
-        return False, {'error': "There's nothing like that nearby."}
-
-    def do_get(self, target):
-        # remove from current location and put into default container
-        self.receive_item(target)
-
-    def can_drop_obj(self, obj):
-        # allow dropping from any carried slot (hands, pack, etc.)
-        for targ in obj:
-            loc = getattr(targ, 'location', None)
-            if loc is None:
-                continue
-            # direct pack check
-            if loc is self.pack:
-                return True, {'target': targ}
-            # any slot container owned by self
-            try:
-                if loc.owner is self:
-                    return True, {'target': targ}
-            except Exception:
-                pass
-        return False, {'error': "You aren't holding that."}
-
-    def do_drop(self, target):
-        # drop onto current cell (a container)
-        self.location.add_item(target)
-
-    # inventory verb
     def can_inventory(self):
         return True, {}
 
     do_inventory = find_verb_method('inventory', 'do_inventory')
 
-    # sheet verb
     def can_sheet(self):
         return True, {}
 

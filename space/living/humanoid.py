@@ -17,10 +17,49 @@ class Humanoid(Living):
     d = 'a humanoid'
 
     class Slots(Slots):
-        pass
+        slots = OrderedDict([
+            ('head', HeadSlot),
+            ('torso', TorsoSlot),
+            ('right hand', HandSlot),
+            ('left hand', HandSlot),
+            ('legs', LegsSlot),
+            ('feet', FeetSlot),
+            ('pack', PackSlot),
+        ])
+        default = 'pack'
 
     class Choices(Living.Choices):
         gender = (Male, Female,)
+
+    def can_get_obj(self, obj):
+        for targ in obj:
+            dist = self.unit_distance_to(targ)
+            if dist <= self.reach:
+                hands = (self.slots.right_hand, self.slots.left_hand)
+                if any(h.accept(targ) for h in hands):
+                    return True, {'target': targ}
+        return False, {'error': "There's nothing like that nearby."}
+
+    def do_get(self, target):
+        for hand in (self.slots.right_hand, self.slots.left_hand):
+            hand.add_item(target)
+
+    def can_drop_obj(self, obj):
+        for targ in obj:
+            loc = getattr(targ, 'location', None)
+            if loc is None:
+                continue
+            if loc is self.pack:
+                return True, {'target': targ}
+            try:
+                if loc.owner is self:
+                    return True, {'target': targ}
+            except Exception:
+                pass
+        return False, {'error': "You aren't holding that."}
+
+    def do_drop(self, target):
+        self.location.add_item(target)
 
     def can_open_obj(self, obj:Door):
         # check door interaction within reach
