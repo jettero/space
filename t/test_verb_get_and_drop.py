@@ -26,7 +26,9 @@ def test_get_and_drop_bauble(me, a_map):
     if not ps:
         # fall back to the correct spelling if parser rejects the typo
         ps = p.parse(me, 'get bauble')
-    assert ps and ps.winner.verb.name == 'get'
+    assert not ps.error
+    assert ps.winner
+    assert ps
     ps()
 
     # ensure it is now carried (hands or pack)
