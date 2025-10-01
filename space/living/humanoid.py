@@ -17,16 +17,17 @@ class Humanoid(Living):
     d = 'a humanoid'
 
     class Slots(Slots):
-        slots = OrderedDict([
-            ('head', HeadSlot),
-            ('torso', TorsoSlot),
-            ('right hand', HandSlot),
-            ('left hand', HandSlot),
-            ('legs', LegsSlot),
-            ('feet', FeetSlot),
-            ('pack', PackSlot),
-        ])
-        default = 'pack'
+        class Meta:
+            slots = OrderedDict([
+                ('head', HeadSlot),
+                ('torso', TorsoSlot),
+                ('right hand', HandSlot),
+                ('left hand', HandSlot),
+                ('legs', LegsSlot),
+                ('feet', FeetSlot),
+                ('pack', PackSlot),
+            ])
+            default = 'pack'
 
     class Choices(Living.Choices):
         gender = (Male, Female,)
