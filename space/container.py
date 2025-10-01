@@ -2,6 +2,7 @@
 
 from collections import deque
 
+import space.exceptions as E
 from .pv import INFINITY
 from .size import Size
 
