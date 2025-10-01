@@ -269,18 +269,9 @@ class Living(HasShell, CanMove, StdObj):
             self.location.add_item(item)
 
     def accept(self, item):
-        if self.pack is not None:
-            try:
-                if self.pack.accept(item):
-                    return True
-            except Exception:
-                pass
         for slot in self.slots:
-            try:
-                if slot.accept(item):
-                    return True
-            except Exception:
-                pass
+            if slot.accept(item):
+                return True
         return False
 
     @property
