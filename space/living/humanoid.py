@@ -4,10 +4,9 @@ import logging
 import space.exceptions as E
 from collections import OrderedDict
 
-from .slots import Slots
 from .base import Living
 from .gender import Male, Female
-from .slots import BeltSlot, HandSlot, LegsSlot, TorsoSlot, HeadSlot, FeetSlot, PackSlot
+from .slots import Slots, BeltSlot, HandSlot, LegsSlot, TorsoSlot, HeadSlot, FeetSlot, PackSlot
 from ..door import Door
 
 log = logging.getLogger(__name__)
