@@ -55,3 +55,5 @@ def p(cmd):
 
 def do(cmd):
     return o.me.do(cmd)
+
+;do open door; sSW6s3w; get bauble

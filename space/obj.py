@@ -11,19 +11,36 @@ log = logging.getLogger(__name__)
 # most objects you can pick up or put in a room should also get Containable
 # you're probably looking for space/stdobj.py
 class baseobj: # pylint: disable=invalid-name
-    _owner = None
+    _location = None
+
+    @property
+    def location(self):
+        return self._location
+
+    @location.setter
+    def location(self, v):
+        if v is not None:
+            v = weakref.proxy(v)
+        self._location = v
 
     @property
     def owner(self):
-        return self._owner
+        try:
+            o = self._location
+            from space.living import Living
+            while o is not None and not isinstance(o, Living):
+                o = o._location
+            return o
+        except AttributeError:
+            pass
 
     @owner.setter
     def owner(self, v):
-        if v is not None:
-            v = weakref.proxy(v)
-        self._owner = v
-
-    location = owner
+        from space.living import Living
+        if isinstance(v, Living):
+            self.location = v
+            return
+        raise ValueError(f'owners should be alive')
 
     @property
     def id(self):

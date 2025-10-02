@@ -5,14 +5,16 @@ from collections import deque
 import space.exceptions as E
 from .pv import INFINITY
 from .size import Size
+from .obj import baseobj
 
-class Containable(Size):
+class Containable(Size, baseobj):
     a = '~'
     s = 'obj'
     l = 'containable object'
 
     def __init__(self, mass=None, volume=None):
         Size.__init__(self, mass=mass, volume=volume)
+        baseobj.__init__(self)
 
 class CapacityMeta:
     class Meta:
@@ -121,7 +123,7 @@ class Container(Containable, CapacityMeta):
 class Slot(Container):
     def __init__(self, name, owner=None):
         super().__init__()
-        self.s = self.l = f'{name} slot'
+        self.s = self.l = f"{name} slot"
         self.owner = owner
     @property
     def item(self):

@@ -8,6 +8,7 @@ from .base import Living
 from .gender import Male, Female
 from .slots import Slots, BeltSlot, HandSlot, LegsSlot, TorsoSlot, HeadSlot, FeetSlot, PackSlot
 from ..door import Door
+from ..stdobj import StdObj
 
 log = logging.getLogger(__name__)
 
@@ -32,38 +33,35 @@ class Humanoid(Living):
     class Choices(Living.Choices):
         gender = (Male, Female,)
 
-    def can_get_obj(self, obj):
-        for targ in obj:
-            dist = self.unit_distance_to(targ)
-            log.debug('%s.can_get_obj() considering %s at a distance of %s', self, targ, dist)
-            if dist <= self.reach:
-                # the right_hand prop is effectively the contents of the right hand
-                # the _right_hand prop is the actual slot, so we can invoke accept()
-                hands = (self.slots._right_hand, self.slots._left_hand)
-                for h in hands:
-                    if h.accept(targ):
-                        return True, {'target': targ}
-        return False, {'error': "There's nothing like that nearby."}
+    def can_get_obj(self, obj:StdObj):
+        if obj.owner == self:
+            return False, {'error': "You already have that"}
+        if obj.owner:
+            return False, {'error': f"{obj.owner} would probably object if you took that."}
+        if self.unit_distance_to(obj) > self.reach:
+            return False, {'error': "That seems too far away"}
+        for h in (self.slots._right_hand, self.slots._left_hand):
+            try:
+                if h.accept(obj):
+                    return True, {'target': obj}
+            except E.ContainerError:
+                pass
+        return False, {'error': "It's not possible to get that."}
 
     def do_get(self, target):
         for hand in (self.slots._right_hand, self.slots._left_hand):
-            if hand.accept(target):
-                hand.add_item(target)
-                return
-
-    def can_drop_obj(self, obj):
-        for targ in obj:
-            loc = getattr(targ, 'location', None)
-            if loc is None:
-                continue
-            if loc is self.pack:
-                return True, {'target': targ}
             try:
-                if loc.owner is self:
-                    return True, {'target': targ}
-            except Exception:
+                if hand.accept(target):
+                    hand.add_item(target)
+                    return
+            except E.ContainerError as e:
                 pass
-        return False, {'error': "You aren't holding that."}
+        raise e
+
+    def can_drop_obj(self, obj:StdObj):
+        if obj.owner != self:
+            return False, {'error': "You don't have that."}
+        return True, {'target': obj}
 
     def do_drop(self, target):
         self.location.add_item(target)
