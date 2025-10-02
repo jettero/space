@@ -11,7 +11,6 @@ class Containable(Size):
     s = 'obj'
     l = 'containable object'
 
-    location = None
     def __init__(self, mass=None, volume=None):
         Size.__init__(self, mass=mass, volume=volume)
 
