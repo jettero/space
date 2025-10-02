@@ -21,11 +21,8 @@ def test_get_and_drop_bauble(me, a_map):
     # We should now be at or very near the bauble at (4,9)
     assert isinstance(me.location.pos, tuple)
 
-    # pick up the useless bauble (typo in spec: 'buable')
-    ps = p.parse(me, 'get buable')
-    if not ps:
-        # fall back to the correct spelling if parser rejects the typo
-        ps = p.parse(me, 'get bauble')
+    # pick up the useless bauble (typo in spec: 'bauble')
+    ps = p.parse(me, 'get bauble')
     assert ps
     assert ps.winner.verb.name == 'get'
     ps()
@@ -36,11 +33,12 @@ def test_get_and_drop_bauble(me, a_map):
     names = [getattr(i, 's', '') for i in held]
     assert 'bauble' in names
 
-    # move a bit east, then drop it from hands (ignore pack)
     p.parse(me, '3e')()
-    # Execute drop verb directly via the actor to avoid parser path that
-    # currently references pack; we only care about dropping from hands here.
-    me.do_drop(getattr([i for i in (me.slots.left_hand, me.slots.right_hand) if i is not None][0], '__self__', None) or [i for i in (me.slots.left_hand, me.slots.right_hand) if i is not None][0])
+
+    ps = p.parse(me, 'drop bauble')
+    assert ps
+    assert ps.winner.verb.name == 'drop'
+    ps()
 
     # verify it's no longer carried in hands (ignore pack)
     held = [i for i in (me.slots.left_hand, me.slots.right_hand) if i is not None]
