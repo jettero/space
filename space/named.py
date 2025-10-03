@@ -89,7 +89,8 @@ class Named(Serial, baseobj):
 
 
 class Tags(Serial):
-    def __init__(self, *a, can=None):
+    def __init__(self, *a, can=None, **kw):
+        super().__init__(**kw)
         self._a = {str(i) for i in a}
         self._c = None if can is None else Tags(*can)
 

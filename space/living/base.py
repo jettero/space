@@ -117,8 +117,8 @@ class Living(HasShell, CanMove, StdObj):
         depth = lambda self: (self.mass / "50 kg").v
         health = lambda self: HitPoints("1d6+10")
 
-    def __init__(self, long=None, short=None):
-        StdObj.__init__(self, short=short, long=long)
+    def __init__(self, long=None, short=None, **kw):
+        super().__init__(**kw) # long and short might have otherwise been used via MRO/super... we use them below instead
         self.slots = self.Slots(self)
 
         if long:
