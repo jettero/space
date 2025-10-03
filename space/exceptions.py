@@ -41,6 +41,8 @@ class ContainerError(Exception, SExceptionMixin):
 class ContainerTypeError(ContainerError):
     pass
 
+class LivingSlotSetupError(Exception):
+    pass
 
 class ContainerCapacityError(ContainerError):
     pass

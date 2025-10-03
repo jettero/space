@@ -3,6 +3,7 @@
 import re
 import logging
 from collections import OrderedDict
+import space.exceptions as E
 from ..container import Slot, Container
 from ..stdobj import StdObj
 
@@ -96,7 +97,7 @@ class Slots:
                     cls.default = prop
                     def_set = True
             if not def_set:
-                raise Exception(f"[subclass] unable to set default slot property {cls.Meta.default}")
+                raise E.LivingSlotSetupError(f"[subclass] unable to set default slot property {cls.Meta.default}")
 
     def __init__(self, owner):
         for priv_prop_name, a in self._slots.items():
@@ -114,11 +115,12 @@ class Slots:
             try:
                 for it in slot:
                     items.append(it)
-                    try:
-                        for inner in it:
-                            items.append(inner)
-                    except Exception:
-                        pass
-            except Exception:
+                    if isinstance(it, Container):
+                        try:
+                            for inner in it:
+                                items.append(inner)
+                        except AttributeError:
+                            pass
+            except AttributeError:
                 pass
         return items
