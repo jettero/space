@@ -48,8 +48,8 @@ class Container(Containable, CapacityMeta):
         mass_capacity = INFINITY
         volume_capacity = INFINITY
 
-    def __init__(self, *items, mass_capacity=None, volume_capacity=None, mass=None, volume=None):
-        Containable.__init__(self, mass=mass, volume=volume)
+    def __init__(self, *items, mass_capacity=None, volume_capacity=None, **kw):
+        super().__init__(**kw)
         self._capacity = self.Capacity(mass=mass_capacity, volume=volume_capacity)
         self._items = deque()
         self.add_items(*items)
