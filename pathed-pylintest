@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+if ! git diff --cached --name-only --diff-filter=ACM | grep -sq '\.py$'
+then echo skipping; exit 0
+fi
+
+DIR="$(dirname "$0")"
+export PYTHONPATH="$DIR"
+
+prog="$1"; shift
+
+echo "$(date): $prog $*" >> .pathed-run.log
+"$prog" "$@"
