@@ -14,7 +14,7 @@ class Containable(Size, baseobj):
     l = "containable object"
 
     def __init__(self, **kw):
-        super().__init__(**kw) # calls both Size and baseobj __init__ (well, baseobj doesn't have one, but it would)
+        super().__init__(**kw)  # calls both Size and baseobj __init__ (well, baseobj doesn't have one, but it would)
 
 
 class CapacityMeta:

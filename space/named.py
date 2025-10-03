@@ -26,7 +26,7 @@ class Named(Serial, baseobj):
         save = "asld"
 
     def __init__(self, short=None, abbr=None, long=None, **kw):
-        super().__init__(**kw) # if Serial and baseobj had __init__, they'd both get called via MRO/super()
+        super().__init__(**kw)  # if Serial and baseobj had __init__, they'd both get called via MRO/super()
         if abbr:
             self.a = abbr
         if short:
