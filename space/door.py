@@ -21,12 +21,12 @@ class Door(StdObj):
     def abbr(self):
         return "□" if self.open else "■"
 
-    def __init__(self, *items, open=False, locked=False, stuck=False, attached=False, **kw):
+    def __init__(self, *items, is_open=False, is_locked=False, is_stuck=False, is_attached=False, **kw):
         super().__init__(*items, **kw)
-        self.open = bool(open)
-        self.locked = bool(locked)
-        self.stuck = bool(stuck)
-        self.attached = bool(attached)
+        self.open = bool(is_open)
+        self.locked = bool(is_locked)
+        self.stuck = bool(is_stuck)
+        self.attached = bool(is_attached)
 
     def can_open(self):
         if self.open:

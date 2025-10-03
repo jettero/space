@@ -11,7 +11,7 @@ class BlockedCell(Corridor):
 
     def __init__(self, *items, mobj=None, pos=None):
         super().__init__(*items, mobj=mobj, pos=pos)
-        Container._add_item(self, Door(attached=True))
+        Container._add_item(self, Door(is_attached=True))
 
     @property
     def door(self):
