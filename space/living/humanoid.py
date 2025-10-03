@@ -1,9 +1,9 @@
 # coding: utf-8
 
 import logging
-import space.exceptions as E
 from collections import OrderedDict
 
+import space.exceptions as E
 from .base import Living
 from .gender import Male, Female
 from .slots import Slots, BeltSlot, HandSlot, LegsSlot, TorsoSlot, HeadSlot, FeetSlot, PackSlot
@@ -26,6 +26,7 @@ class Humanoid(Living):
                     ("torso", TorsoSlot),
                     ("right hand", HandSlot),
                     ("left hand", HandSlot),
+                    ("belt", BeltSlot),
                     ("legs", LegsSlot),
                     ("feet", FeetSlot),
                     ("pack", PackSlot),
@@ -55,14 +56,17 @@ class Humanoid(Living):
         return False, {"error": "It's not possible to get that."}
 
     def do_get(self, target):
+        eff = None
         for hand in (self.slots._right_hand, self.slots._left_hand):
             try:
                 if hand.accept(target):
                     hand.add_item(target)
                     return
             except E.ContainerError as e:
-                pass
-        raise e
+                if eff is None:
+                    eff = e
+        if eff is not None:
+            raise eff
 
     def can_drop_obj(self, obj: StdObj):
         if obj.owner != self:
@@ -73,28 +77,24 @@ class Humanoid(Living):
         self.location.add_item(target)
 
     def can_open_obj(self, obj: Door):
-        # check door interaction within reach
         ok, err = obj.can_open()
         if ok:
             if self.unit_distance_to(obj) <= self.reach:
                 return ok, err
-            else:
-                return False, {"error": f"{obj} is too far away"}
-        return False, {"error": "What door?"}
+            return False, {"error": f"{obj} is too far away"}
+        return ok, err
 
     def do_open_obj(self, obj: Door):
         log.debug("do_open_obj(%s)", obj)
         obj.do_open()
 
     def can_close_obj(self, obj: Door):
-        # check door interaction within reach
         ok, err = obj.can_close()
         if ok:
             if self.unit_distance_to(obj) <= self.reach:
                 return ok, err
-            else:
-                return False, {"error": f"{obj} is too far away"}
-        return False, {"error": "What door?"}
+            return False, {"error": f"{obj} is too far away"}
+        return ok, err
 
     def do_close_obj(self, obj: Door):
         log.debug("do_sclose_obj(%s)", obj)
