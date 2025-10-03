@@ -13,7 +13,7 @@ class FAK(namedtuple("FAK", ["filled", "args", "kwargs"])):
         return self.filled
 
 
-def filter_annotated_arg(name, item, annotation):
+def filter_annotated_arg(name, item, annotation):  # pylint: disable=unused-argument
     if annotation is None:
         return item
     if inspect.isclass(annotation):
@@ -52,7 +52,9 @@ class IntroHint(namedtuple("IntroHint", ["aname", "tlist"])):
 
 def introspect_hints(fn, add_kwonly=False):
     """try to guess the needed argument types for the given function"""
-    from .container import Containable
+    # pylint: disable=import-outside-toplevel
+    # we lazy import so space.args can be used by the below Living and StdObj
+    # types without a loop
     from .living import Living
     from .stdobj import StdObj
 
@@ -82,6 +84,9 @@ def introspect_hints(fn, add_kwonly=False):
 
 
 def introspect_args(fn, *iargs, **ikwargs):
+    # pylint: disable=too-many-statements
+    # you know what? it *is* too many statements, but this is complicated and
+    # more functions won't make it better
     """given a function, zero or more args and zero or more kwargs
 
     Try to determine a relatively safe set of args from those given

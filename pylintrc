@@ -1,7 +1,4 @@
-[MASTER]
-
-optimize-ast=y
-
+[MAIN]
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
 # run arbitrary code.
@@ -9,7 +6,7 @@ extension-pkg-whitelist=
 
 # Add files or directories to the blacklist. They should be base names, not
 # paths.
-ignore=CVS,.git
+ignore=.git,build,dist,space.egg-info,old,contrib,t
 
 # Add files or directories matching the regex patterns to the blacklist. The
 # regex matches against base names, not paths.
@@ -33,7 +30,7 @@ limit-inference-results=100
 load-plugins=
 
 # Pickle collected data for later comparisons.
-persistent=yes
+persistent=no
 
 # Specify a configuration file.
 #rcfile=
@@ -63,7 +60,9 @@ confidence=
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
 disable=fixme,
-    missing-docstring,
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
     too-few-public-methods,
     too-many-public-methods,
     too-many-locals,
@@ -71,13 +70,13 @@ disable=fixme,
     too-many-arguments,
     too-many-function-args,
     too-many-instance-attributes,
+    too-many-return-statements,
+    too-many-branches,
+    use-list-literal,
     inconsistent-return-statements, # dumb (if thing: return 1; implied null return -- fine)
-    no-self-use, # dumb
     no-name-in-module, # space.item is pkg populated, so Ubi isn't in there for pylint
     arguments-differ, # not tunable; probably would be handy, sad really
-    multiple-statements, # not tunable enough
-    bad-continuation, # not tuable
-    bad-whitespace # not tunable enough
+    multiple-statements # not tunable enough
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -192,7 +191,7 @@ indent-after-paren=4
 indent-string='    '
 
 # Maximum number of characters on a single line.
-max-line-length=118
+max-line-length=119
 
 # Maximum number of lines in a module.
 max-module-lines=1000
@@ -201,7 +200,7 @@ max-module-lines=1000
 # separator` is used to allow tabulation in dicts, etc.: {1  : 1,\n222: 2}.
 # `trailing-comma` allows a space between comma and closing bracket: (a, ).
 # `empty-line` allows space-only lines.
-no-space-check=trailing-comma,
+# no-space-check was removed in modern pylint
 
 # Allow the body of a class to be on the same line as the declaration if body
 # contains single statement.
@@ -332,7 +331,7 @@ function-naming-style=snake_case
 function-rgx=_?[a-z][a-z0-9_]*
 
 # Good variable names which should always be accepted, separated by a comma.
-good-names=i, j, k, log, _
+good-names=i,j,k,log,_,id,ps,fn,dt
 
 # Include a hint for the correct naming format with invalid-name.
 include-naming-hint=no
@@ -485,10 +484,3 @@ valid-classmethod-first-arg=cls
 
 # List of valid names for the first argument in a metaclass class method.
 valid-metaclass-classmethod-first-arg=cls
-
-
-[EXCEPTIONS]
-
-# Exceptions that will emit a warning when being caught. Defaults to
-# "Exception".
-overgeneral-exceptions=Exception
