@@ -2,21 +2,21 @@
 # coding: utf-8
 
 class A:
-    def __init__(self, **kw):
+    def __init__(self, a=0, **kw):
         print('A.__init__')
-        self.a = kw.pop('a', 0)
+        self.a = a
         super().__init__(**kw)
 
 class B:
-    def __init__(self, **kw):
+    def __init__(self, b=0, **kw):
         print('B.__init__')
-        self.b = kw.pop('b', 0)
+        self.b = b
         super().__init__(**kw)
 
 class C(A, B):
-    def __init__(self, **kw):
+    def __init__(self, c=0, **kw):
         print('C.__init__')
-        self.c = kw.pop('c', 0)
+        self.c = c
         super().__init__(**kw)
 
 c = C(a=1, b=2, c=3)
