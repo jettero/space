@@ -72,6 +72,7 @@ disable=fixme,
     too-many-instance-attributes,
     too-many-return-statements,
     too-many-branches,
+    too-many-nested-blocks, # to many fussy bitch too-many- warnings; that's how it has to work, splitting it up is even more expensive. wtf
     too-many-positional-arguments, # jesus, fuck off with the too many. a stack frame is expensive, just live with the arguments
     use-list-literal, # sometimes I list(); I think you should be ok with it. [] is ugly with nothing in it
     use-dict-literal, # I like to dict(); I think {} is ugly with nothing in it.
