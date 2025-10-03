@@ -10,6 +10,10 @@ class SExceptionMixin:
     body = None
 
     def __init__(self, *a, **kw):
+        # pylint: disable=import-outside-toplevel
+        # we lazy import to avoid circular impot issues. It's ok if
+        # SExceptionMixin is slower for it. we only use it when something's
+        # broken anyway.
         from .find import this_body
 
         super().__init__(*a, **kw)
@@ -38,7 +42,7 @@ class ContainerTypeError(ContainerError):
     pass
 
 
-class CapacityError(ContainerError):
+class ContainerCapacityError(ContainerError):
     pass
 
 

@@ -100,9 +100,9 @@ class Container(Containable, CapacityMeta):
     def items(self):
         return self._items
 
-    def biggest_item(self, filter=None):
-        if filter:
-            filtered = [x for x in self._items if isinstance(x, filter)]
+    def biggest_item(self, filt=None):
+        if filt:
+            filtered = [x for x in self._items if isinstance(x, filt)]
             if filtered:
                 return max(filtered, key=lambda x: x.mass)
         if self._items:
