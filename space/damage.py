@@ -1,6 +1,7 @@
 # coding: utf-8
 
 from collections import deque
+import space.exceptions as E
 from .dn import DN
 
 __all__ = ["Generic", "Kinetic", "Thermal", "Mind", "Damage"]
@@ -48,8 +49,7 @@ class Damage:
     def _genericize(self, *a):
         for i in a:
             if isinstance(i, Damage):
-                for j in i.items:
-                    yield j
+                yield from i.items
             elif isinstance(i, (list, tuple)):
                 yield from self._genericize(*i)
             elif isinstance(i, Generic):
@@ -58,7 +58,7 @@ class Damage:
                 try:
                     yield self.generic(i)
                 except Exception as e:
-                    raise Exception(f"bad damage value: {repr(i)}") from e
+                    raise E.InvalidDamageType(f"bad damage value: {repr(i)}") from e
 
     def add(self, amount):
         self._items.extend(self._genericize(amount))

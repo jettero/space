@@ -72,7 +72,8 @@ disable=fixme,
     too-many-instance-attributes,
     too-many-return-statements,
     too-many-branches,
-    use-list-literal,
+    use-list-literal, # sometimes I list(); I think you should be ok with it. [] is ugly with nothing in it
+    use-dict-literal, # I like to dict(); I think {} is ugly with nothing in it.
     inconsistent-return-statements, # dumb (if thing: return 1; implied null return -- fine)
     no-name-in-module, # space.item is pkg populated, so Ubi isn't in there for pylint
     arguments-differ, # not tunable; probably would be handy, sad really

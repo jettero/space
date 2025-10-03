@@ -56,3 +56,6 @@ class InternalParserError(Exception):
 
 class TargetError(ParseError):
     pass
+
+class InvalidDamageType(Exception):
+    pass

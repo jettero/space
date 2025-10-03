@@ -35,7 +35,7 @@ class Cell(MapObj, Container):
     def abbr(self):
         if self._override is not None:
             return self._override
-        bi = self.biggest_item(filter=Living)
+        bi = self.biggest_item(filt=Living)
         if bi is None:
             return self.a
         return bi.abbr
