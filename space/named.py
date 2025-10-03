@@ -11,9 +11,9 @@ log = logging.getLogger(__name__)
 
 
 class Named(Serial, baseobj):
-    a = s = l = ""
-    a = s = l = ""
-
+    a = '~'
+    s = 'object'
+    l = 'named object'
     d = "an object with names and descriptions"
 
     a_fmt = "{a:{fmt}}"

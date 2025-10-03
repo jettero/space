@@ -72,13 +72,13 @@ class Slots:
         super().__init_subclass__()
         cls._slots = sd = OrderedDict()
 
-        def _p(priv_prop_name):
+        def _p(slot_prop_name):
             def _g(self):
-                log.debug("get %s.%s.item", self, priv_prop_name)
-                return getattr(self, priv_prop_name).item
+                log.debug("get %s.%s.item", self, slot_prop_name)
+                return getattr(self, slot_prop_name).item
 
             def _s(self, v):
-                getattr(self, priv_prop_name).item = v
+                getattr(self, slot_prop_name).item = v
 
             return property(_g).setter(_s)
 
@@ -86,27 +86,27 @@ class Slots:
             def_set = False
             for slot_name, slot_class in cls.Meta.slots.items():
                 prop_name = PROP_NAME_RE.sub("_", slot_name)
-                priv_prop_name = "_" + prop_name
+                slot_prop_name = prop_name + "_slot"
                 log.debug(
-                    "[subclass] slot_name=%s prop_name=%s priv_prop_name=%s", slot_name, prop_name, priv_prop_name
+                    "[subclass] slot_name=%s prop_name=%s slot_prop_name=%s", slot_name, prop_name, slot_prop_name
                 )
-                sd[priv_prop_name] = (slot_name, slot_class)
-                prop = _p(priv_prop_name)
+                sd[slot_prop_name] = (slot_name, slot_class)
+                prop = _p(slot_prop_name)
                 setattr(cls, prop_name, prop)
-                if cls.Meta.default in (slot_name, prop_name, priv_prop_name):
+                if cls.Meta.default in (slot_name, prop_name, slot_prop_name):
                     cls.default = prop
                     def_set = True
             if not def_set:
                 raise E.LivingSlotSetupError(f"[subclass] unable to set default slot property {cls.Meta.default}")
 
     def __init__(self, owner):
-        for priv_prop_name, a in self._slots.items():
+        for slot_prop_name, a in self._slots.items():
             slot_name, slot_class = a
-            setattr(self, priv_prop_name, slot_class(slot_name, owner))
+            setattr(self, slot_prop_name, slot_class(slot_name, owner))
 
     def __iter__(self):
-        for priv_prop_name in self._slots:
-            yield getattr(self, priv_prop_name)
+        for slot_prop_name in self._slots:
+            yield getattr(self, slot_prop_name)
 
     @property
     def inventory(self):

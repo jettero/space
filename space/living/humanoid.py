@@ -42,22 +42,22 @@ class Humanoid(Living):
 
     def can_get_obj(self, obj: StdObj):
         if obj.owner == self:
-            return False, {"error": "You already have that"}
+            return False, {"error": f"You already have {obj}"}
         if obj.owner:
             return False, {"error": f"{obj.owner} would probably object if you took that."}
         if self.unit_distance_to(obj) > self.reach:
-            return False, {"error": "That seems too far away"}
-        for h in (self.slots._right_hand, self.slots._left_hand):
+            return False, {"error": f"{obj} seems too far away"}
+        for h in (self.slots.right_hand_slot, self.slots.left_hand_slot):
             try:
                 if h.accept(obj):
                     return True, {"target": obj}
             except E.ContainerError:
                 pass
-        return False, {"error": "It's not possible to get that."}
+        return False, {"error": f"It's not possible to get {obj}."}
 
     def do_get(self, target):
         eff = None
-        for hand in (self.slots._right_hand, self.slots._left_hand):
+        for hand in (self.slots.right_hand_slot, self.slots.left_hand_slot):
             try:
                 if hand.accept(target):
                     hand.add_item(target)
@@ -70,7 +70,7 @@ class Humanoid(Living):
 
     def can_drop_obj(self, obj: StdObj):
         if obj.owner != self:
-            return False, {"error": "You don't have that."}
+            return False, {"error": f"You don't have {obj}."}
         return True, {"target": obj}
 
     def do_drop(self, target):
