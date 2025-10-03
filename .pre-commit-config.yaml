@@ -34,7 +34,7 @@ repos:
         types: [python]
       - id: pytest
         name: pytest
-        entry: ./pathed-pylintest pytest t --cov sudoku
+        entry: ./pathed-pylintest pytest t
         always_run: true
         language: system
         pass_filenames: false
