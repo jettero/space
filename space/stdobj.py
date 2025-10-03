@@ -6,6 +6,5 @@ from .named import Named
 
 
 class StdObj(Named, Containable):
-    def __init__(self, short=None, abbr=None, long=None, mass=None, volume=None):
-        Named.__init__(self, short=short, abbr=abbr, long=long)
-        Containable.__init__(self, mass=mass, volume=volume)
+    def __init__(self, **kw):
+        super().__init__(**kw) # MRO insures we call Named.__init__ and Containable.__init__
