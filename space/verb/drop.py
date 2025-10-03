@@ -4,4 +4,3 @@ from .base import Verb
 
 class Action(Verb):
     name = 'drop'
-
