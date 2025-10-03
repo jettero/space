@@ -11,9 +11,9 @@ log = logging.getLogger(__name__)
 
 
 class Named(Serial, baseobj):
-    a = '~'
-    s = 'object'
-    l = 'named object'
+    a = "~"
+    s = "object"
+    l = "named object"
     d = "an object with names and descriptions"
 
     a_fmt = "{a:{fmt}}"
@@ -92,10 +92,10 @@ class Tags(Serial):
         self._a = {str(i) for i in a}
         self._c = None if can is None else Tags(*can)
 
-    def clone(self):
+    def clone(self):  # pylint: disable=protected-access
         n = self.__class__.__new__(self.__class__)
-        n._a = set(self._a)  # pylint: disable=protected-access
-        n._c = None if self._c is None else set(self._c)  # pylint: disable=protected-access
+        n._a = set(self._a)
+        n._c = None if self._c is None else set(self._c)
         return n
 
     def clear(self):
