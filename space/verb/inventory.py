@@ -2,8 +2,9 @@
 
 from .base import Verb
 
+
 class Action(Verb):
-    name = 'inventory'
+    name = "inventory"
 
     def do_inventory(self):
         def box(title, body_lines, width=None):
@@ -11,15 +12,15 @@ class Action(Verb):
             w = max([len(title)] + [len(s) for s in inner])
             if width is not None:
                 w = max(w, width)
-            top = '+' + '-' * (w + 2) + '+'
-            title_line = '| ' + title.center(w) + ' |'
+            top = "+" + "-" * (w + 2) + "+"
+            title_line = "| " + title.center(w) + " |"
             framed = [top, title_line, top]
             for s in inner:
-                framed.append('| ' + s.ljust(w) + ' |')
+                framed.append("| " + s.ljust(w) + " |")
             framed.append(top)
-            return '\n'.join(framed)
+            return "\n".join(framed)
 
-        self.tell('You inventory your stuff.')
+        self.tell("You inventory your stuff.")
         entries = []  # (slot_label, item_name, mass_str)
         # collect primary slot items
         for slot in self.slots:
@@ -31,32 +32,32 @@ class Action(Verb):
             except Exception:
                 item = None
             if item is None:
-                entries.append((sname, '', ''))
+                entries.append((sname, "", ""))
                 continue
             # StdObj provides .l and .mass for items; access directly
             iname = item.l
             imass = item.mass
-            entries.append((sname, iname, f'{imass}' if imass is not None else ''))
+            entries.append((sname, iname, f"{imass}" if imass is not None else ""))
             # include one-level contents if item is a container; indent label
             try:
                 contents = list(item)
                 for it in contents:
                     sub = it.l
                     sm = it.mass
-                    entries.append(('  ', sub, f'{sm}' if sm is not None else ''))
+                    entries.append(("  ", sub, f"{sm}" if sm is not None else ""))
             except Exception:
                 pass
 
         if not entries:
-            self.tell('You are carrying nothing.')
+            self.tell("You are carrying nothing.")
             return
 
         # compute column widths for alignment; keep colon attached to label
         # Determine display label (with colon) and track indent of child rows
         disp = []  # (disp_label, is_child, name, wstr)
         for label, name, wstr in entries:
-            is_child = (label == '  ')
-            disp_label = (label + ':') if not is_child else '  '
+            is_child = label == "  "
+            disp_label = (label + ":") if not is_child else "  "
             disp.append((disp_label, is_child, name, wstr))
 
         labelcol_w = max(len(d[0]) for d in disp) if disp else 0
@@ -66,11 +67,11 @@ class Action(Verb):
         out = []
         for disp_label, is_child, name, wstr in disp:
             # pad after label+colon to start item column consistently
-            padding = ' ' * (labelcol_w - len(disp_label) + 1)
+            padding = " " * (labelcol_w - len(disp_label) + 1)
             if not name:
                 # empty slot row: just the label+colon
                 line = f"{disp_label}"
             else:
                 line = f"{disp_label}{padding}{name.ljust(name_w)}  {wstr}"
             out.append(line.rstrip())
-        self.tell(box('Inventory', out))
+        self.tell(box("Inventory", out))

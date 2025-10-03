@@ -3,6 +3,7 @@
 import re
 import logging
 import weakref
+
 # note: shell.owner is weakref
 # owner.shell is not weakref
 
@@ -11,6 +12,7 @@ from ..parser import Parser
 from .message import TextMessage, MapMessage, Message
 
 log = logging.getLogger(__name__)
+
 
 class BaseShell:
     _owner = None
@@ -32,8 +34,8 @@ class BaseShell:
     def owner(self, v):
         if v is None:
             self._owner = None
-        if not hasattr(v, 'tell') or not callable(v.tell):
-            raise TypeError(f'{v} cannot be a shell owner')
+        if not hasattr(v, "tell") or not callable(v.tell):
+            raise TypeError(f"{v} cannot be a shell owner")
         self._owner = weakref.proxy(v)
         v.shell = self
 
@@ -43,18 +45,19 @@ class BaseShell:
         if isinstance(something, str):
             return self.receive_text(something)
         from ..map import Map
+
         if isinstance(something, Map):
             return self.receive_map(something)
-        raise TypeError(f'unable to receive({something})')
+        raise TypeError(f"unable to receive({something})")
 
     def receive_message(self, msg):
         raise NotImplementedError()
 
     def receive_text(self, fmt, *a, **kw):
-        self.receive_message( TextMessage(fmt, *a, **kw) )
+        self.receive_message(TextMessage(fmt, *a, **kw))
 
     def receive_map(self, a_map):
-        self.receive_message( MapMessage(a_map) )
+        self.receive_message(MapMessage(a_map))
 
     def step(self):
         raise NotImplementedError()
@@ -66,7 +69,7 @@ class BaseShell:
         except IntentionalQuit:
             pass
 
-    def stop(self, val=True, msg='see ya.'):
+    def stop(self, val=True, msg="see ya."):
         self._stop = val
         self.receive_text(msg)
 
@@ -77,7 +80,7 @@ class BaseShell:
 
     def do(self, input_text):
         input_text = self.pre_parse_kludges(input_text)
-        txts = re.split(r'\s*;\s*', input_text)
+        txts = re.split(r"\s*;\s*", input_text)
         p0 = self.owner.location.pos
         for txt in txts:
             if txt:
@@ -86,11 +89,11 @@ class BaseShell:
                     if pstate:
                         pstate()
                     else:
-                        self.receive_text(f'error: {pstate.error}')
+                        self.receive_text(f"error: {pstate.error}")
                 except IntentionalQuit:
                     raise
-                except Exception as e: # pylint: disable=broad-except
-                    log.exception('during input: %s', input_text)
-                    self.receive_text(f'error: {e}')
+                except Exception as e:  # pylint: disable=broad-except
+                    log.exception("during input: %s", input_text)
+                    self.receive_text(f"error: {e}")
         if self.owner.location.pos != p0:
-            self.owner.do('look')
+            self.owner.do("look")

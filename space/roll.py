@@ -4,6 +4,7 @@ import random
 from lark import Lark, Transformer
 from lark.exceptions import LarkError
 
+
 class ARoll(int):
     crit = False
     fumb = False
@@ -18,16 +19,17 @@ class ARoll(int):
         r.fumb = fumb
         return r
 
+
 class Roller:
     unusual = {
         # Grime Dice (non-transitive cycle dice):
         # https://youtu.be/6JwEYamjXpA?t=2169
         # http://www.latkin.org/blog/2015/01/16/non-transitive-grime-dice-via-mathematica/
-        'red':     (4,4,4,4,4,9),
-        'blue':    (2,2,2,7,7,7),
-        'olive':   (0,5,5,5,5,5),
-        'yellow':  (3,3,3,3,8,8),
-        'magenta': (1,1,6,6,6,6),
+        "red": (4, 4, 4, 4, 4, 9),
+        "blue": (2, 2, 2, 7, 7, 7),
+        "olive": (0, 5, 5, 5, 5, 5),
+        "yellow": (3, 3, 3, 3, 8, 8),
+        "magenta": (1, 1, 6, 6, 6, 6),
     }
 
     def __init__(self, num=1, sides=6, bonus=0, unusual=None):
@@ -59,18 +61,21 @@ class Roller:
         return ARoll(d, crit=crit, fumb=fumb, min_=min_, max_=max_)
 
     def __repr__(self):
-        if self.b > 0:   b = f'+{self.b}'
-        elif self.b < 0: b = f'{self.b}'
-        else:            b = ''
+        if self.b > 0:
+            b = f"+{self.b}"
+        elif self.b < 0:
+            b = f"{self.b}"
+        else:
+            b = ""
         if self.u:
-            return f'{self.n}«{self.u}{self.faces}»{b}'
-        return f'{self.n}d{self.d}{b}'
+            return f"{self.n}«{self.u}{self.faces}»{b}"
+        return f"{self.n}d{self.d}{b}"
 
     @property
     def faces(self):
         if self.u is not None:
             return self.unusual[self.u]
-        return tuple(range(1,self.d+1))
+        return tuple(range(1, self.d + 1))
 
     @property
     def max(self):
@@ -97,7 +102,7 @@ class Roller:
         # e = 0.5 * self.d * (self.d+1) / self.d
         # e = 0.5 * (self.d+1)
         # E = self.n * e
-        return self.n * 0.5 * (self.d+1) + self.b
+        return self.n * 0.5 * (self.d + 1) + self.b
         # In [12]: from space.roll import Roller
         #     ...: r = Roller(8,20,7)
         #     ...: [ r.mean, sum([ r.roll() for _ in range(50000) ]) / 50000 ]
@@ -106,11 +111,20 @@ class Roller:
 
 def _lark():
     class MakeRoller(Transformer):
-        def     num(self, v): return {  'num':   int(v[0])}
-        def   sides(self, v): return {'sides':   int(v[0])}
-        def   bonus(self, v): return {'bonus':   int(v[0])}
-        def penalty(self, v): return {'bonus':  -int(v[0])}
-        def unusual(self, v): return {'unusual': str(v[0])}
+        def num(self, v):
+            return {"num": int(v[0])}
+
+        def sides(self, v):
+            return {"sides": int(v[0])}
+
+        def bonus(self, v):
+            return {"bonus": int(v[0])}
+
+        def penalty(self, v):
+            return {"bonus": -int(v[0])}
+
+        def unusual(self, v):
+            return {"unusual": str(v[0])}
 
         def desc(self, v):
             ret = dict()
@@ -124,14 +138,15 @@ def _lark():
                 args.update(i)
             return Roller(**args)
 
-    unusual_names = [ f'"{n}"' for n in Roller.unusual ]
-    unusual_names = ' | '.join(unusual_names)
+    unusual_names = [f'"{n}"' for n in Roller.unusual]
+    unusual_names = " | ".join(unusual_names)
 
     # NOTE: we accept "red" and "olive" as names of dice;
     # and we accept "d4" and "d8" and "d7" as names of dice.
     # "d red" is not a name of a die — don't try to make it one.
 
-    return Lark(f'''
+    return Lark(
+        f"""
         %import common (INT, WS)
         %ignore WS
         ?start: roller
@@ -142,18 +157,25 @@ def _lark():
         sides: "d" INT
         bonus: "+" INT
         penalty: "-" INT
-    ''', parser='lalr', transformer=MakeRoller(), debug=True).parse
+    """,
+        parser="lalr",
+        transformer=MakeRoller(),
+        debug=True,
+    ).parse
 
-_lark = _lark() # pylint: disable=invalid-name
+
+_lark = _lark()  # pylint: disable=invalid-name
+
 
 class RollError(ValueError):
     pass
+
 
 class Roll:
     def __init__(self, desc):
         try:
             desc = int(desc)
-            self._roller = Roller(0,0,desc)
+            self._roller = Roller(0, 0, desc)
             return
         except ValueError:
             pass
@@ -183,8 +205,10 @@ class Roll:
     def max(self):
         return self._roller.max
 
+
 def roll(desc):
     return Roll(desc).roll()
+
 
 class AttrChoices:
     _ordered = tuple()
@@ -192,7 +216,7 @@ class AttrChoices:
     @classmethod
     def to_choose(cls):
         s = set(dir(AttrChoices))
-        for k in getattr(cls, '_ordered', list()):
+        for k in getattr(cls, "_ordered", list()):
             if k not in s:
                 s.add(k)
                 yield k
@@ -207,7 +231,7 @@ class AttrChoices:
             a = getattr(cls, k)
             if isinstance(a, Roll):
                 a = a.roll()
-            if isinstance(a, (list,tuple)):
+            if isinstance(a, (list, tuple)):
                 a = random.choice(a)
             if callable(a):
                 a = a(target)

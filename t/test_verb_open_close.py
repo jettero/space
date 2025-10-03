@@ -15,9 +15,10 @@ def me(objs):
 
 def test_open_door(me, a_map):
     p = Parser()
-    pstate = p.parse(me, 'open door')
+    pstate = p.parse(me, "open door")
     assert pstate
-    assert pstate.winner.verb.name == 'open'
+    assert pstate.winner.verb.name == "open"
+
 
 # def test_open_south_door(me, a_map):
 #     p = Parser()

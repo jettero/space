@@ -1,7 +1,9 @@
 # coding: utf-8
 
+
 def text_message(fmt, *a, **kw):
     return TextMessage(fmt, *a, **kw)
+
 
 class Message:
     def __init__(self, *a, **kw):
@@ -15,7 +17,8 @@ class Message:
         return self.render_text()
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({str(self)})'
+        return f"{self.__class__.__name__}({str(self)})"
+
 
 class TextMessage(Message):
     def __init__(self, fmt, *a, **kw):
@@ -25,6 +28,7 @@ class TextMessage(Message):
     def render_text(self, color=True):
         return self.fmt.format(*self.a, **self.kw)
 
+
 class MapMessage(Message):
     def __init__(self, a_map):
         super().__init__()
@@ -33,16 +37,17 @@ class MapMessage(Message):
     def render_text(self, color=True):
         from ..map.util import LineSeg
         from ..find import this_body
-        def dist(pos1,pos2):
-            return LineSeg(pos1,pos2).distance
+
+        def dist(pos1, pos2):
+            return LineSeg(pos1, pos2).distance
+
         tb = this_body()
         txt = self.map.colorized_text_drawing if color else self.map.text_drawing
         tbp = tb.location.pos
-        dob = sorted([ (dist(tbp, o.location.pos),o) for o in self.map.objects ],
-            key=lambda x: x[0])
-        dob = [ (f'{o[0]:0.1f}', o[1]) for o in dob if o[1] is not tb ]
+        dob = sorted([(dist(tbp, o.location.pos), o) for o in self.map.objects], key=lambda x: x[0])
+        dob = [(f"{o[0]:0.1f}", o[1]) for o in dob if o[1] is not tb]
         if dob:
-            mdob = max([ len(o[0]) for o in dob ])
-            for dist,o in dob:
-                txt += f'\n{dist:>{mdob}} [{o.abbr}] {o.long}'
+            mdob = max([len(o[0]) for o in dob])
+            for dist, o in dob:
+                txt += f"\n{dist:>{mdob}} [{o.abbr}] {o.long}"
         return txt

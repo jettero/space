@@ -6,31 +6,33 @@ import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
+
 class VerbError(E.TargetError):
     pass
 
+
 class Verb:
-    name = 'verb'
+    name = "verb"
     nick = None
 
     def __init__(self):
-        if self.name == 'verb':
-            self.name = self.__module__.split('.')[-1]
+        if self.name == "verb":
+            self.name = self.__module__.split(".")[-1]
         if not self.nick:
-            self.nick = [ self.name ]
+            self.nick = [self.name]
         if self.name not in self.nick:
             self.nick.insert(0, self.name)
 
     def match(self, tok):
         # avoid confusing single-letter direction tokens with verbs
-        if len(tok) == 1 and tok.lower() in set('nsewud'):  # includes diagonals via parser rewrite
+        if len(tok) == 1 and tok.lower() in set("nsewud"):  # includes diagonals via parser rewrite
             return False
         for i in self.nick:
             if i.startswith(tok):
                 return True
 
     def __repr__(self):
-        return f'Verb({self.name})'
+        return f"Verb({self.name})"
 
     def __str__(self):
         return self.name
@@ -49,22 +51,22 @@ class Verb:
         except AttributeError:
             pass
 
-    def target_error(self, target=None, more=None, sep=' '):
-        if isinstance(target, (list,tuple)):
+    def target_error(self, target=None, more=None, sep=" "):
+        if isinstance(target, (list, tuple)):
             # NOTE: if target is an empty list, it'll join to ''
             # and if not target will fire
-            target = target[0] if len(target) == 1 else ', or '.join(target)
+            target = target[0] if len(target) == 1 else ", or ".join(target)
         if not target:
-            error = f'could not find {self} target' # could not find attack target
+            error = f"could not find {self} target"  # could not find attack target
         else:
-            error = f'could not {self} {target}' # could not attack human#1234, or human#345, or human#9
+            error = f"could not {self} {target}"  # could not attack human#1234, or human#345, or human#9
         if more:
             error += sep + more
         raise TargetError(error)
 
     def error(self, msg=None):
         if msg is None:
-            msg = f'cannot {self}'
+            msg = f"cannot {self}"
         if isinstance(msg, Exception):
             raise msg
         raise VerbError(msg)
@@ -73,7 +75,7 @@ class Verb:
         if isinstance(pcr, tuple) and len(pcr) == 2:
             if isinstance(pcr[0], bool) and isinstance(pcr[1], dict):
                 return pcr
-        raise TypeError(f'me.parse_can() error: return should be (bool, dict)')
+        raise TypeError(f"me.parse_can() error: return should be (bool, dict)")
 
     def preprocess_tokens(self, me, **tokens):
         return tokens
@@ -82,4 +84,4 @@ class Verb:
         me.parse_do(self.name, **kw)
 
     def can(self, me, **kw):
-        return self._test_pcr( me.parse_can(self.name, **kw) )
+        return self._test_pcr(me.parse_can(self.name, **kw))

@@ -5,5 +5,6 @@ from .base import Verb
 
 log = logging.getLogger(__name__)
 
+
 class Action(Verb):
-    name = 'open'
+    name = "open"

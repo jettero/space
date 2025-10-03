@@ -3,9 +3,10 @@
 
 from .stdobj import StdObj
 
+
 class Door(StdObj):
-    a = '+'
-    s = l = 'door'
+    a = "+"
+    s = l = "door"
     d = "a door"
 
     # Basic open-state flags used by both objects and map cells.
@@ -18,7 +19,7 @@ class Door(StdObj):
 
     @property
     def abbr(self):
-        return '□' if self.open else '■'
+        return "□" if self.open else "■"
 
     def __init__(self, *items, open=False, locked=False, stuck=False, attached=False, **kw):
         super().__init__(*items, **kw)
@@ -29,12 +30,12 @@ class Door(StdObj):
 
     def can_open(self):
         if self.open:
-            return False, {'error': f'{self} is already open'}
+            return False, {"error": f"{self} is already open"}
         if self.locked:
-            return False, {'error': f'{self} is locked'}
+            return False, {"error": f"{self} is locked"}
         if self.stuck:
-            return False, {'error': f'{self} appears to be stuck'}
-        return True, {'target': self}
+            return False, {"error": f"{self} appears to be stuck"}
+        return True, {"target": self}
 
     def do_open(self):
         self.open = True
@@ -44,9 +45,9 @@ class Door(StdObj):
         meta = {}
         if not ok:
             if not self.open:
-                meta['reason'] = 'already-closed'
+                meta["reason"] = "already-closed"
             elif self.stuck:
-                meta['reason'] = 'stuck'
+                meta["reason"] = "stuck"
         return ok, meta
 
     def do_close(self):

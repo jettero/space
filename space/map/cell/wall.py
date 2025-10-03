@@ -4,12 +4,28 @@ from .base import MapObj, DDIRS
 from .cell import Cell
 from .blocked import BlockedCell
 
+
 class Wall(MapObj):
     _override = None
-    conv = { '': '░', 'C': '▪', 'n': '╵', 's': '╷', 'e': '╶', 'w': '╴',
-        'ns': '│', 'ew': '─', 'ne': '└', 'se': '┌', 'nw': '┘', 'sw': '┐',
-        'new': '┴', 'sew': '┬', 'nsw': '┤', 'nse': '├',
-        'nsew': '┼' }
+    conv = {
+        "": "░",
+        "C": "▪",
+        "n": "╵",
+        "s": "╷",
+        "e": "╶",
+        "w": "╴",
+        "ns": "│",
+        "ew": "─",
+        "ne": "└",
+        "se": "┌",
+        "nw": "┘",
+        "sw": "┐",
+        "new": "┴",
+        "sew": "┬",
+        "nsw": "┤",
+        "nse": "├",
+        "nsew": "┼",
+    }
 
     @property
     def useless(self):
@@ -20,12 +36,12 @@ class Wall(MapObj):
 
     @property
     def wcode(self):
-        r = ''
+        r = ""
         ccnt = 0
-        for d in 'nsew':
+        for d in "nsew":
             dc = self.mpos(d)
             if isinstance(dc, Wall) or (isinstance(dc, BlockedCell) and dc.has_door):
-                check = 'ns' if d in 'ew' else 'ew'
+                check = "ns" if d in "ew" else "ew"
                 for c in check:
                     if dc.dtype(c, Cell) or self.dtype(c, Cell):
                         r += d
@@ -33,7 +49,7 @@ class Wall(MapObj):
             elif isinstance(dc, Cell):
                 ccnt += 1
         if ccnt == 4:
-            return 'C'
+            return "C"
         return r
 
     @property

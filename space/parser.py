@@ -10,17 +10,20 @@ import space.exceptions as E
 log = logging.getLogger(__name__)
 
 VERBS = None
+
+
 def find_verb(x):
     global VERBS
     if not VERBS:
-        VERBS = { v.name: v for v in load_verbs() }
+        VERBS = {v.name: v for v in load_verbs()}
     if not x:
         return VERBS.values()
     x = x.lower()
     v = VERBS.get(x)
     if v:
-        return [ v ]
-    return [ v for n,v in VERBS.items() if v.match(x) ]
+        return [v]
+    return [v for n, v in VERBS.items() if v.match(x)]
+
 
 class PSNode:
     can_do = do_args = kid = fname = rhint = None
@@ -34,7 +37,7 @@ class PSNode:
         cur = self
         while cur.verb is not verb:
             if cur.next is None:
-                raise E.InternalParseError(f'{verb} not found in {self}')
+                raise E.InternalParseError(f"{verb} not found in {self}")
             cur = cur.next
         return cur
 
@@ -48,32 +51,32 @@ class PSNode:
     def add_rhint(self, verb, rhint):
         kid = self.new_kid(verb=verb)
         kid.rhint = rhint
-        kid.fname = getattr(rhint.func, '__name__', str(rhint.func))
+        kid.fname = getattr(rhint.func, "__name__", str(rhint.func))
 
     @property
     def short(self):
         if self.fname:
-            return f'PSN[{self.score}]<{self.verb}:{self.fname}>'
-        return f'PSN[{self.score}]<{self.verb}>'
+            return f"PSN[{self.score}]<{self.verb}:{self.fname}>"
+        return f"PSN[{self.score}]<{self.verb}>"
 
     def __repr__(self):
         return self.short
 
     def __str__(self):
         if self.fname:
-            sr = f'PSN[{self.score}]<{self.verb}:{self.fname}>'
+            sr = f"PSN[{self.score}]<{self.verb}:{self.fname}>"
             for hli in self.rhint.hlist:
-                sr += f'\n  {hli}: {self.rhint.tokens.get(hli.aname)}'
+                sr += f"\n  {hli}: {self.rhint.tokens.get(hli.aname)}"
                 if hli.aname in self.filled:
-                    sr += f' → {self.filled[hli.aname]}'
+                    sr += f" → {self.filled[hli.aname]}"
                 else:
-                    sr += ' → ??'
+                    sr += " → ??"
         else:
-            sr = f'PSN[{self.score}]<{self.verb}>'
+            sr = f"PSN[{self.score}]<{self.verb}>"
         if self.kid is not None:
-            sr += f'\n {str(self.kid)}'
+            sr += f"\n {str(self.kid)}"
         if self.next is not None:
-            sr += f'\n{str(self.next)}'
+            sr += f"\n{str(self.next)}"
         return sr
 
     def fill(self, objs):
@@ -92,19 +95,19 @@ class PSNode:
         self.can_do, tmp_kwargs = res
         self.do_args = dict(**self.filled)
         self.do_args.update(tmp_kwargs)
-        log.debug('[PSNode] %s.evaluate() → can_do=%s do_args=%s', self.short, self.can_do, self.do_args)
+        log.debug("[PSNode] %s.evaluate() → can_do=%s do_args=%s", self.short, self.can_do, self.do_args)
         return res
 
     @property
     def score(self):
         if self.can_do is True:
-            return 2 + (len(self.do_args)/100)
+            return 2 + (len(self.do_args) / 100)
         if self.rhint:
             for hli in self.rhint.hlist:
                 if hli.aname not in self.filled:
                     return 0
             return 1
-        scores = [ x.score for x in self if x is not self ]
+        scores = [x.score for x in self if x is not self]
         if scores:
             return max(scores) / 10
         return 0
@@ -139,21 +142,22 @@ class PSNode:
         if self.next is not None:
             yield from self.next
 
+
 class PState:
     winner = states = tokens = None
 
     def __init__(self, me, text_input):
-        self.me     = me
-        self.orig   = text_input
+        self.me = me
+        self.orig = text_input
         self.tokens = shlex.split(text_input)
-        self.vtok   = self.tokens.pop(0) if text_input else ''
+        self.vtok = self.tokens.pop(0) if text_input else ""
         fv = find_verb(self.vtok)
         if fv:
             self.states = PSNode(*fv)
-        log.debug('[PState] new PState() vtok=%s (verbs=%s) tokens=%s', self.vtok, fv, self.tokens)
+        log.debug("[PState] new PState() vtok=%s (verbs=%s) tokens=%s", self.vtok, fv, self.tokens)
         self.filled = False
         self.vmap = me.location.map.visicalc_submap(me)
-        self.objs = [ o for o in self.vmap.objects ] + me.inventory
+        self.objs = [o for o in self.vmap.objects] + me.inventory
         self.filled = False
 
     @property
@@ -177,7 +181,7 @@ class PState:
     @property
     def error(self):
         try:
-            e = self.high_score_args.get('error')
+            e = self.high_score_args.get("error")
             return f'unable to "{self.orig}": {e}'
         except (AttributeError, TypeError):
             pass
@@ -185,32 +189,32 @@ class PState:
 
     @property
     def short(self):
-        r = f'{bool(self)}'
+        r = f"{bool(self)}"
         hss = self.high_score_state
         if hss:
-            r += f'/{hss.short}'
+            r += f"/{hss.short}"
         return r
 
     def __repr__(self):
-        return f'PState({self.short})'
+        return f"PState({self.short})"
 
     def __str__(self):
         self.fill()
         st = str(self.states).splitlines()
-        st = '\n          '.join(st)
+        st = "\n          ".join(st)
         kv = [
-            f'PState:',
-            f'me:     {self.me}',
-            f'tokens: {self.tokens}',
-            f'objs:   {self.objs}',
-            f'states: {st}',
-            f'bool:   {bool(self)}',
-            f'winner: {self.winner.verb} → {self.winner.do_args}' if self.winner else 'winner: no',
+            f"PState:",
+            f"me:     {self.me}",
+            f"tokens: {self.tokens}",
+            f"objs:   {self.objs}",
+            f"states: {st}",
+            f"bool:   {bool(self)}",
+            f"winner: {self.winner.verb} → {self.winner.do_args}" if self.winner else "winner: no",
         ]
-        return '\n  '.join(kv)
+        return "\n  ".join(kv)
 
     def add_rhint(self, verb, rhint):
-        log.debug('[PState] add_rhint(%s, %s)', verb.name, rhint)
+        log.debug("[PState] add_rhint(%s, %s)", verb.name, rhint)
         self.states.add_rhint(verb, rhint)
         self.filled = False
 
@@ -218,7 +222,7 @@ class PState:
         if self.states is not None:
             if self.filled or not self.states:
                 return
-            log.debug('[PState] filling PState')
+            log.debug("[PState] filling PState")
             self.filled = True
             self.states.fill(self.objs)
 
@@ -256,7 +260,7 @@ class PState:
 
     def __call__(self):
         if self:
-            mr = MethodArgsRouter(self.me, f'do_{self.winner.verb.name}')
+            mr = MethodArgsRouter(self.me, f"do_{self.winner.verb.name}")
             self.me.active = True
             log.debug("[PState] invoking %s(**%s) with active living %s", mr, self.winner.do_args, self.me)
             mr(**self.winner.do_args)
@@ -268,14 +272,16 @@ class PState:
                 raise E.ParseError(e) from e
             raise E.ParseError(e)
 
+
 class Parser:
     def parse(self, me, text_input):
         log.debug('[Parser] parsing "%s" for %s', text_input, me)
         pstate = PState(me, text_input)
         if pstate.states is None:
             from space.map.dir_util import is_direction_string
+
             if is_direction_string(text_input):
-                text_input = f'move {text_input}'
+                text_input = f"move {text_input}"
                 log.debug('[Parser] parsing "%s" instead', text_input)
                 pstate = PState(me, text_input)
         if pstate.states is None:
@@ -285,7 +291,7 @@ class Parser:
         return pstate
 
     def next_words(self, me, text_input):
-        ''' try to guess what words will fit next '''
+        """try to guess what words will fit next"""
         # XXX: we only consider the very first token, needs work
         pstate = self.parse(me, text_input)
         for v in pstate.iter_verbs:
@@ -293,9 +299,9 @@ class Parser:
 
     def plan(self, pstate):
         for verb in pstate.iter_verbs:
-            mn = f'can_{verb.name}'
+            mn = f"can_{verb.name}"
             mr = MethodArgsRouter(pstate.me, mn)
-            log.debug('[Parser] plan(%s)', mn)
+            log.debug("[Parser] plan(%s)", mn)
             for rhint in mr.hints():
                 log.debug("[Parser] rhint=%s", rhint)
                 tokens = dict()
@@ -312,21 +318,23 @@ class Parser:
                             tokens[ihint.aname].append(pstate.tokens[pos])
                             pos += 1
                 if pos < end:
-                    log.debug('[Parser] rejecting rhint=%s due to extra unmatched tokens=%s', rhint, pstate.tokens[pos:])
+                    log.debug(
+                        "[Parser] rejecting rhint=%s due to extra unmatched tokens=%s", rhint, pstate.tokens[pos:]
+                    )
                     continue
                 pp_tok = verb.preprocess_tokens(pstate.me, **tokens)
-                log.debug('[Parser] preprocess tokens for rhint=%s; tokens=%s --> pp_tok=%s', rhint, tokens, pp_tok)
+                log.debug("[Parser] preprocess tokens for rhint=%s; tokens=%s --> pp_tok=%s", rhint, tokens, pp_tok)
                 rhint.tokens = pp_tok
                 pstate.add_rhint(verb, rhint)
 
     def evaluate(self, pstate):
-        log.debug('[Parser] evaluating pstate')
+        log.debug("[Parser] evaluating pstate")
         for item in pstate.iter_filled:
-            log.debug('[Parser] %s.evaluate()', item)
+            log.debug("[Parser] %s.evaluate()", item)
             item.evaluate()
 
         for item in sorted(pstate.iter_can_do, key=lambda x: 0 - x.score):
-            log.debug('[Parser] %s is the winner', item)
+            log.debug("[Parser] %s is the winner", item)
             pstate.winner = item
             break
-        log.debug('[Parser] pstate evaluation result:\n%s', pstate)
+        log.debug("[Parser] pstate evaluation result:\n%s", pstate)

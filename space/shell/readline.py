@@ -8,15 +8,17 @@ from .base import BaseShell, IntentionalQuit
 
 log = logging.getLogger(__name__)
 
+
 class KeywordFilter(logging.Filter):
     def __init__(self, *name_filters):
-        self.name_filters = [ re.compile(x) for x in name_filters ]
+        self.name_filters = [re.compile(x) for x in name_filters]
 
     def filter(self, record):
         for nf in self.name_filters:
-            if nf.search( record.name ):
+            if nf.search(record.name):
                 return False
         return True
+
 
 class Shell(BaseShell):
     _logging_opts = None
@@ -24,21 +26,21 @@ class Shell(BaseShell):
     color = True
 
     def startup(self, init=None):
-        readline.parse_and_bind('tab: complete')
+        readline.parse_and_bind("tab: complete")
         readline.set_completer(self.complete)
-        self.reconfigure_logging(filename='shell.log',
-            format='%(asctime)s %(name)17s %(levelname)5s %(message)s',
-            level=logging.DEBUG)
+        self.reconfigure_logging(
+            filename="shell.log", format="%(asctime)s %(name)17s %(levelname)5s %(message)s", level=logging.DEBUG
+        )
 
-        if isinstance(init, (tuple,list)):
+        if isinstance(init, (tuple, list)):
             for cmd in init:
                 self.do_step(cmd)
 
     def receive_message(self, msg):
         if self.at_prompt:
-            print('')
+            print("")
             self.at_prompt = False
-        print( msg.render_text(color=self.color) )
+        print(msg.render_text(color=self.color))
 
     def complete(self, text, state):
         bidx = readline.get_begidx()
@@ -48,11 +50,11 @@ class Shell(BaseShell):
             # an exception
             words = self.parser.words
             results = [x for x in words if x.startswith(text)]
-            return results[state] + ' '
-        if bidx == 1 and lbuf[0] == '/':
-            words = ['debug', 'logfile', 'quit', 'help']
+            return results[state] + " "
+        if bidx == 1 and lbuf[0] == "/":
+            words = ["debug", "logfile", "quit", "help"]
             results = [x for x in words if x.startswith(text)]
-            return results[state] + ' '
+            return results[state] + " "
 
         # line = readline.get_line_buffer()
         # XXX:
@@ -67,36 +69,40 @@ class Shell(BaseShell):
             norepeat = set()
             for d in dl:
                 if isinstance(d, dict):
-                    for k,v in d.items():
+                    for k, v in d.items():
                         if k not in norepeat:
                             if v is not None:
-                                yield k,v
+                                yield k, v
                         norepeat.add(k)
-        self._logging_opts = { k:v for k,v in mydl(kw, self._logging_opts) }
+
+        self._logging_opts = {k: v for k, v in mydl(kw, self._logging_opts)}
         logging.root.handlers = []
         logging.basicConfig(**self._logging_opts)
-        kwf = KeywordFilter('space.args') # XXX: should be configurable
+        kwf = KeywordFilter("space.args")  # XXX: should be configurable
         for handler in logging.root.handlers:
             handler.addFilter(kwf)
 
     def internal_command(self, line):
-        if line.startswith('/'):
+        if line.startswith("/"):
             cmd, *args = line[1:].split()
-            if cmd == 'debug':
-                cl = self._logging_opts.get('level')
+            if cmd == "debug":
+                cl = self._logging_opts.get("level")
                 nl = logging.INFO if cl == logging.DEBUG else logging.DEBUG
                 self.reconfigure_logging(level=nl)
-            elif cmd == 'logfile':
-                if not args or args[0] in ('off', '0', 'false'):
+            elif cmd == "logfile":
+                if not args or args[0] in ("off", "0", "false"):
                     self.reconfigure_logging(filename=None)
                 else:
                     self.reconfigure_logging(filename=args[0])
-            elif cmd in ('exit','quit',):
+            elif cmd in (
+                "exit",
+                "quit",
+            ):
                 self.stop()
             else:
-                self.owner.tell('/debug    toggle log debug (default: on)')
-                self.owner.tell('/logfile  set the logfile location (default: shell.log)')
-                self.owner.tell('/quit     exit the shell')
+                self.owner.tell("/debug    toggle log debug (default: on)")
+                self.owner.tell("/logfile  set the logfile location (default: shell.log)")
+                self.owner.tell("/quit     exit the shell")
             return True
 
     def do_step(self, cmd):
@@ -109,7 +115,7 @@ class Shell(BaseShell):
     def step(self):
         self.at_prompt = True
         try:
-            cmd = input('ssr> ').strip()
+            cmd = input("ssr> ").strip()
             self.at_prompt = False
             self.do_step(cmd)
         except (EOFError, KeyboardInterrupt):

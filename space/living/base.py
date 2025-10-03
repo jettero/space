@@ -6,19 +6,20 @@ import space.exceptions as E
 from space.find import find_verb_method
 from space.pv import INFINITY
 
-from ..vv        import VV
-from ..stdobj    import StdObj
+from ..vv import VV
+from ..stdobj import StdObj
 from ..container import Containable
-from ..damage    import Damage, Kinetic
-from ..roll      import Roll, AttrChoices
+from ..damage import Damage, Kinetic
+from ..roll import Roll, AttrChoices
 
 from .gender import Unknown
-from .stats  import Sci, Dip, Mar, Eng, Mor, HitPoints, ClassRank, ExperiencePoints, Initiative
-from .slots  import PackSlot, Slots
+from .stats import Sci, Dip, Mar, Eng, Mor, HitPoints, ClassRank, ExperiencePoints, Initiative
+from .slots import PackSlot, Slots
 
 import space.exceptions as E
 
 log = logging.getLogger(__name__)
+
 
 class HasShell:
     _shell = None
@@ -27,90 +28,94 @@ class HasShell:
     def shell(self):
         if self._shell is None:
             from ..shell.log import Shell as LogShell
+
             self._shell = LogShell(owner=self)
         return self._shell
 
     @shell.setter
     def shell(self, v):
         from ..shell.base import BaseShell
+
         if v is None:
             self._shell = v
         if not isinstance(v, BaseShell):
-            raise E.STypeError(f'{v} is not a shell')
+            raise E.STypeError(f"{v} is not a shell")
         self._shell = v
 
     def tell(self, msg):
         self.shell.receive(msg)
 
+
 class CanMove:
     def move(self, *moves):
-        if len(moves) == 1 and isinstance(moves[0], (tuple,list)):
+        if len(moves) == 1 and isinstance(moves[0], (tuple, list)):
             moves = moves[0]
-        c = self.location # pylint: disable=no-member
+        c = self.location  # pylint: disable=no-member
         for move in moves:
             c = c.mpos(move)
             c.add_item(self)
 
-    def can_move_words(self, *moves, obj:StdObj=None):
+    def can_move_words(self, *moves, obj: StdObj = None):
         is_moving = self if obj is None else obj
         if is_moving is None:
             is_moving = self
-        c = is_moving.location # pylint: disable=no-member
+        c = is_moving.location  # pylint: disable=no-member
         for move in moves:
             c = c.mpos(move)
             try:
                 if c.accept(is_moving):
                     continue
             except AttributeError:
-                return False, {'error': "there's something in the way" }
+                return False, {"error": "there's something in the way"}
             except E.ContainerError as e:
-                return False, {'error': e}
-        return True, {'moves': moves}
+                return False, {"error": e}
+        return True, {"moves": moves}
 
-    def can_move_obj_words(self, obj:StdObj, *moves):
+    def can_move_obj_words(self, obj: StdObj, *moves):
         if not obj:
-            return False, {'error': 'which object?'}
+            return False, {"error": "which object?"}
         # the method router calls longest first, so we have a chance to
         # populate is_moving before can_move_words fires
         # XXX: should we do more to consider which obj is more appropriate?
         # XXX: if the obj doesn't want to move, we should have some sort of ability contest here
-        if isinstance(obj, (list,tuple)):
+        if isinstance(obj, (list, tuple)):
             obj = obj[0]
-        return True, {'obj': obj}
+        return True, {"obj": obj}
 
     def do_move_words(self, *moves):
-        log.debug('do_move_words(%s)', moves)
+        log.debug("do_move_words(%s)", moves)
         self.move(*moves)
 
     def do_move_obj_words(self, obj, *moves):
-        log.debug('do_move_obj_words(%s, %s)', obj, moves)
+        log.debug("do_move_obj_words(%s, %s)", obj, moves)
         obj.move(*moves)
 
+
 class Living(HasShell, CanMove, StdObj):
-    health = gender = None # autoloaded from metaclass
+    health = gender = None  # autoloaded from metaclass
     active = False
 
-    s = l = 'living'
-    a = 'L'
-    d = 'a living object'
+    s = l = "living"
+    a = "L"
+    d = "a living object"
     # maximum interaction distance for adjacency-sensitive actions
     reach = 1.42
 
     @property
     def abbr(self):
         if self.active:
-            return '@'
+            return "@"
         return super().abbr
 
     class Choices(AttrChoices):
-        _ordered = ('gender', 'height', 'mass')
+        _ordered = ("gender", "height", "mass")
 
         gender = (Unknown,)
-        height = Roll('5d6+30')
-        mass   = Roll('6d8+40')
-        width  = lambda self: self.height * 0.42
-        depth  = lambda self: (self.mass / '50 kg').v
-        health = lambda self: HitPoints('1d6+10')
+        height = Roll("5d6+30")
+        mass = Roll("6d8+40")
+        width = lambda self: self.height * 0.42
+        depth = lambda self: (self.mass / "50 kg").v
+        health = lambda self: HitPoints("1d6+10")
 
     def __init__(self, long=None, short=None):
         StdObj.__init__(self, short=short, long=long)
@@ -119,9 +124,9 @@ class Living(HasShell, CanMove, StdObj):
         if long:
             self.long = long
             if not short:
-                if ', ' in long:
-                    short = long.split(', ')[1]
-                elif ' ' in long:
+                if ", " in long:
+                    short = long.split(", ")[1]
+                elif " " in long:
                     short = long.split()[0]
         if short:
             self.short = short
@@ -142,7 +147,7 @@ class Living(HasShell, CanMove, StdObj):
     def hurt(self, damage):
         h1 = self.hp
         self.damage.add(damage)
-        log.debug('%s .hurt(%s) hp %s -> %s', self, damage, h1, self.hp)
+        log.debug("%s .hurt(%s) hp %s -> %s", self, damage, h1, self.hp)
 
     @property
     def weapon(self):
@@ -154,7 +159,7 @@ class Living(HasShell, CanMove, StdObj):
         # XXX: we probably need a weapon subclass that bodies can inherit from
         # this should be a function of living things also being weapons when
         # employed that way
-        return Kinetic(Roll('1d2').roll())
+        return Kinetic(Roll("1d2").roll())
 
     def attack(self, other):
         # XXX: clearly, we need to send this instruction to a fight daemon to
@@ -167,10 +172,10 @@ class Living(HasShell, CanMove, StdObj):
         # XXX: any time we deliver a message to a player, we should deliver
         # something to all players in view and that should automatically parse
         # context, e.g.: $N $vattack $t causing $o damage.
-        self.tell(f'You attack {other} causing {d} damage.')
-        other.tell(f'{self} attacks you causing {d} damage')
+        self.tell(f"You attack {other} causing {d} damage.")
+        other.tell(f"{self} attacks you causing {d} damage")
 
-        log.debug('%s .attack( %s ) weapon=%s damage=%s', self, other, w, d)
+        log.debug("%s .attack( %s ) weapon=%s damage=%s", self, other, w, d)
         other.hurt(d)
 
     def unit_vect_to(self, other):
@@ -194,12 +199,12 @@ class Living(HasShell, CanMove, StdObj):
         # candidates are pre-sorted by router; pick first in reach
         for targ in living:
             dist = self.unit_distance_to(targ)
-            log.debug('can_attack_living() considering %s at a distance of %s', targ, dist)
+            log.debug("can_attack_living() considering %s at a distance of %s", targ, dist)
             if dist is not None and dist <= self.reach:
-                log.debug('  … seems good, returning')
-                return (True, {'target': targ})
-        log.debug('  … nothing seemed to match')
-        return (False, {'error': "There's no targets with that name in range."})
+                log.debug("  … seems good, returning")
+                return (True, {"target": targ})
+        log.debug("  … nothing seemed to match")
+        return (False, {"error": "There's no targets with that name in range."})
 
     def do_attack(self, target):
         self.attack(target)
@@ -209,11 +214,12 @@ class Living(HasShell, CanMove, StdObj):
         return True, {}
 
     def can_look_living(self):
-        return (False, {'error': "XXX: this should work sometimes"})
+        return (False, {"error": "XXX: this should work sometimes"})
 
     def do_look(self):
         from ..shell.message import MapMessage
-        self.tell('You look around.')
+
+        self.tell("You look around.")
         self.tell(MapMessage(self.location.map.visicalc_submap(self)))
 
     @property
@@ -229,18 +235,20 @@ class Living(HasShell, CanMove, StdObj):
         return self.hp < -10
 
     def info(self):
-        return '\n'.join([
-            f'Type:   {self.a}',
-            f'Gender: {self.gender.short}',
-            f'Sci:    {self.sci.v:>2}',
-            f'Dip:    {self.dip.v:>2}',
-            f'Mar:    {self.mar.v:>2}',
-            f'Eng:    {self.eng.v:>2}',
-            f'Mor:    {self.mor.v:>2}',
-            '',
-            f'Level:  {self.level.v} ({self.xp.abbr})',
-            f'Health: {self.hp} / {self.health.abbr}',
-        ])
+        return "\n".join(
+            [
+                f"Type:   {self.a}",
+                f"Gender: {self.gender.short}",
+                f"Sci:    {self.sci.v:>2}",
+                f"Dip:    {self.dip.v:>2}",
+                f"Mar:    {self.mar.v:>2}",
+                f"Eng:    {self.eng.v:>2}",
+                f"Mor:    {self.mor.v:>2}",
+                "",
+                f"Level:  {self.level.v} ({self.xp.abbr})",
+                f"Health: {self.hp} / {self.health.abbr}",
+            ]
+        )
 
     def receive_item(self, item):
         try:
@@ -278,9 +286,9 @@ class Living(HasShell, CanMove, StdObj):
     def can_inventory(self):
         return True, {}
 
-    do_inventory = find_verb_method('inventory', 'do_inventory')
+    do_inventory = find_verb_method("inventory", "do_inventory")
 
     def can_sheet(self):
         return True, {}
 
-    do_sheet = find_verb_method('sheet', 'do_sheet')
+    do_sheet = find_verb_method("sheet", "do_sheet")

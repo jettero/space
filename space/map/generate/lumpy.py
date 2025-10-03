@@ -7,6 +7,7 @@ respecting map bounds. Optionally cellifies partitions between rooms.
 Produces organic clusters; not focused on corridor networks. Prefer rdc for
 room+hallway layouts.
 """
+
 import random
 import logging
 
@@ -16,7 +17,8 @@ from ..room import Room
 
 log = logging.getLogger(__name__)
 
-def generate(x=20, y=20, rsz='1d4+1', rooms='3d4', cellify_partitions=True):
+
+def generate(x=20, y=20, rsz="1d4+1", rooms="3d4", cellify_partitions=True):
     """Generate a lumpy cluster of rooms.
 
     Args:
@@ -30,16 +32,16 @@ def generate(x=20, y=20, rsz='1d4+1', rooms='3d4', cellify_partitions=True):
     retries = 10
     rooms = roll(rooms)
     while rooms > 0:
-        walls = [ w for _, w in m.iter_type(Wall) if w.has_neighbor(of_type=Cell) ]
+        walls = [w for _, w in m.iter_type(Wall) if w.has_neighbor(of_type=Cell)]
         while True:
             cw = random.choice(walls)
-            cx,cy = cw.pos
+            cx, cy = cw.pos
             r = Room(rsz.roll(), rsz.roll())
             rb = r.bounds
-            px = cx if cw.dtype('e', type(None)) else cx - rb.X
-            py = cy if cw.dtype('s', type(None)) else cy - rb.Y
+            px = cx if cw.dtype("e", type(None)) else cx - rb.X
+            py = cy if cw.dtype("s", type(None)) else cy - rb.Y
             n = m.clone()
-            n[px,py] = r
+            n[px, py] = r
             nb = n.bounds
             if nb.X <= x and nb.Y <= y:
                 m = n
@@ -48,12 +50,19 @@ def generate(x=20, y=20, rsz='1d4+1', rooms='3d4', cellify_partitions=True):
                 m.strip_useless_walls()
                 m.place_doors()
                 retries = 10
-                log.debug('added %s at (%d,%d)', repr(r), px, py)
+                log.debug("added %s at (%d,%d)", repr(r), px, py)
                 rooms -= 1
                 break
             else:
-                log.debug('%s is too big to add at (%d,%d) under constraint (%d,%d) retries=%d',
-                    repr(r), px, py, x,y, retries)
+                log.debug(
+                    "%s is too big to add at (%d,%d) under constraint (%d,%d) retries=%d",
+                    repr(r),
+                    px,
+                    py,
+                    x,
+                    y,
+                    retries,
+                )
                 retries -= 1
                 if retries < 1:
                     return m

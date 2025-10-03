@@ -15,7 +15,7 @@ def test_sheet_shows_core_stats_and_carry_weight(eroom):
     me.receive_item(Ubi())
 
     # should not raise
-    me.do('sheet')
+    me.do("sheet")
 
     # sanity: ensure basic attributes exist on object
     assert me.height > 0 and me.weight > 0 and me.hp >= 0

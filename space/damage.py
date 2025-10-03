@@ -3,30 +3,39 @@
 from collections import deque
 from .dn import DN
 
-__all__ = ['Generic', 'Kinetic', 'Thermal', 'Mind', 'Damage']
+__all__ = ["Generic", "Kinetic", "Thermal", "Mind", "Damage"]
+
 
 class Generic(DN):
-    d = 'generic damage (type unknown)'
+    d = "generic damage (type unknown)"
+
     class Meta:
-        units = 'damage = [damage]'
+        units = "damage = [damage]"
+
 
 class Kinetic(Generic):
-    s = a = 'K'
-    d = 'damage from pysical objects'
+    s = a = "K"
+    d = "damage from pysical objects"
+
     class Meta:
-        units = 'kinetic = [kinetic]'
+        units = "kinetic = [kinetic]"
+
 
 class Thermal(Generic):
-    s = a = 'T'
-    d = 'damage from heat (aka energy)'
+    s = a = "T"
+    d = "damage from heat (aka energy)"
+
     class Meta:
-        units = 'thermal = [thermal]'
+        units = "thermal = [thermal]"
+
 
 class Mind(Generic):
-    s = a = 'M'
-    d = 'damage to the spirit or morale'
+    s = a = "M"
+    d = "damage to the spirit or morale"
+
     class Meta:
-        units = 'mind = [mind]'
+        units = "mind = [mind]"
+
 
 class Damage:
     generic = Generic
@@ -41,7 +50,7 @@ class Damage:
             if isinstance(i, Damage):
                 for j in i.items:
                     yield j
-            elif isinstance(i, (list,tuple)):
+            elif isinstance(i, (list, tuple)):
                 yield from self._genericize(*i)
             elif isinstance(i, Generic):
                 yield i
@@ -49,7 +58,7 @@ class Damage:
                 try:
                     yield self.generic(i)
                 except Exception as e:
-                    raise Exception(f'bad damage value: {repr(i)}') from e
+                    raise Exception(f"bad damage value: {repr(i)}") from e
 
     def add(self, amount):
         self._items.extend(self._genericize(amount))
@@ -60,7 +69,7 @@ class Damage:
         return tuple(self)
 
     def __iter__(self):
-        return ( i.clone() for i in self._items )
+        return (i.clone() for i in self._items)
 
     def clone(self):
         return self.__class__(self.items)
@@ -69,24 +78,26 @@ class Damage:
     def v(self):
         if not self._items:
             return 0
-        return sum( i.v for i in self._items )
+        return sum(i.v for i in self._items)
 
     def __add__(self, other):
         return self.clone().add(other)
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({str(self)})'
+        return f"{self.__class__.__name__}({str(self)})"
 
     def __str__(self):
         r = dict()
         for d in self._items:
             t = type(d)
-            if t not in r: r[t] = d
-            else:          r[t] += d
-        ret = ' + '.join([ x.abbr for x in r.values() ])
+            if t not in r:
+                r[t] = d
+            else:
+                r[t] += d
+        ret = " + ".join([x.abbr for x in r.values()])
         if len(r) > 1:
             g = self.generic(self.v)
-            return f'{ret} = {g.abbr}'
+            return f"{ret} = {g.abbr}"
         return ret
 
     def __bool__(self):

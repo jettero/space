@@ -5,6 +5,7 @@ from space.living.gender import Male, Female
 from space.living.stats import HitPoints
 from space.item import Sack, Ubi
 
+
 def test_human():
     for _ in range(20):
         h = Human()
@@ -15,7 +16,7 @@ def test_human():
         h.hurt(h.hp)
         assert h.conscious is False
         assert h.dead is False
-        assert type(h.hp) == HitPoints # pylint: disable=unidiomatic-typecheck
+        assert type(h.hp) == HitPoints  # pylint: disable=unidiomatic-typecheck
 
         h.hurt(20)
         assert h.conscious is False
@@ -25,6 +26,7 @@ def test_human():
 
         assert h.height > 0
         assert h.weight > 0
+
 
 def test_slots():
     h = Human()

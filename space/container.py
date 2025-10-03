@@ -7,18 +7,21 @@ from .pv import INFINITY
 from .size import Size
 from .obj import baseobj
 
+
 class Containable(Size, baseobj):
-    a = '~'
-    s = 'obj'
-    l = 'containable object'
+    a = "~"
+    s = "obj"
+    l = "containable object"
 
     def __init__(self, mass=None, volume=None):
         Size.__init__(self, mass=mass, volume=volume)
         baseobj.__init__(self)
 
+
 class CapacityMeta:
     class Meta:
         pass
+
     class Capacity(Size):
         class Meta:
             mass = INFINITY
@@ -26,15 +29,20 @@ class CapacityMeta:
 
     def __init_subclass__(cls):
         super().__init_subclass__()
-        m = type('Meta', (cls.Capacity.Meta,), {
-            'mass':   getattr(cls.Meta, 'mass_capacity', cls.Capacity.Meta.mass),
-            'volume': getattr(cls.Meta, 'volume_capacity', cls.Capacity.Meta.volume),
-        })
-        cls.Capacity = type('Capacity', (cls.Capacity,), {'Meta': m})
+        m = type(
+            "Meta",
+            (cls.Capacity.Meta,),
+            {
+                "mass": getattr(cls.Meta, "mass_capacity", cls.Capacity.Meta.mass),
+                "volume": getattr(cls.Meta, "volume_capacity", cls.Capacity.Meta.volume),
+            },
+        )
+        cls.Capacity = type("Capacity", (cls.Capacity,), {"Meta": m})
+
 
 class Container(Containable, CapacityMeta):
-    a = '~'
-    l = s = 'container'
+    a = "~"
+    l = s = "container"
     accept_types = tuple()
 
     class Meta:
@@ -50,7 +58,7 @@ class Container(Containable, CapacityMeta):
     @property
     def content_size(self):
         start = self.size * 0
-        return sum([ x.size for x in self._items ], start)
+        return sum([x.size for x in self._items], start)
 
     @property
     def capacity(self):
@@ -61,7 +69,7 @@ class Container(Containable, CapacityMeta):
         return self.capacity - self.content_size
 
     def add_items(self, *items):
-        items = [ i for i in items if self.accept(i) ]
+        items = [i for i in items if self.accept(i)]
         for i in items:
             self._add_item(i)
 
@@ -94,7 +102,7 @@ class Container(Containable, CapacityMeta):
 
     def biggest_item(self, filter=None):
         if filter:
-            filtered = [ x for x in self._items if isinstance(x, filter) ]
+            filtered = [x for x in self._items if isinstance(x, filter)]
             if filtered:
                 return max(filtered, key=lambda x: x.mass)
         if self._items:
@@ -102,15 +110,15 @@ class Container(Containable, CapacityMeta):
 
     def accept(self, item):
         if item is self:
-            raise E.ContainerError(f'{item} cannot contain iteself')
+            raise E.ContainerError(f"{item} cannot contain iteself")
         if not isinstance(item, Containable):
-            raise E.ContainerError(f'{item} is not containable')
+            raise E.ContainerError(f"{item} is not containable")
         if item in self._items:
-            raise E.ContainerError(f'{item} is already in {self}')
+            raise E.ContainerError(f"{item} is already in {self}")
         if (self.remaining_capacity - item.size) < 0:
             raise E.ContainerCapacityError(f"{item} won't fit in {self}")
         if self.accept_types and not isinstance(item, self.accept_types):
-            raise E.ContainerTypeError(f'{item} is the wrong type')
+            raise E.ContainerTypeError(f"{item} is the wrong type")
         return True
 
     def __len__(self):
@@ -125,10 +133,12 @@ class Slot(Container):
         super().__init__()
         self.s = self.l = f"{name} slot"
         self.owner = owner
+
     @property
     def item(self):
         for item in self:
             return item
+
     @item.setter
     def item(self, v):
         for item in self:
@@ -136,7 +146,8 @@ class Slot(Container):
                 self.owner.receive_item(item)
             self.remove_item(item)
         self.add_item(v)
+
     def accept(self, item):
         if self._items:
-            raise E.ContainerError(f'{self} is occupied by {self._items[0]}')
+            raise E.ContainerError(f"{self} is occupied by {self._items[0]}")
         return super().accept(item)

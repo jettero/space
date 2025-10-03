@@ -15,38 +15,42 @@ import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
+
 class Map(baseobj):
     @classmethod
     def atosz(cls, a):
-        if len(a) >= 2: return a[0:2]
-        if len(a) == 1: return a[0],a[0]
-        return 10,10
+        if len(a) >= 2:
+            return a[0:2]
+        if len(a) == 1:
+            return a[0], a[0]
+        return 10, 10
 
     def __init__(self, *a):
-        x,y = self.atosz(a)
+        x, y = self.atosz(a)
         self.cells = []
-        self.set_min_size(x,y)
+        self.set_min_size(x, y)
 
     @property
     def bounds(self):
         return Bounds(self.cells)
 
     def __repr__(self):
-        return f'{self.cname}({self.bounds})#{self.id}'
+        return f"{self.cname}({self.bounds})#{self.id}"
 
     def __str__(self):
         if not self.cells:
-            return ''
-        r = ['   ' + ''.join([ f'{i:2d} ' for i,_ in enumerate(self.cells[0]) ])] \
-          + [ f'{i:2} ' + l for i,l in enumerate(self.colorized_text_drawing.splitlines()) ]
-        return '\n'.join(r)
+            return ""
+        r = ["   " + "".join([f"{i:2d} " for i, _ in enumerate(self.cells[0])])] + [
+            f"{i:2} " + l for i, l in enumerate(self.colorized_text_drawing.splitlines())
+        ]
+        return "\n".join(r)
 
     def clear_tags(self):
-        for p,c in self.iter_type():
+        for p, c in self.iter_type():
             c.tags.clear()
 
     def unobstructed_distance(self, obj1, obj2):
-        ''' assuming there are no obstructions at all, compute the distance between two objects '''
+        """assuming there are no obstructions at all, compute the distance between two objects"""
         c1 = self.find_obj(obj1)
         c2 = self.find_obj(obj2)
         if c1 and c2:
@@ -76,19 +80,20 @@ class Map(baseobj):
 
     def _text_drawing(self, cell_join=None, lines_join=None):
         lines = list()
+
         def _c(x):
             if x is None:
-                return '   '
+                return "   "
             if isinstance(x, Wall):
                 wc = x.wcode
-                r  = x.conv['ew'] if 'w' in wc else ' '
+                r = x.conv["ew"] if "w" in wc else " "
                 r += x.abbr
-                r += x.conv['ew'] if 'e' in wc else ' '
+                r += x.conv["ew"] if "e" in wc else " "
                 return r
-            return f' {x.abbr} '
+            return f" {x.abbr} "
 
         for row in self.cells:
-            line = [ _c(c) for c in row ]
+            line = [_c(c) for c in row]
             if cell_join is not None:
                 line = cell_join.join(line)
             lines.append(line)
@@ -98,71 +103,69 @@ class Map(baseobj):
 
     @property
     def text_drawing(self):
-        ''' cells as text '''
+        """cells as text"""
 
-        return self._text_drawing(cell_join='', lines_join='\n')
+        return self._text_drawing(cell_join="", lines_join="\n")
 
     @property
     def colorized_text_drawing(self):
         text_drawing = self._text_drawing()
 
-        last_color    = ''
-        boring_color  = {'fg': 240}
-        door_color    = {'fg': 130}  # brown/dark orange
-        neutral_color = {'fg': 254}
-        can_see_color = {'bg': 17}
-        rst = '\x1b[m'
+        last_color = ""
+        boring_color = {"fg": 240}
+        door_color = {"fg": 130}  # brown/dark orange
+        neutral_color = {"fg": 254}
+        can_see_color = {"bg": 17}
+        rst = "\x1b[m"
 
-        def _assign_color(i,j, bg=None, fg=None): # pylint: disable=invalid-name
+        def _assign_color(i, j, bg=None, fg=None):  # pylint: disable=invalid-name
             color = rst
             if bg is not None:
-                color += f'\x1b[48;5;{bg}m'
+                color += f"\x1b[48;5;{bg}m"
             if fg is not None:
-                color += f'\x1b[38;5;{fg}m'
+                color += f"\x1b[38;5;{fg}m"
             if color != last_color:
                 text_drawing[j][i] = color + text_drawing[j][i]
             return color
 
-        for j,row in enumerate(self.cells):
-            for i,cell in enumerate(row):
+        for j, row in enumerate(self.cells):
+            for i, cell in enumerate(row):
                 if cell is None:
-                    last_color = _assign_color(i,j)
+                    last_color = _assign_color(i, j)
                     continue
                 color = dict()
                 if isinstance(cell, BlockedCell) and cell.has_door:
                     color.update(door_color)
                 else:
-                    color.update(
-                        boring_color if isinstance(cell, Wall) or cell.abbr == '.' else neutral_color
-                    )
-                if 'can_see' in cell.tags:
+                    color.update(boring_color if isinstance(cell, Wall) or cell.abbr == "." else neutral_color)
+                if "can_see" in cell.tags:
                     color.update(can_see_color)
-                last_color = _assign_color(i,j, **color)
+                last_color = _assign_color(i, j, **color)
             text_drawing[j] += rst
-            last_color = ''
+            last_color = ""
 
-        return '\n'.join([ ''.join(x) for x in text_drawing ])
+        return "\n".join(["".join(x) for x in text_drawing])
 
     def _set_min_rows(self, y):
         while len(self.cells) < y:
             self.cells.append(list())
 
     def _set_min_cols(self, x):
-        x = max([x] + [ len(r) for r in self.cells ])
+        x = max([x] + [len(r) for r in self.cells])
         for row in self.cells:
-            d = x-len(row)
+            d = x - len(row)
             if d > 0:
                 row += [None] * d
 
-    def set_min_size(self, x,y):
+    def set_min_size(self, x, y):
         self._set_min_rows(y)
         self._set_min_cols(x)
 
     def in_bounds(self, *a):
         return self.bounds.contains(*a)
 
-    def get(self, x,y):
-        if not self.in_bounds(x,y):
+    def get(self, x, y):
+        if not self.in_bounds(x, y):
             return
         return self.cells[y][x]
 
@@ -174,19 +177,19 @@ class Map(baseobj):
 
     def drop_item_randomly(self, item, retries=10):
         if not isinstance(item, Containable):
-            raise ValueError(f'only containable items can be randomly dropped')
+            raise ValueError(f"only containable items can be randomly dropped")
         while retries > 0:
             c = self.random_location()
             try:
                 c.add_item(item)
                 return
-            except E.ContainerError: # thing is already there
+            except E.ContainerError:  # thing is already there
                 pass
             retries -= 1
-        raise ValueError(f'not sure how to insert {item}')
+        raise ValueError(f"not sure how to insert {item}")
 
     def __setitem__(self, pos, item):
-        if pos in (None, '-', 'rand', 'random', '?'):
+        if pos in (None, "-", "rand", "random", "?"):
             return self.drop_item_randomly(item)
         pos = convert_pos(pos)
         if isinstance(item, Map):
@@ -199,14 +202,14 @@ class Map(baseobj):
             c = self.get(*pos)
             if isinstance(c, Container):
                 return c.add_item(item)
-            raise ValueError(f'{item} cannot be placed at {pos} (non-cell location)')
-        raise ValueError(f'not sure how to insert {item}')
+            raise ValueError(f"{item} cannot be placed at {pos} (non-cell location)")
+        raise ValueError(f"not sure how to insert {item}")
 
     def _translate_map(self, x, y):
-        sx = 0 if x>=0 else abs(x)
-        sy = 0 if y>=0 else abs(y)
-        x  = x if x>=0 else 0
-        y  = y if y>=0 else 0
+        sx = 0 if x >= 0 else abs(x)
+        sy = 0 if y >= 0 else abs(y)
+        x = x if x >= 0 else 0
+        y = y if y >= 0 else 0
         if sx or sy:
             for _ in range(sy):
                 self.cells.insert(0, [None] * len(self.cells[0]))
@@ -217,25 +220,26 @@ class Map(baseobj):
             for cell in row:
                 if cell is not None:
                     p = cell.pos
-                    cell.pos = (p[0]+sx, p[1]+sy)
-        return x,y
+                    cell.pos = (p[0] + sx, p[1] + sy)
+        return x, y
 
     def insert_mapobj(self, x, y, mapobj):
         if mapobj is not None and not isinstance(mapobj, MapObj):
-            raise TypeError(f'{repr(self)}.insert_mapobj(pos=({x},{y}), mapobj={mapobj}): '
-                            'mapobj is not a MapObj (or None)')
+            raise TypeError(
+                f"{repr(self)}.insert_mapobj(pos=({x},{y}), mapobj={mapobj}): " "mapobj is not a MapObj (or None)"
+            )
 
-        self.set_min_size(x+1, y+1)
+        self.set_min_size(x + 1, y + 1)
         self.cells[y][x] = mapobj
         if mapobj is not None:
-            mapobj.pos = (x,y)
+            mapobj.pos = (x, y)
             mapobj.map = self
 
     def insert_map(self, x, y, submap):
         if not isinstance(submap, Map):
-            raise TypeError(f'argument: {submap} is not a Map')
-        for sj,row in enumerate(submap.cells):
-            for si,cell in enumerate(row):
+            raise TypeError(f"argument: {submap} is not a Map")
+        for sj, row in enumerate(submap.cells):
+            for si, cell in enumerate(row):
                 if cell is None:
                     # NOTE: It's tempting to add a param here
                     # that allows us to insert none ... merge_mode=??
@@ -260,10 +264,10 @@ class Map(baseobj):
                     #  ╷  .  .  .  │
                     #  └───────────┘
                     continue
-                self.insert_mapobj(x+si, y+sj, cell.clone())
+                self.insert_mapobj(x + si, y + sj, cell.clone())
 
     def iter_cells(self, of_type=Cell):
-        for _,c in self.iter_type(of_type=of_type):
+        for _, c in self.iter_type(of_type=of_type):
             yield c
 
     def random_location(self, of_type=Cell):
@@ -271,28 +275,28 @@ class Map(baseobj):
         return random.choice(list(self.iter_cells(of_type=of_type)))
 
     def __iter__(self):
-        for j,row in enumerate(self.cells):
-            for i,cell in enumerate(row):
-                yield (i,j), cell
+        for j, row in enumerate(self.cells):
+            for i, cell in enumerate(row):
+                yield (i, j), cell
 
     def iter_type(self, of_type=Cell):
-        for p,cell in self:
+        for p, cell in self:
             if isinstance(cell, of_type):
                 yield p, cell
 
     def strip_useless_walls(self):
         c = 0
-        for p,cell in self.iter_type(Wall):
+        for p, cell in self.iter_type(Wall):
             if cell.useless:
                 self[p] = None
                 c += 1
         if c > 0:
-            log.debug('stripped useless wals c=%d', c)
+            log.debug("stripped useless wals c=%d", c)
 
     def identify_partitions(self, wmin=1, wmax=None):
         partitions = set()
-        for check_dir in sorted(DIRS, key=lambda x: random.random()): # iterate n,s,e,w
-            for _,w in self.iter_type(Wall): # iterate all walls in map
+        for check_dir in sorted(DIRS, key=lambda x: random.random()):  # iterate n,s,e,w
+            for _, w in self.iter_type(Wall):  # iterate all walls in map
                 if w in partitions:
                     continue
                 if w.r_dtype(check_dir, Cell):
@@ -321,49 +325,52 @@ class Map(baseobj):
                 # If all 4 cardinal neighbors are None/Wall/Floor, treat as room smoothing -> Floor
                 # Otherwise (touches any non-Floor Cell), treat as corridor opening -> Corridor
                 from .cell import Floor, Corridor
-                i,j = wall.pos
-                neighbors = [(i+1,j),(i-1,j),(i,j+1),(i,j-1)]
+
+                i, j = wall.pos
+                neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
                 ok_room = True
                 for p in neighbors:
                     c = self[p] if self.in_bounds(*p) else None
                     if not (c is None or isinstance(c, Wall) or isinstance(c, Floor)):
                         ok_room = False
                         break
-                self[ wall.pos ] = Floor() if ok_room else Corridor()
+                self[wall.pos] = Floor() if ok_room else Corridor()
 
     def place_doors(self):
-        for (i,j), cell in self:
+        for (i, j), cell in self:
             if not isinstance(cell, Cell):
                 continue
-            n = self[i, j-1] if self.in_bounds(i, j-1) else None
-            s = self[i, j+1] if self.in_bounds(i, j+1) else None
-            e = self[i+1, j] if self.in_bounds(i+1, j) else None
-            w = self[i-1, j] if self.in_bounds(i-1, j) else None
+            n = self[i, j - 1] if self.in_bounds(i, j - 1) else None
+            s = self[i, j + 1] if self.in_bounds(i, j + 1) else None
+            e = self[i + 1, j] if self.in_bounds(i + 1, j) else None
+            w = self[i - 1, j] if self.in_bounds(i - 1, j) else None
 
             def is_wall(x):
                 return isinstance(x, Wall)
+
             def is_floor(x):
                 return isinstance(x, Floor)
+
             def is_corr(x):
                 return isinstance(x, Corridor)
 
             # Vertical doorway: corridor west/east, floor other side; walls north/south
             if is_wall(n) and is_wall(s):
                 if (is_corr(w) and is_floor(e)) or (is_floor(w) and is_corr(e)):
-                    self[i,j] = BlockedCell()
+                    self[i, j] = BlockedCell()
                     continue
 
             # Horizontal doorway: corridor north/south, floor other side; walls east/west
             if is_wall(w) and is_wall(e):
                 if (is_corr(n) and is_floor(s)) or (is_floor(n) and is_corr(s)):
-                    self[i,j] = BlockedCell()
+                    self[i, j] = BlockedCell()
                     continue
 
     @property
     def sparseness(self):
         none_count = 0
         count = 0
-        for _,cell in self:
+        for _, cell in self:
             count += 1
             if not isinstance(cell, Cell):
                 none_count += 1
@@ -371,7 +378,7 @@ class Map(baseobj):
 
     def clone(self):
         r = self.__class__()
-        for p,c in self:
+        for p, c in self:
             if c is not None:
                 c = c.clone()
             r[p] = c
@@ -387,7 +394,7 @@ class Map(baseobj):
 
     def _e_sj_bound(self):
         rj = None
-        for j in range(len(self.cells)-1,-1,-1):
+        for j in range(len(self.cells) - 1, -1, -1):
             for c in self.cells[j]:
                 if c is not None:
                     return rj
@@ -396,62 +403,64 @@ class Map(baseobj):
     def _e_wi_bound(self):
         ri = None
         for i in range(0, len(self.cells[0])):
-            for c in [ row[i] for row in self.cells ]:
+            for c in [row[i] for row in self.cells]:
                 if c is not None:
                     return ri
             ri = i
 
     def _e_ei_bound(self):
         ri = None
-        for i in range(len(self.cells[0])-1, -1, -1):
-            for c in [ row[i] for row in self.cells ]:
+        for i in range(len(self.cells[0]) - 1, -1, -1):
+            for c in [row[i] for row in self.cells]:
                 if c is not None:
                     return ri
             ri = i
 
     def e_bounds(self):
-        return [ self._e_nj_bound(), self._e_sj_bound(), self._e_ei_bound(), self._e_wi_bound() ]
+        return [self._e_nj_bound(), self._e_sj_bound(), self._e_ei_bound(), self._e_wi_bound()]
 
     def condense(self):
         nb, sb, eb, wb = self.e_bounds()
         if sb is not None:
-            log.debug('[condense] adjusting s-bound=%d', sb)
+            log.debug("[condense] adjusting s-bound=%d", sb)
             self.cells = self.cells[:sb]
         if nb is not None:
-            log.debug('[condense] adjusting n-bound=%d', nb)
-            self.cells = self.cells[nb+1:]
+            log.debug("[condense] adjusting n-bound=%d", nb)
+            self.cells = self.cells[nb + 1 :]
         if eb is not None:
-            log.debug('[condense] adjusting e-bound=%d', eb)
-            for j,row in enumerate(self.cells):
+            log.debug("[condense] adjusting e-bound=%d", eb)
+            for j, row in enumerate(self.cells):
                 self.cells[j] = row[:eb]
         if wb is not None:
-            log.debug('[condense] adjusting w-bound=%d', wb)
-            for j,row in enumerate(self.cells):
-                self.cells[j] = row[wb+1:]
+            log.debug("[condense] adjusting w-bound=%d", wb)
+            for j, row in enumerate(self.cells):
+                self.cells[j] = row[wb + 1 :]
         if nb is not None or wb is not None:
-            log.debug('[condense] repositioning cells')
-            for p,c in self:
+            log.debug("[condense] repositioning cells")
+            for p, c in self:
                 if c is not None:
                     c.pos = p
 
     def __eq__(self, other_map):
         if not isinstance(other_map, Map):
             return False
-        for p,c in self:
+        for p, c in self:
             if type(c) is not type(other_map[p]):
                 return False
         return True
 
     def identify_cliques(self):
         cliques = list()
+
         def find_clique(cell):
             for clique in cliques:
                 if cell in clique:
                     return clique
+
         for cell in self.iter_cells():
             cq = find_clique(cell)
             if cq is None:
-                todo = [ cell ]
+                todo = [cell]
                 cq = MapClique(todo)
                 cliques.append(cq)
                 while todo:
@@ -462,10 +471,10 @@ class Map(baseobj):
         return cliques
 
     def fast_voxel(self, pos1, pos2, ok_type=None, bad_type=None):
-        ''' return positions mapped by Fast Voxel: Amanatides, Woo '''
+        """return positions mapped by Fast Voxel: Amanatides, Woo"""
 
         if pos1 == pos2:
-            raise ValueError(f'direction undfined for {pos1} == {pos2}')
+            raise ValueError(f"direction undfined for {pos1} == {pos2}")
 
         def type_break(cell):
             if ok_type is not None and not isinstance(cell, ok_type):
@@ -503,7 +512,7 @@ class Map(baseobj):
             # You have to work that out for yourself …
 
             # tdelta is the amount of l2d it takes to cross one whole cell
-            tdelta = step * ((b1.lr-b1.ul) / l2d)
+            tdelta = step * ((b1.lr - b1.ul) / l2d)
 
             # tmax starts as the amount of l2d it takes to get to the next cell (b1.lr)
             tmax = tdelta / 2
@@ -532,7 +541,7 @@ class Map(baseobj):
     def visicalc(self, whom, maxdist=None):
         c1 = self[whom]
         if not isinstance(c1, Cell):
-            raise ValueError(f'{whom} is not on the map apparently')
+            raise ValueError(f"{whom} is not on the map apparently")
         cells = set(self.iter_cells()) - set([c1])
         c1.visible = True
         for c in cells:
@@ -556,9 +565,14 @@ class Map(baseobj):
         # we don't actually use the visicalc to bound the map view though
         wlp = whom.location.pos
         actual_bnds = self.bounds
-        bnds = Bounds(wlp[0]-maxdist, wlp[1]-maxdist, wlp[0]+maxdist, wlp[1]+maxdist)
-        log.debug('maxdist_submap actual-bounds=[%s: %s] submap-bounds=[%s: %s]',
-            actual_bnds, tuple(actual_bnds), bnds, tuple(bnds))
+        bnds = Bounds(wlp[0] - maxdist, wlp[1] - maxdist, wlp[0] + maxdist, wlp[1] + maxdist)
+        log.debug(
+            "maxdist_submap actual-bounds=[%s: %s] submap-bounds=[%s: %s]",
+            actual_bnds,
+            tuple(actual_bnds),
+            bnds,
+            tuple(bnds),
+        )
         return MapView(self, bounds=bnds)
 
     def visicalc_submap(self, whom, maxdist=None):
@@ -568,30 +582,44 @@ class Map(baseobj):
         for p, cell in self:
             try:
                 if cell.visible:
-                    if p[0] < bnds.x: bnds.x = p[0]
-                    if p[0] > bnds.X: bnds.X = p[0]
-                    if p[1] < bnds.y: bnds.y = p[1]
-                    if p[1] > bnds.Y: bnds.Y = p[1]
+                    if p[0] < bnds.x:
+                        bnds.x = p[0]
+                    if p[0] > bnds.X:
+                        bnds.X = p[0]
+                    if p[1] < bnds.y:
+                        bnds.y = p[1]
+                    if p[1] > bnds.Y:
+                        bnds.Y = p[1]
             except AttributeError:
                 pass
         actual_bnds = self.bounds
         maxdist = test_maxdist(maxdist)
-        if bnds.x > actual_bnds.x and maxdist(wlp, (bnds.x-1, wlp[1])): bnds.x -= 1
-        if bnds.y > actual_bnds.y and maxdist(wlp, (wlp[0], bnds.y-1)): bnds.y -= 1
-        if bnds.X < actual_bnds.X and maxdist(wlp, (bnds.X+1, wlp[1])): bnds.X += 1
-        if bnds.Y < actual_bnds.Y and maxdist(wlp, (wlp[0], bnds.Y+1)): bnds.Y += 1
-        log.debug('visicalc_submap actual-bounds=[%s: %s] submap-bounds=[%s: %s]',
-            actual_bnds, tuple(actual_bnds), bnds, tuple(bnds))
+        if bnds.x > actual_bnds.x and maxdist(wlp, (bnds.x - 1, wlp[1])):
+            bnds.x -= 1
+        if bnds.y > actual_bnds.y and maxdist(wlp, (wlp[0], bnds.y - 1)):
+            bnds.y -= 1
+        if bnds.X < actual_bnds.X and maxdist(wlp, (bnds.X + 1, wlp[1])):
+            bnds.X += 1
+        if bnds.Y < actual_bnds.Y and maxdist(wlp, (wlp[0], bnds.Y + 1)):
+            bnds.Y += 1
+        log.debug(
+            "visicalc_submap actual-bounds=[%s: %s] submap-bounds=[%s: %s]",
+            actual_bnds,
+            tuple(actual_bnds),
+            bnds,
+            tuple(bnds),
+        )
         return MapView(self, bounds=bnds)
+
 
 class MapClique(set):
     @property
     def edges(self):
-        return { x for x in self if x.has_neighbor( (Wall,type(None)) ) }
+        return {x for x in self if x.has_neighbor((Wall, type(None)))}
 
 
 class MapView(Map):
-    def __init__(self, a_map, bounds=None, filter_cells=True): # pylint: disable=super-init-not-called
+    def __init__(self, a_map, bounds=None, filter_cells=True):  # pylint: disable=super-init-not-called
         self.a_map = a_map
         self._bounds = bounds
         self._filter = filter_cells
@@ -603,13 +631,16 @@ class MapView(Map):
         return self.a_map.bounds
 
     def _cells(self):
-        ''' return a copy of the actual cell arrays
-            the copy may be bounded, and can be filtered without ruining the
-            actual cell array in self.a_map
-        '''
+        """return a copy of the actual cell arrays
+        the copy may be bounded, and can be filtered without ruining the
+        actual cell array in self.a_map
+        """
         vb = self.bounds
         ab = self.a_map.bounds
-        return [ [ self.a_map.cells[j][i] if ab.x <= i <= ab.X and ab.y <= j <= ab.Y else None for i in vb.x_iter ] for j in vb.y_iter ]
+        return [
+            [self.a_map.cells[j][i] if ab.x <= i <= ab.X and ab.y <= j <= ab.Y else None for i in vb.x_iter]
+            for j in vb.y_iter
+        ]
 
         # note: we used to do the below, but we changed it 2023-06-19 to
         # faciliate genearting submaps of a specific size, even if the submap
@@ -618,42 +649,44 @@ class MapView(Map):
         #   bnds = self.bounds
         #   return [ [ self.a_map.cells[j][i] for i in bnds.x_iter ] for j in bnds.y_iter ]
 
-
     def iter_type(self, *a, **kw):
         bnds = self.bounds
-        for p,cell in self.a_map.iter_type(*a, **kw):
+        for p, cell in self.a_map.iter_type(*a, **kw):
             if bnds.contains(p):
-                yield p,cell
+                yield p, cell
+
     # iter_cells() uses iter_type(), so it's already fixed too
 
-    def realpos(self,x,y):
-        return x+self.bounds.x, y+self.bounds.y
+    def realpos(self, x, y):
+        return x + self.bounds.x, y + self.bounds.y
 
-    def get(self, x,y):
-        return self.a_map.get(*self.realpos(x,y))
+    def get(self, x, y):
+        return self.a_map.get(*self.realpos(x, y))
 
     @property
     def cells(self):
         cells = self._cells()
-        bnds  = self.bounds
+        bnds = self.bounds
+
         def _fake_none(p):
-            qi,qj = (p[0]-bnds.x, p[1]-bnds.y)
-            #log.debug('_fake_none(%s) -> (%s,%s)', p, qi,qj)
+            qi, qj = (p[0] - bnds.x, p[1] - bnds.y)
+            # log.debug('_fake_none(%s) -> (%s,%s)', p, qi,qj)
             cells[qj][qi] = None
+
         if self._filter is True:
             for cell in self.iter_cells(of_type=Cell):
-                if cell is None or 'can_see' in cell.tags:
+                if cell is None or "can_see" in cell.tags:
                     continue
                 _fake_none(cell.pos)
             for cell in self.iter_cells(of_type=Wall):
                 ok = False
-                for _,ncell in cell.iter_neighbors(dirs=DDIRS):
-                    if ncell is not None and 'can_see' in ncell.tags:
+                for _, ncell in cell.iter_neighbors(dirs=DDIRS):
+                    if ncell is not None and "can_see" in ncell.tags:
                         ok = True
                         break
                 if ok:
                     continue
                 _fake_none(cell.pos)
         elif callable(self._filter):
-            raise Exception('TODO')
+            raise Exception("TODO")
         return cells

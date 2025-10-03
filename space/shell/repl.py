@@ -3,5 +3,6 @@
 
 from .base import BaseShell
 
+
 class Shell(BaseShell):
     pass

@@ -10,36 +10,40 @@ import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
+
 class MethodRouter:
     def __init__(self, obj, top, multi=False, callback=None, dne_ok=True):
-        self.top   = top
+        self.top = top
         self.multi = multi
         self.obj = obj if isinstance(obj, weakref.ProxyTypes) else weakref.proxy(obj)
         self.callback = callback
         self.dne_ok = dne_ok
-        self.dir = tuple( m for m in dir(obj) if m.startswith(top) )
+        self.dir = tuple(m for m in dir(obj) if m.startswith(top))
 
     def __iter__(self):
         yield from self.dir
 
     def __getitem__(self, idx):
-        if isinstance(idx, (list,tuple,set)):
-            return tuple( self[i] for i in idx )
+        if isinstance(idx, (list, tuple, set)):
+            return tuple(self[i] for i in idx)
         return self.dir[idx]
 
     @property
     def stringified(self):
-        base = self.obj.__repr__() # repr(obj) won't work (weakref.proxy)
+        base = self.obj.__repr__()  # repr(obj) won't work (weakref.proxy)
         if len(self.dir) == 1:
-            return f'{base}.{self.dir[0]}'
+            return f"{base}.{self.dir[0]}"
         return f'{base}.({"|".join(self.dir)})'
 
     def __repr__(self):
-        return f'MethodRouter{{{self.stringified}}}'
+        return f"MethodRouter{{{self.stringified}}}"
+
     __str__ = __repr__
 
-class FFAK(namedtuple('FFAK', ['func', 'filled', 'args', 'kwargs'])):
+
+class FFAK(namedtuple("FFAK", ["func", "filled", "args", "kwargs"])):
     _base_order = 1000
+
     def __bool__(self):
         return self.filled
 
@@ -47,7 +51,7 @@ class FFAK(namedtuple('FFAK', ['func', 'filled', 'args', 'kwargs'])):
         return self.func(*self.args, **self.kwargs)
 
     def __str__(self):
-        return f'{self.func.__name__}()'
+        return f"{self.func.__name__}()"
 
     @property
     def order(self):
@@ -55,40 +59,46 @@ class FFAK(namedtuple('FFAK', ['func', 'filled', 'args', 'kwargs'])):
             return self._base_order - len(self.args) + len(self.kwargs)
         return self._base_order
 
+
 def list_match(name, objs):
     if isinstance(objs, (types.GeneratorType, list, tuple)):
-        s = name.split('.', 1)
-        assert len(s) in (1,2,)
-        objs = [ i for i in objs if i.parse_match(*s) ]
+        s = name.split(".", 1)
+        assert len(s) in (
+            1,
+            2,
+        )
+        objs = [i for i in objs if i.parse_match(*s)]
         if objs:
             return objs
     return tuple()
 
-class RouteHint(namedtuple('RouteHint', ['fname', 'func', 'hlist'])):
+
+class RouteHint(namedtuple("RouteHint", ["fname", "func", "hlist"])):
     tokens = None
+
     def __repr__(self):
-        hl = '/'.join([ repr(x) for x in self.hlist ])
-        return f'RH({self.fname})«{hl}»'
+        hl = "/".join([repr(x) for x in self.hlist])
+        return f"RH({self.fname})«{hl}»"
 
     def fill(self, objs):
-        log.debug(' filling %s using objs=%s tok=%s', self, objs, self.tokens)
+        log.debug(" filling %s using objs=%s tok=%s", self, objs, self.tokens)
         ret = dict()
-        for aname,tlist in self.hlist:
-            type0,*remainder = tlist
+        for aname, tlist in self.hlist:
+            type0, *remainder = tlist
             v = self.tokens.get(aname)
             if v is None:
                 continue
             if not type0:
                 ret[aname] = v
-            elif type0 in (list,tuple): # tuple→str, hopefully
+            elif type0 in (list, tuple):  # tuple→str, hopefully
                 if len(remainder) != 1 or remainder[0] is not str:
-                    raise NotImplementedError('TODO')
+                    raise NotImplementedError("TODO")
                 ret[aname] = v
-            elif remainder: # wtf!??!
-                raise NotImplementedError('TODO')
+            elif remainder:  # wtf!??!
+                raise NotImplementedError("TODO")
             else:
-                applicable_objs = [ o for o in objs if isinstance(o, type0) ]
-                if isinstance(v, (list,tuple)):
+                applicable_objs = [o for o in objs if isinstance(o, type0)]
+                if isinstance(v, (list, tuple)):
                     o = list()
                     for x in v:
                         o += list_match(x, applicable_objs)
@@ -104,6 +114,7 @@ class RouteHint(namedtuple('RouteHint', ['fname', 'func', 'hlist'])):
         except E.UnfilledArgumentError:
             return False, {}
 
+
 class MethodArgsRouter(MethodRouter):
     def hints(self):
         ret = list()
@@ -114,9 +125,11 @@ class MethodArgsRouter(MethodRouter):
 
     def fill(self, *a, **kw):
         from .stdobj import StdObj
+
         def _should_sort_by_distance(v):
             if isinstance(v, (list, tuple)) and v and isinstance(v[0], StdObj):
                 return True
+
         kw = {
             k: (tuple(sorted(v, key=lambda o: self.obj.unit_distance_to(o))) if _should_sort_by_distance(v) else v)
             for k, v in kw.items()
@@ -131,14 +144,15 @@ class MethodArgsRouter(MethodRouter):
             yield ffak
 
     def __repr__(self):
-        return f'MethodArgsRouter{{{self.stringified}}}'
+        return f"MethodArgsRouter{{{self.stringified}}}"
+
     __str__ = __repr__
 
     def __call__(self, *a, **kw):
         rr = [True, kw]
         did_something = False
         for ffak in self.ordered_fill(*a, **kw):
-            log.debug('MNR invoking %s.%s', self.obj, ffak)
+            log.debug("MNR invoking %s.%s", self.obj, ffak)
             r = ffak()
             did_something = True
             if isinstance(r, tuple) and len(r) == 2 and r[0]:
@@ -153,25 +167,26 @@ class MethodArgsRouter(MethodRouter):
             raise NotImplementedError(f'unable to locate {"_".join(self.top)} methods for ({kw})')
         return tuple(rr)
 
+
 class MethodNameRouter(MethodRouter):
     def __init__(self, obj, top, multi=False, callback=None, dne_ok=True):
         super().__init__(obj, top, multi=multi, callback=callback, dne_ok=dne_ok)
-        self.top   = top.split('_')
+        self.top = top.split("_")
         l = len(self.top)
-        self.dir = tuple( m.split('_')[l:] for m in self.dir )
+        self.dir = tuple(m.split("_")[l:] for m in self.dir)
 
     def __getitem__(self, idx):
-        if isinstance(idx, (list,tuple,set)):
-            return tuple( self[i] for i in idx )
-        return '_'.join( self.top + self.dir[idx] )
+        if isinstance(idx, (list, tuple, set)):
+            return tuple(self[i] for i in idx)
+        return "_".join(self.top + self.dir[idx])
 
     def count(self, items, smode=None):
         ret = set()
-        for idx,mtpl in enumerate(self):
-            missing = tuple( i for i in mtpl if i not in items )
+        for idx, mtpl in enumerate(self):
+            missing = tuple(i for i in mtpl if i not in items)
             if not missing:
                 ret.add(idx)
-        log.debug('MNR counted %s', ret)
+        log.debug("MNR counted %s", ret)
         if callable(smode):
             return sorted(self[ret], key=smode)
         return self[ret]
@@ -187,7 +202,7 @@ class MethodNameRouter(MethodRouter):
 
         rr = [True, kw]
         for fname in pf:
-            log.debug('MNR invoking %s.%s()', self.obj, fname)
+            log.debug("MNR invoking %s.%s()", self.obj, fname)
             r = safe_execute(getattr(self.obj, fname), *a, **kw)
             if isinstance(r, tuple) and len(r) == 2 and r[0]:
                 kw.update(r[1])

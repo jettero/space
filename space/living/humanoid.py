@@ -12,41 +12,47 @@ from ..stdobj import StdObj
 
 log = logging.getLogger(__name__)
 
+
 class Humanoid(Living):
-    s = l = 'humanoid'
-    a = 'p'
-    d = 'a humanoid'
+    s = l = "humanoid"
+    a = "p"
+    d = "a humanoid"
 
     class Slots(Slots):
         class Meta:
-            slots = OrderedDict([
-                ('head', HeadSlot),
-                ('torso', TorsoSlot),
-                ('right hand', HandSlot),
-                ('left hand', HandSlot),
-                ('legs', LegsSlot),
-                ('feet', FeetSlot),
-                ('pack', PackSlot),
-            ])
-            default = 'right hand'
+            slots = OrderedDict(
+                [
+                    ("head", HeadSlot),
+                    ("torso", TorsoSlot),
+                    ("right hand", HandSlot),
+                    ("left hand", HandSlot),
+                    ("legs", LegsSlot),
+                    ("feet", FeetSlot),
+                    ("pack", PackSlot),
+                ]
+            )
+            default = "right hand"
 
     class Choices(Living.Choices):
-        gender = (Male, Female,)
+        gender = (
+            Male,
+            Female,
+        )
 
-    def can_get_obj(self, obj:StdObj):
+    def can_get_obj(self, obj: StdObj):
         if obj.owner == self:
-            return False, {'error': "You already have that"}
+            return False, {"error": "You already have that"}
         if obj.owner:
-            return False, {'error': f"{obj.owner} would probably object if you took that."}
+            return False, {"error": f"{obj.owner} would probably object if you took that."}
         if self.unit_distance_to(obj) > self.reach:
-            return False, {'error': "That seems too far away"}
+            return False, {"error": "That seems too far away"}
         for h in (self.slots._right_hand, self.slots._left_hand):
             try:
                 if h.accept(obj):
-                    return True, {'target': obj}
+                    return True, {"target": obj}
             except E.ContainerError:
                 pass
-        return False, {'error': "It's not possible to get that."}
+        return False, {"error": "It's not possible to get that."}
 
     def do_get(self, target):
         for hand in (self.slots._right_hand, self.slots._left_hand):
@@ -58,42 +64,43 @@ class Humanoid(Living):
                 pass
         raise e
 
-    def can_drop_obj(self, obj:StdObj):
+    def can_drop_obj(self, obj: StdObj):
         if obj.owner != self:
-            return False, {'error': "You don't have that."}
-        return True, {'target': obj}
+            return False, {"error": "You don't have that."}
+        return True, {"target": obj}
 
     def do_drop(self, target):
         self.location.add_item(target)
 
-    def can_open_obj(self, obj:Door):
+    def can_open_obj(self, obj: Door):
         # check door interaction within reach
-        ok,err = obj.can_open()
+        ok, err = obj.can_open()
         if ok:
             if self.unit_distance_to(obj) <= self.reach:
-                return ok,err
+                return ok, err
             else:
-                return False, {'error': f'{obj} is too far away'}
-        return False, {'error': "What door?"}
+                return False, {"error": f"{obj} is too far away"}
+        return False, {"error": "What door?"}
 
-    def do_open_obj(self, obj:Door):
+    def do_open_obj(self, obj: Door):
         log.debug("do_open_obj(%s)", obj)
         obj.do_open()
 
-    def can_close_obj(self, obj:Door):
+    def can_close_obj(self, obj: Door):
         # check door interaction within reach
-        ok,err = obj.can_close()
+        ok, err = obj.can_close()
         if ok:
             if self.unit_distance_to(obj) <= self.reach:
-                return ok,err
+                return ok, err
             else:
-                return False, {'error': f'{obj} is too far away'}
-        return False, {'error': "What door?"}
+                return False, {"error": f"{obj} is too far away"}
+        return False, {"error": "What door?"}
 
-    def do_close_obj(self, obj:Door):
+    def do_close_obj(self, obj: Door):
         log.debug("do_sclose_obj(%s)", obj)
         obj.do_close()
 
+
 class Human(Humanoid):
-    s = l = 'human'
-    d = 'a human'
+    s = l = "human"
+    d = "a human"

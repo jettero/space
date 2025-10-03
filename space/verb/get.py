@@ -2,5 +2,6 @@
 
 from .base import Verb
 
+
 class Action(Verb):
-    name = 'get'
+    name = "get"

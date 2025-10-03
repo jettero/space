@@ -2,6 +2,7 @@
 
 from collections import deque
 
+
 class Time:
     def __init__(self, *actors):
         self._actors = deque()
@@ -26,5 +27,5 @@ class Time:
         self._actors.pop(a)
 
     def __iter__(self):
-        for a in sorted(self.actors, key=lambda x: 0-x.initiative.roll()):
+        for a in sorted(self.actors, key=lambda x: 0 - x.initiative.roll()):
             yield a

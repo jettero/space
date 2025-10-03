@@ -9,14 +9,15 @@ import space.exceptions as E
 # various symbols for floor/corridor, etc
 # ■□◦◆◇◌᛭᛫܀⁘⁙⸬
 
+
 class Cell(MapObj, Container):
     _override = None
-    a = '◦'
+    a = "◦"
 
     class Meta:
-        height = '10ft'
-        width  = '5ft'
-        depth  = '5ft'
+        height = "10ft"
+        width = "5ft"
+        depth = "5ft"
         mass = INFINITY
 
     def __init__(self, *items, mobj=None, pos=None):
@@ -27,7 +28,7 @@ class Cell(MapObj, Container):
         if isinstance(item, Living):
             for other in self:
                 if isinstance(other, Living):
-                    raise E.ContainerError(f'{other} is already there')
+                    raise E.ContainerError(f"{other} is already there")
         return True
 
     @property
@@ -62,15 +63,18 @@ class Cell(MapObj, Container):
 
 class Floor(Cell):
     """Room floor cell (same render as Cell)."""
-    a = '·'
+
+    a = "·"
 
     @property
     def is_floor(self):
         return True
 
+
 class Corridor(Cell):
     """Corridor/hallway floor cell (same render as Cell)."""
-    a = '܀'
+
+    a = "܀"
 
     @property
     def is_corridor(self):

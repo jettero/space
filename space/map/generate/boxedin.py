@@ -14,11 +14,13 @@ import random
 from ..cell import Wall, Cell, Corridor
 
 from .rdropper import generate_rooms
-#from .base import sparse
+
+# from .base import sparse
 
 log = logging.getLogger(__name__)
 
-def generate(x=50, y=50, rsz='2d4+1', rsparse='1d10+3'):
+
+def generate(x=50, y=50, rsz="2d4+1", rsparse="1d10+3"):
     """Generate boxed-in rooms with corridors.
 
     Uses rdropper to place rooms, cellifies short partitions, then carves
@@ -28,10 +30,10 @@ def generate(x=50, y=50, rsz='2d4+1', rsparse='1d10+3'):
     a_map.cellify_partitions()
 
     visited = set()
-    for _,wall in a_map.iter_type(Wall):
+    for _, wall in a_map.iter_type(Wall):
         if wall in visited:
             continue
-        to_see = [ wall ]
+        to_see = [wall]
         while to_see:
             t = to_see.pop(0)
             visited.add(t)
@@ -54,14 +56,23 @@ def generate(x=50, y=50, rsz='2d4+1', rsparse='1d10+3'):
     a_map.strip_useless_walls()
     return a_map
 
+
 def reconstruct_walls(a_map):
     nonetype = type(None)
     to_wall = []
-    for (i,j), c in a_map:
+    for (i, j), c in a_map:
         if isinstance(c, Cell):
-            for dd,(dx,dy) in {'n':(0,-1),'s':(0,1),'e':(1,0),'w':(-1,0),
-                               'ne':(1,-1),'nw':(-1,-1),'se':(1,1),'sw':(-1,1)}.items():
-                p = (i+dx, j+dy)
+            for dd, (dx, dy) in {
+                "n": (0, -1),
+                "s": (0, 1),
+                "e": (1, 0),
+                "w": (-1, 0),
+                "ne": (1, -1),
+                "nw": (-1, -1),
+                "se": (1, 1),
+                "sw": (-1, 1),
+            }.items():
+                p = (i + dx, j + dy)
                 if not a_map.in_bounds(*p):
                     continue
                 q = a_map[p]
@@ -70,25 +81,26 @@ def reconstruct_walls(a_map):
     for p in to_wall:
         a_map[p] = Wall(mobj=a_map, pos=p)
 
+
 def open_doors_along_corridors(a_map, prob=0.6, max_doors_per_room=2):
     opened = {}
-    for (i,j), w in a_map:
+    for (i, j), w in a_map:
         if not isinstance(w, Wall):
             continue
-        for d,(dx,dy) in {'n':(0,-1),'s':(0,1),'e':(1,0),'w':(-1,0)}.items():
-            p1 = (i+dx,j+dy)
-            p2 = (i-dx,j-dy)
+        for d, (dx, dy) in {"n": (0, -1), "s": (0, 1), "e": (1, 0), "w": (-1, 0)}.items():
+            p1 = (i + dx, j + dy)
+            p2 = (i - dx, j - dy)
             if not (a_map.in_bounds(*p1) and a_map.in_bounds(*p2)):
                 continue
             c1 = a_map[p1]
             c2 = a_map[p2]
             # open only when one side is room-interior Cell and the other is corridor Cell
             if isinstance(c1, Cell) and isinstance(c2, Cell):
-                cnt = opened.get(p1,0) + opened.get(p2,0)
+                cnt = opened.get(p1, 0) + opened.get(p2, 0)
                 if cnt >= max_doors_per_room:
                     continue
                 if random.random() <= prob:
-                    a_map[i,j] = Corridor(mobj=a_map, pos=(i,j))
-                    opened[p1] = opened.get(p1,0) + 1
-                    opened[p2] = opened.get(p2,0) + 1
+                    a_map[i, j] = Corridor(mobj=a_map, pos=(i, j))
+                    opened[p1] = opened.get(p1, 0) + 1
+                    opened[p2] = opened.get(p2, 0) + 1
                     break

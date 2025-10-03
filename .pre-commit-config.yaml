@@ -8,8 +8,7 @@
 # but do whatever you like
 
 fail_fast: false
-exclude: |
-  ^(old/|contrib/)
+exclude: '^(old|contrib)/'
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks

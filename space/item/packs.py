@@ -2,6 +2,7 @@
 
 from space.container import Container
 
+
 class Sack(Container):
     class Meta(Container.Meta):
         mass = 0.1

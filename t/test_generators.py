@@ -20,20 +20,20 @@ def _basic_map_checks(m: Map):
 
 
 def test_generate_lumpy_smoke():
-    m = lumpy_room(x=20, y=20, rsz='1d2+1', rooms='2d2')
+    m = lumpy_room(x=20, y=20, rsz="1d2+1", rooms="2d2")
     _basic_map_checks(m)
 
 
 def test_generate_rooms_smoke():
-    m = generate_rooms(x=20, y=20, rsz='1d2+1', rsparse='2')
+    m = generate_rooms(x=20, y=20, rsz="1d2+1", rsparse="2")
     _basic_map_checks(m)
 
 
 def test_generate_boxedin_smoke():
-    m = boxed_in(x=20, y=20, rsz='1d2+1', rsparse='2')
+    m = boxed_in(x=20, y=20, rsz="1d2+1", rsparse="2")
     _basic_map_checks(m)
 
 
 def test_generate_rdc_smoke():
-    m = rdc_generate(x=30, y=30, rsz='1d2+1', rsparse='2', seed_budget='4', max_steps='60')
+    m = rdc_generate(x=30, y=30, rsz="1d2+1", rsparse="2", seed_budget="4", max_steps="60")
     _basic_map_checks(m)
