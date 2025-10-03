@@ -9,9 +9,8 @@ import space.exceptions as E
 
 class BlockedCell(Corridor):
 
-    def __init__(self, *items, mobj=None, pos=None):
-        super().__init__(*items, mobj=mobj, pos=pos)
-        Container._add_item(self, Door(is_attached=True))
+    def __init__(self, *a, **kw):
+        super().__init__(*(Door(is_attached=True), *a), **kw)
 
     @property
     def door(self):

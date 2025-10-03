@@ -20,9 +20,8 @@ class Cell(MapObj, Container):
         depth = "5ft"
         mass = INFINITY
 
-    def __init__(self, *items, mobj=None, pos=None):
-        Container.__init__(self, *items)
-        MapObj.__init__(self, mobj=mobj, pos=pos)
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
 
     def accept(self, item):
         if isinstance(item, Living):

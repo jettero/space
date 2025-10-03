@@ -11,10 +11,10 @@ class MapObj:
     # NOTE: we define the MapObj.box property during import space.map.util
     # e.g.: self.box → Box(MapObj)
 
-    def __init__(self, mobj=None, pos=None):
+    def __init__(self, *a, mobj=None, pos=None, **kw):
+        super().__init__(*a, **kw)
         self.map = mobj
         self.pos = pos
-
         self.tags = Tags()
 
     def __bool__(self):
