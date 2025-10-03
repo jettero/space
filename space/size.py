@@ -51,8 +51,8 @@ class Size(SizeMeta):
     class Meta:
         mass = height = width = depth = 0
 
-    def __init__(self, mass=None, height=None, width=None, depth=None, volume=None):
-        super().__init__()
+    def __init__(self, mass=None, height=None, width=None, depth=None, volume=None, **kw):
+        super().__init__(**kw)
         self.mass = mass
         self.height = height
         self.width = width
