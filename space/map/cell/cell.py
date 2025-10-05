@@ -13,6 +13,7 @@ import space.exceptions as E
 class Cell(MapObj, Container):
     _override = None
     a = "◦"
+    attenuation = 0.0  # hearability loss across the barrier
 
     class Meta:
         height = "10ft"
@@ -64,6 +65,7 @@ class Floor(Cell):
     """Room floor cell (same render as Cell)."""
 
     a = "·"
+    attenuation = 0.0
 
     @property
     def is_floor(self):
@@ -74,6 +76,7 @@ class Corridor(Cell):
     """Corridor/hallway floor cell (same render as Cell)."""
 
     a = "܀"
+    attenuation = 0.0
 
     @property
     def is_corridor(self):

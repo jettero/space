@@ -535,8 +535,18 @@ class Map(baseobj):
                     cur.y += step.y
 
     def _visicalc(self, pos1, pos2):
+        # Stop line-of-sight at walls and closed doors; mark cells up to barrier visible
+        from .cell.blocked import BlockedCell
+        from ..door import Door
+
         for c in self.fast_voxel(pos1, pos2, bad_type=Wall):
             c.visible = True
+            # stop at closed doors, but allow LOS through open doors
+            if isinstance(c, BlockedCell):
+                d = c.door
+                if isinstance(d, Door) and not d.open:
+                    break
+            # also stop if the very next step is a wall (already handled by bad_type)
 
     def visicalc(self, whom, maxdist=None):
         c1 = self[whom]
@@ -609,6 +619,74 @@ class Map(baseobj):
             bnds,
             tuple(bnds),
         )
+        return MapView(self, bounds=bnds)
+
+    # Audio-like submap: attenuates through barriers instead of pruning LOS
+    def hearicalc_submap(self, whom, maxdist=None, min_hearability=0.1):
+        """Return a MapView bounded to maxdist that includes cells reachable
+        with cumulative hearability >= min_hearability.
+
+        For now, mirrors visicalc_submap bounds behavior, but computes inclusion
+        by propagating hearability without pruning at doors/walls. Pass-through
+        factors are derived from barrier attenuation attributes when present.
+        """
+        from .cell.wall import Wall
+        from .cell.cell import Cell
+
+        wlp = whom.location.pos
+        maxdist = test_maxdist(maxdist)
+
+        # Dijkstra-like frontier by best hearability
+        import heapq
+
+        def passthrough(c_from, c_to):
+            # open tiles: full pass-through
+            if c_from is None or c_to is None:
+                return 0.0
+            return max(0.0, 1.0 - c_to.attenuation)
+
+        best = {}
+        pq = []
+        start = (wlp[0], wlp[1])
+        best[start] = 1.0
+        heapq.heappush(pq, (-1.0, start))
+
+        def neighbors(p):
+            x, y = p
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                np = (x + dx, y + dy)
+                yield np
+
+        while pq:
+            neg_aud, p = heapq.heappop(pq)
+            aud = -neg_aud
+            if aud < min_hearability:
+                continue
+            if not maxdist(wlp, p):
+                continue
+            c_from = self.get(*p)
+            for np in neighbors(p):
+                if not maxdist(wlp, np):
+                    continue
+                c_to = self.get(*np)
+                k = passthrough(c_from, c_to)
+                if k <= 0.0:
+                    continue
+                na = aud * k
+                if na < min_hearability:
+                    continue
+                if na > best.get(np, 0.0):
+                    best[np] = na
+                    heapq.heappush(pq, (-na, np))
+
+        # Build bounds from visited cells
+        from .util import Bounds
+
+        if not best:
+            return MapView(self, bounds=Bounds(*(wlp * 2)))
+        xs = [p[0] for p in best]
+        ys = [p[1] for p in best]
+        bnds = Bounds(min(xs), min(ys), max(xs), max(ys))
         return MapView(self, bounds=bnds)
 
 

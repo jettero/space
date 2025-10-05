@@ -8,6 +8,13 @@ import space.exceptions as E
 
 
 class BlockedCell(Corridor):
+    @property
+    def attenuation(self):
+        # hearability loss across the barrier, for BlockedCells, this depends on open-state
+        d = self.door
+        if d is None or d.open:
+            return 0.0
+        return 0.7
 
     def __init__(self, *a, **kw):
         super().__init__(*(Door(is_attached=True), *a), **kw)
