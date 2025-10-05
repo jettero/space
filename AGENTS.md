@@ -125,6 +125,39 @@
 - Comments: avoid adding comments unless necessary for code clarity; keep any
   comments short and about the code only.
 
+## Messaging System (Planning Notes)
+
+- Source of inspiration: `contrib/m_messages.c` (LPC). Treat it as a reference
+  for concepts only; port behavior into idiomatic Python within `space/`.
+- Placement: prefer a small `MessagesMixin` integrated into `Living`/`Humanoid`
+  (likely on `Humanoid`) rather than a new global system. Keep surface area
+  minimal and reuse existing shells and message types in `space/shell/`.
+- Composition vs delivery: separate message composition (token expansion like
+  `$N`, `$vverb`, `$t`, pronouns/possessives, and basic agreement) from
+  delivery. Composition should return `TextMessage` instances; delivery should
+  call `.tell()` on participants and nearby observers.
+- Nearby delivery: fan‑out to “others” via the map/cell containers already in
+  `space/map/cell/`. If a helper is required, add a minimal method on `Cell`
+  to enumerate adjacent cells/occupants for audience collection. Avoid broad
+  registries or globals.
+- Grammar tokens: start with a practical subset: subjects `$N/$n`, target
+  `$T/$t`, objects `$O/$o`, possessive/objective/reflexive `$p/$o/$r`, and
+  verb agreement `$vverb`. Expand incrementally alongside tests.
+- Gender/pronouns: follow the current `Living` gender model. Do not add
+  defensive checks for attributes guaranteed by `Living` (e.g., `gender`,
+  pronoun accessors once defined). Prefer direct attribute access.
+- Shell integration: reuse `space/shell/message.TextMessage` and the existing
+  `Living.tell()` plumbing (`HasShell.shell.receive`). Avoid introducing new
+  sinks; format once, then deliver.
+- Minimal environment changes: only add what’s needed to enumerate nearby
+  `MessagesMixin` receivers. Floors and corridors should remain visually the
+  same; any helper should be short and generic.
+- Tests first: add focused tests in `t/` covering token expansion, agreement,
+  self/target/others variants, and adjacency fan‑out. Keep tests deterministic
+  and avoid router changes.
+- Keep Pythonic: small pure functions for token parsing/expansion; avoid hidden
+  globals. Any defaults/templates live on the mixin/class, not modules.
+
 ## Git Usage Policy
 
 - Using `git diff` and `git log` for context is encouraged.
