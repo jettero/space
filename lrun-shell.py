@@ -13,7 +13,9 @@ from space.item import Ubi
 from t.troom import a_map, o
 
 c = sys.argv[1:]
-if not c:
+if c[0:2] in (['get','bauble'], ['bauble'], ["ubi"]):
     c = ["open door; sSW6s2w; get bauble"]
+else:
+    c = ['look']
 
 ReadlineShell(owner=o.me, init=c).loop()
