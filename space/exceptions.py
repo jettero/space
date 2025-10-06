@@ -26,7 +26,7 @@ class SExceptionMixin:
             self.body.tell(self.body_msg)
 
 
-class STypeError(TypeError, SExceptionMixin):
+class STypeError(SExceptionMixin, TypeError):
     pass
 
 
@@ -34,7 +34,7 @@ class UnfilledArgumentError(STypeError):
     pass
 
 
-class ContainerError(Exception, SExceptionMixin):
+class ContainerError(SExceptionMixin, Exception):
     pass
 
 
@@ -42,7 +42,7 @@ class ContainerTypeError(ContainerError):
     pass
 
 
-class LivingSlotSetupError(Exception):
+class LivingSlotSetupError(SExceptionMixin, Exception):
     pass
 
 
@@ -50,11 +50,11 @@ class ContainerCapacityError(ContainerError):
     pass
 
 
-class ParseError(SyntaxError, SExceptionMixin):
+class ParseError(SExceptionMixin, SyntaxError):
     pass
 
 
-class InternalParserError(Exception):
+class InternalParserError(ParseError):
     pass
 
 
@@ -62,5 +62,5 @@ class TargetError(ParseError):
     pass
 
 
-class InvalidDamageType(Exception):
+class InvalidDamageType(SExceptionMixin, ValueError):
     pass
