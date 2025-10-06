@@ -11,3 +11,6 @@ class Shell(BaseShell):
         msg = msg.render_text(color=False).splitlines()
         msg = "\n  " + "\n  ".join(msg)
         log.info("%s heard: %s", self, msg)
+
+    def __str__(self):
+        return f"<{self.owner}'s {self.__class__}>"
