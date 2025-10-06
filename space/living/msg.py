@@ -106,8 +106,9 @@ class ReceivesMessages(HasShell):
                 # default subject/short
                 return self._name_for(forwhom, subj, "s")
             if tag in ("O", "o"):
+                # Objects default to first observed ($o0), not second
                 if idx is None:
-                    idx = 1
+                    idx = 0
                 if idx >= len(obs):
                     return "something"
                 obj = obs[idx]
