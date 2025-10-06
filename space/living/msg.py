@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import re
+import space.exceptions as E
 from ..stdobj import StdObj
 
 
