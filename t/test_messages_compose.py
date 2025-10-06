@@ -2,7 +2,6 @@
 
 from space.living.msg import ReceivesMessages as MessagesMixin
 
-
 def test_compose_basic_pronouns_and_verb(a_map,objs):
     m = MessagesMixin()
     who = [objs.me, objs.stupid]
@@ -18,7 +17,7 @@ def test_compose_objects_variants(a_map,objs):
     from space.living.msg import ReceivesMessages as MessagesMixin
 
     m = MessagesMixin()
-    who = [objs.me]
+    who = [objs.me, objs.stupid]
     obs = [objs.ubi]
     msg_t = m.compose(objs.me, "$N $vlook at $o.", who, *obs)
     assert msg_t == f"You look at {objs.ubi.a_short}."
