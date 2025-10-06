@@ -15,36 +15,11 @@ from ..roll import Roll, AttrChoices
 from .gender import Unknown
 from .stats import Sci, Dip, Mar, Eng, Mor, HitPoints, ClassRank, ExperiencePoints, Initiative
 from .slots import PackSlot, Slots
+from .msg import ReceivesMessages
 
 import space.exceptions as E
 
 log = logging.getLogger(__name__)
-
-
-class HasShell:
-    _shell = None
-
-    @property
-    def shell(self):
-        if self._shell is None:
-            from ..shell.log import Shell as LogShell
-
-            self._shell = LogShell(owner=self)
-        return self._shell
-
-    @shell.setter
-    def shell(self, v):
-        from ..shell.base import BaseShell
-
-        if v is None:
-            self._shell = v
-        if not isinstance(v, BaseShell):
-            raise E.STypeError(f"{v} is not a shell")
-        self._shell = v
-
-    def tell(self, msg):
-        self.shell.receive(msg)
-
 
 class CanMove:
     def move(self, *moves):
@@ -91,7 +66,7 @@ class CanMove:
         obj.move(*moves)
 
 
-class Living(HasShell, CanMove, StdObj):
+class Living(ReceivesMessages, CanMove, StdObj):
     health = gender = None  # autoloaded from metaclass
     active = False
 

@@ -621,7 +621,7 @@ class Map(baseobj):
         )
         return MapView(self, bounds=bnds)
 
-    # Audio-like submap: attenuates through barriers instead of pruning LOS
+    # Hearing-like submap: attenuates through barriers instead of pruning LOS
     def hearicalc_submap(self, whom, maxdist=None, min_hearability=0.1):
         """Return a MapView bounded to maxdist that includes cells reachable
         with cumulative hearability >= min_hearability.
