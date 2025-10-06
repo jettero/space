@@ -21,6 +21,7 @@ import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
+
 class CanMove:
     def move(self, *moves):
         if len(moves) == 1 and isinstance(moves[0], (tuple, list)):

@@ -3,6 +3,7 @@
 import re
 from ..stdobj import StdObj
 
+
 class HasShell:
     _shell = None
 
@@ -26,7 +27,6 @@ class HasShell:
 
     def tell(self, msg):
         self.shell.receive(msg)
-
 
 
 class ReceivesMessages(HasShell):

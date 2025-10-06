@@ -13,4 +13,4 @@ class StdObj(Named, Containable):
         return self.long
 
     def __repr__(self):
-        return f'{self.__class__.__name__}<{self.short}>'
+        return f"{self.__class__.__name__}<{self.short}>"

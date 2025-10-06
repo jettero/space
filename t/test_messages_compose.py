@@ -5,6 +5,7 @@ from space.shell.message import TextMessage
 
 def test_compose_basic_pronouns_and_verb(a_map):
     from t.troom import o as to
+
     me = to.me
     them = to.stupid
     # import mixin directly
@@ -23,6 +24,7 @@ def test_compose_basic_pronouns_and_verb(a_map):
 
 def test_compose_objects_variants(a_map):
     from t.troom import o as to
+
     me = to.me
     ubi = to.ubi
     from space.living.msg import ReceivesMessages as MessagesMixin

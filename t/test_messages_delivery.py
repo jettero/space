@@ -3,6 +3,7 @@
 
 def test_simple_and_targeted_delivery(a_map):
     from t.troom import o as to
+
     me = to.me
     them = to.stupid
     from space.living.msg import ReceivesMessages

@@ -45,11 +45,7 @@ def import_safely(mod_name: str) -> ModuleType:
 
 
 def is_descriptor(obj) -> bool:
-    return (
-        hasattr(obj, "__get__")
-        or hasattr(obj, "__set__")
-        or hasattr(obj, "__delete__")
-    )
+    return hasattr(obj, "__get__") or hasattr(obj, "__set__") or hasattr(obj, "__delete__")
 
 
 def classify_attr(obj) -> str:
@@ -225,6 +221,7 @@ def main(argv: List[str]) -> int:
     # Prepare rows for a tabular display
     rows: List[Tuple[str, str, str, str]] = []
     import fnmatch
+
     for cls, confs in sorted(results, key=lambda x: (x[0].__module__, x[0].__qualname__)):
         cls_name = f"{cls.__module__}.{cls.__qualname__}"
         if args.object and not any(fnmatch.fnmatch(cls_name, pat) for pat in args.object):
@@ -264,7 +261,12 @@ def main(argv: List[str]) -> int:
             all_space_definers = all(getattr(d, "__module__", "").startswith("space.") for d in definers)
             if not has_space_definer:
                 continue
-            if (not args.include_space_wins) and (winner_cls is not None) and getattr(winner_cls, "__module__", "").startswith("space.") and not all_space_definers:
+            if (
+                (not args.include_space_wins)
+                and (winner_cls is not None)
+                and getattr(winner_cls, "__module__", "").startswith("space.")
+                and not all_space_definers
+            ):
                 # Winner is space.*, other side outside space.*, skip unless flag requested
                 continue
             # Merge winner into Attribute column as Winner.attr
@@ -277,12 +279,13 @@ def main(argv: List[str]) -> int:
 
     # Compute column widths
     headers = ("Class", "Bases", "Attribute (winner)", "Defined In (base:type)")
+
     # Order rows by function/attribute name, then by winner class name, then by class/module
     def sort_key(r):
         # r[2] is Attribute (winner) like 'Winner.attr' or just 'attr'
         attr = r[2]
-        if '.' in attr:
-            winner, fname = attr.split('.', 1)
+        if "." in attr:
+            winner, fname = attr.split(".", 1)
         else:
             winner, fname = "", attr
         return (fname, winner, r[0])
