@@ -129,6 +129,10 @@
 
 - Source of inspiration: `contrib/m_messages.c` (LPC). Treat it as a reference
   for concepts only; port behavior into idiomatic Python within `space/`.
+  Always re-scan `contrib/m_messages.c` when touching token defaults or
+  composition semantics (e.g., `$t` defaults to index 1; `$o` defaults to 0).
+  Cross-check `contrib/grammar.c` and `contrib/names.c` for pronoun and
+  naming behavior before changing `space/living/msg.py` or `space/named.py`.
 - Placement: prefer a small `MessagesMixin` integrated into `Living`/`Humanoid`
   (likely on `Humanoid`) rather than a new global system. Keep surface area
   minimal and reuse existing shells and message types in `space/shell/`.
