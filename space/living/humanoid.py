@@ -104,3 +104,6 @@ class Humanoid(Living):
 class Human(Humanoid):
     s = l = "human"
     d = "a human"
+
+    def __init__(self, proper_name=None, short=None, **kw):
+        super().__init__(proper_name=proper_name, short=short, **kw)

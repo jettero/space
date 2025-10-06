@@ -22,17 +22,21 @@ class Named(Serial, baseobj):
     d_fmt = "{l:{fmt}} :- {d}"
     r_fmt = "{c}({l})"
 
+    unique = False
+
     class Meta:
         save = "asld"
 
-    def __init__(self, short=None, abbr=None, long=None, **kw):
+    def __init__(self, short=None, abbr=None, long=None, proper_name=None, **kw):
         super().__init__(**kw)  # if Serial and baseobj had __init__, they'd both get called via MRO/super()
         if abbr:
             self.a = abbr
+        if proper_name:
+            self.proper_name = proper_name
+        elif long:
+            self.l = long
         if short:
             self.s = short
-        if long:
-            self.l = long
         self.tokens = self._tokenize()
 
     def __format__(self, spec):
@@ -51,6 +55,46 @@ class Named(Serial, baseobj):
                 m_select = "s"
             return self._m_fmt(m_select, fmt=fmt)
         return super().__format__(spec)
+
+    @property
+    def proper_name(self):
+        return self.l
+
+    @proper_name.setter
+    def proper_name(self, v):
+        # Setting a proper name assigns long and short as indicated
+        # to set something fancier, like 'Jordan "Schitzo" Blueberry', do this instead:
+        # self.s = 'Schitzo'
+        # self.l = 'Jordan "Schitzo" Blueberry'
+        # self.unique = True
+        name = str(v) if v is not None else None
+        if name:
+            self.l = name
+            self.s = name.split()[0]
+            self.unique = True
+        else:
+            self.s = self.l = "something"
+            self.unique = False
+        self.tokens = self._tokenize()
+
+    @property
+    def a_short(self):
+        s = self.short
+        if not s:
+            return s
+        if self.unique:
+            return s
+        first = s[:1].lower()
+        return f"an {s}" if first in "aeiou" else f"a {s}"
+
+    @property
+    def the_short(self):
+        s = self.short
+        if not s:
+            return s
+        if self.unique:
+            return s
+        return f"the {s}"
 
     def _m_fmt(self, var_name, fmt="", **kw):
         m = var_name.lower().strip()[0]

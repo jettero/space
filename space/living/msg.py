@@ -30,20 +30,6 @@ class HasShell:
 
 
 class ReceivesMessages(HasShell):
-    def _a_an(self, word):
-        w = str(word)
-        return ("an " + w) if (w[:1].lower() in "aeiou") else ("a " + w)
-
-    def _short(self, x, the=False, a=False):
-        if isinstance(x, StdObj):
-            s = x.short
-        else:
-            s = str(x)
-        if the:
-            return f"the {s}"
-        if a:
-            return self._a_an(s)
-        return s
 
     def _name_for(self, forwhom, subj, mode):
         if mode == "o":  # objective
@@ -102,7 +88,7 @@ class ReceivesMessages(HasShell):
                 if qual in ("o", "r", "p"):
                     return self._name_for(forwhom, subj, qual)
                 if qual == "a":
-                    return self._short(subj, a=True)
+                    return subj.a_short
                 # default subject/short
                 return self._name_for(forwhom, subj, "s")
             if tag in ("O", "o"):
@@ -112,11 +98,22 @@ class ReceivesMessages(HasShell):
                 if idx >= len(obs):
                     return "something"
                 obj = obs[idx]
+                # Qualifiers: default -> a_short, 's' -> short, 't' -> the_short, 'a' -> a_short
+                if isinstance(obj, StdObj):
+                    if qual == "t":
+                        return obj.the_short
+                    if qual == "s":
+                        return obj.short
+                    # default and 'a'
+                    return obj.a_short
+                # Non-StdObj fallback (strings)
                 if qual == "t":
-                    return self._short(obj, the=True)
-                if qual == "a":
-                    return self._short(obj, a=True)
-                return self._short(obj)
+                    return f"the {obj}"
+                if qual == "s":
+                    return str(obj)
+                # default/a
+                w = str(obj)
+                return (f"an {w}") if w[:1].lower() in "aeiou" else (f"a {w}")
             return t
 
         return re.sub(r"\$[MNVTTPPOOnnvtto][a-z0-9]*", sub_token, msg)
