@@ -3,6 +3,7 @@
 /space/version.py
 /reqs
 /mods
+/file*
 
 __pycache__
 *.egg-info
