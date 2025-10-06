@@ -115,15 +115,17 @@ def find_conflicts_in_class(cls: type) -> List[Tuple[str, List[Tuple[type, type,
         # Ignore names that ultimately resolve from the same defining class
         # across all bases (i.e., multiple bases inherit the same definition
         # from a single ancestor). Those are not true conflicts.
-        defining_classes = set(definer for _, definer, _ in entries)
-        if len(defining_classes) == 1:
-            continue
-        # Consider only attributes present in 2+ distinct bases
+        # But only consider defining classes coming from distinct direct bases;
+        # multiple bases must participate.
         bases_with = {}
         for base, definer, obj in entries:
             bases_with.setdefault(base, (definer, obj))
         if len(bases_with) < 2:
             continue
+        defining_classes = set(definer for _, (definer, _obj) in bases_with.items())
+        if len(defining_classes) == 1:
+            continue
+        # At this point we have 2+ direct bases contributing different definers
 
         # Skip common harmless or irrelevant names, including those provided only by object
         if name in {"__module__", "__doc__", "__weakref__", "__dict__"}:
@@ -135,13 +137,8 @@ def find_conflicts_in_class(cls: type) -> List[Tuple[str, List[Tuple[type, type,
         if all(c is object for c in contributing_classes):
             continue
 
-        # At this point, we have 2+ direct bases that would supply a definition
-        # for the same name (possibly via their own ancestors). Only consider
-        # it a conflict if at least one defining class is from space.*.
-        resolved = [(b, d, o) for b, (d, o) in bases_with.items()]
-        if not any(getattr(d, "__module__", "").startswith("space.") for _, d, _ in resolved):
-            continue
-        conflicts.append((name, resolved))
+        # Filter policy applied in scan_packages/main when emitting rows based on flags
+        conflicts.append((name, [(b, d, o) for b, (d, o) in bases_with.items()]))
 
     return conflicts
 
@@ -178,6 +175,11 @@ def scan_packages(pkgs: Iterable[str]) -> List[Tuple[type, List[Tuple[str, List[
 def main(argv: List[str]) -> int:
     parser = argparse.ArgumentParser(description="Scan for MRO conflicts")
     parser.add_argument("packages", nargs="*", default=["space"], help="Packages to scan")
+    parser.add_argument(
+        "--include-space-wins",
+        action="store_true",
+        help="Include conflicts where the winner is from space.* (default excludes)",
+    )
     parser.add_argument(
         "-f",
         "--function",
@@ -253,6 +255,18 @@ def main(argv: List[str]) -> int:
                 if name in getattr(c, "__dict__", {}):
                     winner_cls = c
                     break
+            # Apply filtering policy:
+            # - keep if at least one definer is from space.*
+            # - exclude by default if winner is from space.* unless --include-space-wins
+            # Note: still include intra-space conflicts (all definers in space.*)
+            definers = [d for _b, d, _o in entries]
+            has_space_definer = any(getattr(d, "__module__", "").startswith("space.") for d in definers)
+            all_space_definers = all(getattr(d, "__module__", "").startswith("space.") for d in definers)
+            if not has_space_definer:
+                continue
+            if (not args.include_space_wins) and (winner_cls is not None) and getattr(winner_cls, "__module__", "").startswith("space.") and not all_space_definers:
+                # Winner is space.*, other side outside space.*, skip unless flag requested
+                continue
             # Merge winner into Attribute column as Winner.attr
             if winner_cls:
                 attr_disp = f"{winner_cls.__name__}.{name}"
