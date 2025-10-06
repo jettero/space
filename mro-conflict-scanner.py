@@ -136,10 +136,12 @@ def find_conflicts_in_class(cls: type) -> List[Tuple[str, List[Tuple[type, type,
             continue
 
         # At this point, we have 2+ direct bases that would supply a definition
-        # for the same name (possibly via their own ancestors). That's a conflict.
-        # Only consider duplicates where 2+ distinct direct bases contribute
-        # different defining classes.
-        conflicts.append((name, [(b, d, o) for b, (d, o) in bases_with.items()]))
+        # for the same name (possibly via their own ancestors). Only consider
+        # it a conflict if at least one defining class is from space.*.
+        resolved = [(b, d, o) for b, (d, o) in bases_with.items()]
+        if not any(getattr(d, "__module__", "").startswith("space.") for _, d, _ in resolved):
+            continue
+        conflicts.append((name, resolved))
 
     return conflicts
 
