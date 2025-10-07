@@ -5,8 +5,9 @@ from collections import namedtuple
 import space.exceptions as E
 from ..stdobj import StdObj
 
-Messages = namedtuple('Messages', ['us', 'them', 'other'])
-Actors = namedtuple('Actors', ['actor', 'target'])
+Messages = namedtuple("Messages", ["us", "them", "other"])
+Actors = namedtuple("Actors", ["actor", "target"])
+
 
 class HasShell:
     _shell = None
@@ -15,6 +16,7 @@ class HasShell:
     def shell(self):
         if self._shell is None:
             from ..shell.log import Shell as LogShell
+
             self.shell = LogShell()
         return self._shell
 
@@ -126,13 +128,13 @@ class ReceivesMessages(HasShell):
     def compose(self, forwhom, msg, who, *obs):
         return self._expand(forwhom, msg, who, obs)
 
-    def action(self, who:Actors, msg, *obs):
+    def action(self, who: Actors, msg, *obs):
         us = self.compose(who.actor, msg, who, *obs)
-        them = self.compose(who.target, msg, who, *obs)if who.target is not None else None
+        them = self.compose(who.target, msg, who, *obs) if who.target is not None else None
         others = self.compose(None, msg, who, *obs)
         return Messages(us, them, others)
 
-    def inform(self, who:Actors, msgs:Messages, range=6, min_hearability=0.1):  # pylint: disable=redefined-builtin
+    def inform(self, who: Actors, msgs: Messages, range=6, min_hearability=0.1):  # pylint: disable=redefined-builtin
         seen = set()
         if msgs.us is not None:
             who.actor.tell(msgs.us)
@@ -149,19 +151,19 @@ class ReceivesMessages(HasShell):
                     seen.add(targ)
 
     def simple_action(self, msg, *obs, range=6, min_hearability=0.1):  # pylint: disable=redefined-builtin
-        who = Actors(self,None)
+        who = Actors(self, None)
         self.inform(who, self.action(who, msg, *obs), range=range, min_hearability=min_hearability)
 
     def my_action(self, msg, *obs):
-        who = Actors(self,None)
+        who = Actors(self, None)
         us, _, _ = self.action(who, msg, *obs)
         self.tell(us)
 
     def other_action(self, msg, *obs, range=6, min_hearability=0.1):  # pylint: disable=redefined-builtin
-        who = Actors(self,None)
+        who = Actors(self, None)
         _, _, others = self.action(who, msg, *obs)
         self.inform(who, Messages(None, None, others), range=range, min_hearability=min_hearability)
 
     def targeted_action(self, msg, target, *obs, range=6, min_hearability=0.1):  # pylint: disable=redefined-builtin
-        who = Actors(self,target)
+        who = Actors(self, target)
         self.inform(who, self.action(who, msg, *obs), range=range, min_hearability=min_hearability)

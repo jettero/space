@@ -2,7 +2,8 @@
 
 from space.living.msg import ReceivesMessages as MessagesMixin
 
-def test_compose_basic_pronouns_and_verb(a_map,objs):
+
+def test_compose_basic_pronouns_and_verb(a_map, objs):
     m = MessagesMixin()
     who = [objs.me, objs.stupid]
     # $N $vattack $t.
@@ -13,7 +14,8 @@ def test_compose_basic_pronouns_and_verb(a_map,objs):
     others = m.compose(None, "$N $vattack $t.", who)
     assert others == f"{objs.me.a_short} attacks {objs.stupid.a_short}."
 
-def test_compose_objects_variants(a_map,objs):
+
+def test_compose_objects_variants(a_map, objs):
     from space.living.msg import ReceivesMessages as MessagesMixin
 
     m = MessagesMixin()
