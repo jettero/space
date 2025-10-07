@@ -10,4 +10,4 @@ class Shell(BaseShell):
         self.msgs = list()
 
     def receive_message(self, msg):
-        self.msgs.append(msg)
+        self.msgs.append(msg.render_text(color=False))
