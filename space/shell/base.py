@@ -19,7 +19,8 @@ class BaseShell:
     _stop = False
 
     def __init__(self, owner=None, init=None):
-        self.owner = owner
+        if owner is not None:
+            owner.shell = self
         self.parser = Parser()
         self.startup(init=init)
 
@@ -36,8 +37,9 @@ class BaseShell:
             self._owner = None
         if not hasattr(v, "tell") or not callable(v.tell):
             raise TypeError(f"{v} cannot be a shell owner")
-        self._owner = weakref.proxy(v)
-        v.shell = self
+        if self._owner != v:
+            self._owner = weakref.proxy(v)
+            v.shell = self
 
     def receive(self, something):
         if isinstance(something, Message):
