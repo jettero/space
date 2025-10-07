@@ -12,8 +12,7 @@ class HasShell:
     def shell(self):
         if self._shell is None:
             from ..shell.log import Shell as LogShell
-
-            self._shell = LogShell(owner=self)
+            self.shell = LogShell()
         return self._shell
 
     @shell.setter
@@ -24,7 +23,9 @@ class HasShell:
             self._shell = v
         if not isinstance(v, BaseShell):
             raise E.STypeError(f"{v} is not a shell")
-        self._shell = v
+        if self._shell is not v:
+            self._shell = v
+            v.owner = self
 
     def tell(self, msg):
         self.shell.receive(msg)
@@ -143,7 +144,7 @@ class ReceivesMessages(HasShell):
                 targ.tell(them)
                 seen.add(targ)
         sub = actor.location.map.hearicalc_submap(actor, maxdist=range, min_hearability=min_hearability)
-        for obj in getattr(sub, "objects", []):
+        for obj in sub.objects:
             if isinstance(obj, ReceivesMessages) and obj not in seen and obj not in who:
                 obj.tell(others)
                 seen.add(obj)
