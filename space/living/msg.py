@@ -1,9 +1,12 @@
 # coding: utf-8
 
 import re
+from collections import namedtuple
 import space.exceptions as E
 from ..stdobj import StdObj
 
+Messages = namedtuple('Messages', ['us', 'them', 'other'])
+Actors = namedtuple('Actors', ['actor', 'target'])
 
 class HasShell:
     _shell = None
@@ -121,48 +124,44 @@ class ReceivesMessages(HasShell):
         return re.sub(r"\$[MNVTTPPOOnnvtto][a-z0-9]*", sub_token, msg)
 
     def compose(self, forwhom, msg, who, *obs):
-        return self._expand(forwhom, msg, who, list(obs))
+        return self._expand(forwhom, msg, who, obs)
 
-    def action(self, who, msg, *obs):
-        us = self.compose(who[0], msg, who, *obs)
-        them = None
-        if len(who) > 1:
-            them = self.compose(who[1], msg, who, *obs)
+    def action(self, who:Actors, msg, *obs):
+        us = self.compose(who.actor, msg, who, *obs)
+        them = self.compose(who.target, msg, who, *obs)if who.target is not None else None
         others = self.compose(None, msg, who, *obs)
-        return us, them, others
+        return Messages(us, them, others)
 
-    def inform(self, who, msgs, range=6, min_hearability=0.1):  # pylint: disable=redefined-builtin
-        actor = who[0]
-        us, them, others = msgs
+    def inform(self, who:Actors, msgs:Messages, range=6, min_hearability=0.1):  # pylint: disable=redefined-builtin
         seen = set()
-        if us is not None:
-            actor.tell(us)
-            seen.add(actor)
-        if them is not None and len(who) > 1 and who[1] is not None:
-            targ = who[1]
-            if targ not in seen:
-                targ.tell(them)
-                seen.add(targ)
-        sub = actor.location.map.hearicalc_submap(actor, maxdist=range, min_hearability=min_hearability)
-        for obj in sub.objects:
-            if isinstance(obj, ReceivesMessages) and obj not in seen and obj not in who:
-                obj.tell(others)
-                seen.add(obj)
+        if msgs.us is not None:
+            who.actor.tell(msgs.us)
+            seen.add(who.actor)
+        if msgs.them is not None and who.target is not None and who.target not in seen:
+            who.target.tell(msgs.them)
+            seen.add(who.target)
+        for src in who:
+            if src is None:
+                continue
+            for targ in src.location.map.visicalc_submap(src, maxdist=range).objects:
+                if isinstance(targ, ReceivesMessages) and targ not in seen:
+                    targ.tell(msgs.other)
+                    seen.add(targ)
 
     def simple_action(self, msg, *obs, range=6, min_hearability=0.1):  # pylint: disable=redefined-builtin
-        who = [self]
+        who = Actors(self,None)
         self.inform(who, self.action(who, msg, *obs), range=range, min_hearability=min_hearability)
 
     def my_action(self, msg, *obs):
-        who = [self]
+        who = Actors(self,None)
         us, _, _ = self.action(who, msg, *obs)
         self.tell(us)
 
     def other_action(self, msg, *obs, range=6, min_hearability=0.1):  # pylint: disable=redefined-builtin
-        who = [self]
+        who = Actors(self,None)
         _, _, others = self.action(who, msg, *obs)
-        self.inform(who, (None, None, others), range=range, min_hearability=min_hearability)
+        self.inform(who, Messages(None, None, others), range=range, min_hearability=min_hearability)
 
     def targeted_action(self, msg, target, *obs, range=6, min_hearability=0.1):  # pylint: disable=redefined-builtin
-        who = [self, target]
+        who = Actors(self,target)
         self.inform(who, self.action(who, msg, *obs), range=range, min_hearability=min_hearability)
