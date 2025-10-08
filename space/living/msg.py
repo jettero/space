@@ -57,9 +57,16 @@ class ReceivesMessages(HasShell):
         return getattr(subj, "subjective", getattr(subj, "short", str(subj)))
 
     def _agree(self, forwhom_is_subject, verb):
+        # We only handle verbs written in second-person present.
+        # If the subject is the addressee, keep the verb as-is (e.g., "you attack").
         if forwhom_is_subject:
             return verb
-        # naive third-person singular inflection
+        # Third-person present for others. Handle "be" specially and otherwise
+        # inflect with simple -s/-es rules from the 2nd-person form.
+        if verb == "are":
+            return "is"
+        if verb == "have":
+            return "has"
         if verb.endswith(("s", "sh", "ch", "x", "z", "o")):
             return verb + "es"
         return verb + "s"
