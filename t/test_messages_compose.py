@@ -3,6 +3,7 @@
 import pytest
 from space.living.msg import Actors
 
+
 def test_compose_basic_pronouns_and_verb(objs):
     msg = objs.me.compose(objs.me, "$N $vattack $t.", [objs.me, objs.stupid])
     assert isinstance(msg, str)

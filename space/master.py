@@ -6,6 +6,7 @@
 from space.living.msg import HasShell
 from space.shell import ReadlineShell
 
+
 class MasterControlProgram:
     """Minimal MCP for local instances.
 
@@ -15,7 +16,9 @@ class MasterControlProgram:
     transports (ssh/telnet) can call the same entry point.
     """
 
-    def start_instance(self, type="local", username=None, map=None, body=None, init=None):  # pylint: disable=redefined-builtin
+    def start_instance(
+        self, type="local", username=None, map=None, body=None, init=None
+    ):  # pylint: disable=redefined-builtin
         """Start an instance.
 
         Args:
