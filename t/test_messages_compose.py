@@ -22,17 +22,20 @@ def test_compose_objects_variants(a_map, objs):
     assert msg_t == f"{objs.me.a_short} looks at {objs.ubi.a_short}."
 
 
-@pytest.mark.parametrize('msgs', [
-    ('$N $vdie.', "You die.", "Paul dies."),
-    ('$N $vare very cool.', "You are very cool.", "Paul is very cool."),
-    ('$N $vhave $o.', "You have a bauble.", "Paul has a bauble."),
-    ('$N $vdo "things" to $o.', 'You do "things" to a bauble.', 'Paul does "things" to a bauble.'),
-])
-def test_action_verb_agreement(objs,msgs):
+@pytest.mark.parametrize(
+    "msgs",
+    [
+        ("$N $vdie.", "You die.", "Paul dies."),
+        ("$N $vare very cool.", "You are very cool.", "Paul is very cool."),
+        ("$N $vhave $o.", "You have a bauble.", "Paul has a bauble."),
+        ('$N $vdo "things" to $o.', 'You do "things" to a bauble.', 'Paul does "things" to a bauble.'),
+    ],
+)
+def test_action_verb_agreement(objs, msgs):
     try:
-        to_parse,us,them,other = msgs
+        to_parse, us, them, other = msgs
     except ValueError:
-        to_parse,us,them = msgs
+        to_parse, us, them = msgs
         other = them
 
     msg = objs.me.action(Actors(objs.me, objs.stupid), to_parse, objs.ubi)
