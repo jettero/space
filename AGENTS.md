@@ -57,6 +57,12 @@
 - For parse failures, assert `not pstate`, `pstate.winner is None`, and check
   any available `pstate.error` text when relevant.
 
+### Tests (Reminders)
+- Do not attempt to import fixtures if they're already existing in t/conftest.py; just rely on the pytest fixture system
+- Do not attempt to build new objects (livings, something to pick up, etc), use the `objs` fixture that's already loaded
+- Do not attempt to load or initalize a map. the troom map is already available as the `a_map` fixture and already has the varous `objs` loaded into it
+- Do not attempt to make new fixtures if you can get by with one that already exists
+
 ### Test Naming
 - Use concise, descriptive function names that encode input and outcome.
 - Positive parse cases: `test_open_door`, `test_open_south_door`.
