@@ -107,3 +107,15 @@ class Human(Humanoid):
 
     def __init__(self, proper_name=None, short=None, **kw):
         super().__init__(proper_name=proper_name, short=short, **kw)
+
+
+class Skeleton(Humanoid):
+    s = l = "skeleton"
+    a = "s"
+    d = "a skeleton"
+
+
+class HumanSkeleton(Skeleton):
+    s = l = "skeleton"
+    a = "s"
+    d = "a human skeleton"
