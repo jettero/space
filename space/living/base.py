@@ -12,7 +12,7 @@ from ..container import Containable
 from ..damage import Damage, Kinetic
 from ..roll import Roll, AttrChoices
 
-from .gender import Unknown
+from .gender import Gender
 from .stats import Sci, Dip, Mar, Eng, Mor, HitPoints, ClassRank, ExperiencePoints, Initiative
 from .slots import PackSlot, Slots
 from .msg import ReceivesMessages
@@ -86,7 +86,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
     class Choices(AttrChoices):
         _ordered = ("gender", "height", "mass")
 
-        gender = (Unknown,)
+        gender = (Gender,)
         height = Roll("5d6+30")
         mass = Roll("6d8+40")
         width = lambda self: self.height * 0.42
