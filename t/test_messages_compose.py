@@ -1,16 +1,25 @@
 # coding: utf-8
 
 import pytest
-from space.living.msg import Actors
+from space.living.msg import Actors, Messages
 
+def _compose(me, targ, msg):
+    return Messages(
+        me.compose(me, msg, [me, targ]),
+        me.compose(targ, msg, [me, targ]),
+        me.compose(None, msg, [me, targ]),
+    )
 
 def test_compose_basic_pronouns_and_verb(objs):
-    msg = objs.me.compose(objs.me, "$N $vattack $t.", [objs.me, objs.stupid])
-    assert isinstance(msg, str)
-    assert msg == f"You attack {objs.stupid.a_short}."
+    msg = _compose(objs.me, objs.dig_dug, "$N $vattack $t.")
+    assert msg.us == f"You attack {objs.dig_dug.a_short}."
+    assert msg.them == f"{objs.me.a_short} attacks you."
+    assert msg.other == f"{objs.me.a_short} attacks {objs.dig_dug.a_short}."
 
-    others = objs.me.compose(None, "$N $vattack $t.", [objs.me, objs.stupid])
-    assert others == f"{objs.me.a_short} attacks {objs.stupid.a_short}."
+    msg = _compose(objs.me, objs.stupid, "$N $vattack $t.")
+    assert msg.us == f"You attack {objs.stupid.a_short}."
+    assert msg.them == f"{objs.me.a_short} attacks you."
+    assert msg.other == f"{objs.me.a_short} attacks {objs.stupid.a_short}."
 
 
 def test_compose_objects_variants(a_map, objs):
