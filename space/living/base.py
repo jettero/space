@@ -270,3 +270,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
         return True, {}
 
     do_sheet = find_verb_method("sheet", "do_sheet")
+
+    def do_receive(self, msg):
+        """Receive out-of-band text intended for the owner shell."""
+        pass
