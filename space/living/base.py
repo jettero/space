@@ -268,11 +268,3 @@ class Living(ReceivesMessages, CanMove, StdObj):
         return True, {}
 
     do_sheet = find_verb_method("sheet", "do_sheet")
-
-    def do_receive(self, msg, your_turn=False):
-        """ Receive text from the mob shell
-            Calling this on a player controlled living does nothing.
-            Living objects with behaviors (aka mobs) will receive environment information via do_receive.
-            Messages won't be delivered until it's the mob's turn and which point the mob will receive the nonsense message:
-              `:EOF:YOUR_TURN:` and the your_turn flag (to this function) will be set to true.
-        """

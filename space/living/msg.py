@@ -174,3 +174,12 @@ class ReceivesMessages(HasShell):
     def targeted_action(self, msg, target, *obs, range=6, min_hearability=0.1):  # pylint: disable=redefined-builtin
         who = Actors(self, target)
         self.inform(who, self.action(who, msg, *obs), range=range, min_hearability=min_hearability)
+
+    def do_receive(self, msg, your_turn=False):
+        """ Receive text from the mob shell
+            Calling this on a player controlled living does nothing.
+            Living objects with behaviors (aka mobs) will receive environment information via do_receive.
+            Messages won't be delivered until it's the mob's turn and which point the mob will receive the nonsense message:
+              `:EOF:YOUR_TURN:` and the your_turn flag (to this function) will be set to true.
+        """
+        raise NotImplementedError()
