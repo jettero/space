@@ -152,7 +152,7 @@ class ReceivesMessages(HasShell):
         for src in who:
             if src is None:
                 continue
-            for targ in src.location.map.visicalc_submap(src, maxdist=range).objects:
+            for targ in src.location.map.visicalc_submap(src).objects:
                 if isinstance(targ, ReceivesMessages) and targ not in seen:
                     targ.tell(msgs.other)
                     seen.add(targ)
@@ -176,10 +176,10 @@ class ReceivesMessages(HasShell):
         self.inform(who, self.action(who, msg, *obs), range=range, min_hearability=min_hearability)
 
     def do_receive(self, msg, your_turn=False):
-        """ Receive text from the mob shell
-            Calling this on a player controlled living does nothing.
-            Living objects with behaviors (aka mobs) will receive environment information via do_receive.
-            Messages won't be delivered until it's the mob's turn and which point the mob will receive the nonsense message:
-              `:EOF:YOUR_TURN:` and the your_turn flag (to this function) will be set to true.
+        """Receive text from the mob shell
+        Calling this on a player controlled living does nothing.
+        Living objects with behaviors (aka mobs) will receive environment information via do_receive.
+        Messages won't be delivered until it's the mob's turn and which point the mob will receive the nonsense message:
+          `:EOF:YOUR_TURN:` and the your_turn flag (to this function) will be set to true.
         """
         raise NotImplementedError()

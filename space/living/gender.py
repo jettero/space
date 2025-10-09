@@ -8,10 +8,12 @@ from ..named import Named
 # pronouns super flexible for players that need this and pretend gender is a
 # reproductive modality?
 
+
 class Gender(Named):
     a = "U"
     s = "unknown"
     l = "unknown reproductive modality"
+
 
 class Male(Gender):
     a = "M"
@@ -29,6 +31,7 @@ class Other(Gender):
     a = "O"
     s = "other"
     l = "other reproductive modality"
+
 
 class Not(Gender):
     a = "N"
