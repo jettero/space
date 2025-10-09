@@ -6,7 +6,7 @@ from collections import OrderedDict
 import space.exceptions as E
 from .base import Living
 from .gender import Male, Female
-from .slots import Slots, BeltSlot, HandSlot, LegsSlot, TorsoSlot, HeadSlot, FeetSlot, PackSlot
+from .slots import Slots as BaseSlots, BeltSlot, HandSlot, LegsSlot, TorsoSlot, HeadSlot, FeetSlot, PackSlot
 from ..door import Door
 from ..stdobj import StdObj
 
@@ -18,7 +18,7 @@ class Humanoid(Living):
     a = "p"
     d = "a humanoid"
 
-    class Slots(Slots):
+    class Slots(BaseSlots):
         class Meta:
             slots = OrderedDict(
                 [
