@@ -21,4 +21,4 @@ class Shell(LogShell):
     def step(self):
         while self._queue:
             self.owner.do_receive(self._queue.pop(0))
-        self.owner.do_recieve(":EOF:YOUR_TURN:")
+        self.owner.do_recieve(":EOF:YOUR_TURN:", your_turn=True)

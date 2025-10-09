@@ -94,9 +94,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
         health = lambda self: HitPoints("1d6+10")
 
     def __init__(self, long=None, short=None, **kw):
-        super().__init__(
-            **kw
-        )  # long and short might have otherwise been used via MRO/super... we use them below instead
+        super().__init__(**kw)  # long and short might have otherwise been used via MRO/super... we use them below instead
         self.slots = self.Slots(self)
 
         if long:
@@ -271,6 +269,10 @@ class Living(ReceivesMessages, CanMove, StdObj):
 
     do_sheet = find_verb_method("sheet", "do_sheet")
 
-    def do_receive(self, msg):
-        """Receive out-of-band text intended for the owner shell."""
-        pass
+    def do_receive(self, msg, your_turn=False):
+        """ Receive text from the mob shell
+            Calling this on a player controlled living does nothing.
+            Living objects with behaviors (aka mobs) will receive environment information via do_receive.
+            Messages won't be delivered until it's the mob's turn and which point the mob will receive the nonsense message:
+              `:EOF:YOUR_TURN:` and the your_turn flag (to this function) will be set to true.
+        """
