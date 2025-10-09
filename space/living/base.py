@@ -74,8 +74,11 @@ class Living(ReceivesMessages, CanMove, StdObj):
     s = l = "living"
     a = "L"
     d = "a living object"
-    # maximum interaction distance for adjacency-sensitive actions
-    reach = 1.42
+
+    # XXX: these should all be computed from our hight and body shape I guess
+    reach = 1.42 # arm reach for closing doors and grabbing things
+    sight_range = None # our visual range is forever
+    hearing_range = None # we hear forever too
 
     @property
     def abbr(self):
