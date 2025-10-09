@@ -213,7 +213,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
     def info(self):
         return "\n".join(
             [
-                f"Type:   {self.a}",
+                f"Type:   {self.abbr}",
                 f"Gender: {self.gender.short}",
                 f"Sci:    {self.sci.v:>2}",
                 f"Dip:    {self.dip.v:>2}",
