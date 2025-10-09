@@ -114,6 +114,9 @@ class Skeleton(Humanoid):
     a = "s"
     d = "a skeleton"
 
+    def __init__(self, long=None, short=None, **kw):
+        super().__init__(long=long, short=short, **kw)
+
 
 class HumanSkeleton(Skeleton):
     s = l = "skeleton"
