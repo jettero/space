@@ -88,8 +88,8 @@ def test_pronouns_in_messages(GCls, objs):
     assert objs.dig_dug.a_short in msg.other
 
     # Parity: $to and $n1o should be identical (both objective pronouns); $t may differ (articles)
-    msg_t   = _compose(objs.dig_dug, objs.stupid, "$t")
-    msg_to  = _compose(objs.dig_dug, objs.stupid, "$to")
+    msg_t = _compose(objs.dig_dug, objs.stupid, "$t")
+    msg_to = _compose(objs.dig_dug, objs.stupid, "$to")
     msg_n1o = _compose(objs.dig_dug, objs.stupid, "$n1o")
     assert msg_to.us == msg_n1o.us
     assert msg_to.them == msg_n1o.them
