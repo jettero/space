@@ -7,18 +7,7 @@ class Action(Verb):
     name = "inventory"
 
     def do_inventory(self):
-        def box(title, body_lines, width=None):
-            inner = list(body_lines)
-            w = max([len(title)] + [len(s) for s in inner])
-            if width is not None:
-                w = max(w, width)
-            top = "+" + "-" * (w + 2) + "+"
-            title_line = "| " + title.center(w) + " |"
-            framed = [top, title_line, top]
-            for s in inner:
-                framed.append("| " + s.ljust(w) + " |")
-            framed.append(top)
-            return "\n".join(framed)
+        from ..shell.message import BoxMessage
 
         self.simple_action("$N $vinventory $p stuff.")
         entries = []  # (slot_label, item_name, mass_str)
@@ -74,4 +63,4 @@ class Action(Verb):
             else:
                 line = f"{disp_label}{padding}{name.ljust(name_w)}  {wstr}"
             out.append(line.rstrip())
-        self.tell(box("Inventory", out))
+        self.tell(BoxMessage("Inventory", out))

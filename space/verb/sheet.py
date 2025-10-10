@@ -11,18 +11,7 @@ class Action(Verb):
     def do_sheet(self):
         """Display basic character sheet with core stats."""
 
-        def box(title, body_lines, width=None):
-            inner = list(body_lines)
-            w = max([len(title)] + [len(s) for s in inner])
-            if width is not None:
-                w = max(w, width)
-            top = "+" + "-" * (w + 2) + "+"
-            title_line = "| " + title.center(w) + " |"
-            framed = [top, title_line, top]
-            for s in inner:
-                framed.append("| " + s.ljust(w) + " |")
-            framed.append(top)
-            return "\n".join(framed)
+        from ..shell.message import BoxMessage
 
         # name
         lines = [
@@ -57,4 +46,4 @@ class Action(Verb):
         # blank line intentionally omitted per request
         lines.append(f"Carrying: {len(inv)} items, {total_mass} mass")
 
-        self.tell(box("Character Sheet", lines))
+        self.tell(BoxMessage("Character Sheet", lines))

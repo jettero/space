@@ -51,3 +51,30 @@ class MapMessage(Message):
             for dist, o in dob:
                 txt += f"\n{dist:>{mdob}} [{o.abbr}] {o.long}"
         return txt
+
+
+class BoxMessage(Message):
+    """Simple framed text box message.
+
+    Build a boxed block with a centered title and left-aligned body lines.
+    The box width expands to fit the longest line or provided width.
+    """
+
+    def __init__(self, title, body_lines, width=None):
+        super().__init__()
+        self.title = title
+        self.body_lines = list(body_lines)
+        self.width = width
+
+    def render_text(self, color=True):
+        inner = self.body_lines
+        w = max([len(self.title)] + [len(s) for s in inner])
+        if self.width is not None:
+            w = max(w, self.width)
+        top = "+" + "-" * (w + 2) + "+"
+        title_line = "| " + self.title.center(w) + " |"
+        framed = [top, title_line, top]
+        for s in inner:
+            framed.append("| " + s.ljust(w) + " |")
+        framed.append(top)
+        return "\n".join(framed)
