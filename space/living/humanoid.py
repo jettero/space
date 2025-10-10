@@ -55,12 +55,13 @@ class Humanoid(Living):
                 pass
         return False, {"error": f"It's not possible to get {obj}."}
 
-    def do_get(self, target):
+    def do_get(self, obj):
         eff = None
         for hand in (self.slots.right_hand_slot, self.slots.left_hand_slot):
             try:
-                if hand.accept(target):
-                    hand.add_item(target)
+                if hand.accept(obj):
+                    hand.add_item(obj)
+                    self.simple_action("$N $vget $o.", obj)
                     return
             except E.ContainerError as e:
                 if eff is None:
@@ -73,8 +74,9 @@ class Humanoid(Living):
             return False, {"error": f"You don't have {obj}."}
         return True, {"target": obj}
 
-    def do_drop(self, target):
-        self.location.add_item(target)
+    def do_drop(self, obj):
+        self.location.add_item(obj)
+        self.simple_action("$N $vdrop $o.", obj)
 
     def can_open_obj(self, obj: Door):
         ok, err = obj.can_open()

@@ -26,8 +26,9 @@ class Quadruped(Living):
                     return True, {"target": targ}
         return False, {"error": "There's nothing like that nearby."}
 
-    def do_get(self, target):
-        self.slots.mouth.add_item(target)
+    def do_get(self, obj):
+        self.slots.mouth.add_item(obj)
+        self.simple_action("$N $vget $o.", obj)
 
     def can_drop_obj(self, obj):
         for targ in obj:
@@ -43,5 +44,6 @@ class Quadruped(Living):
                 pass
         return False, {"error": "You aren't holding that."}
 
-    def do_drop(self, target):
-        self.location.add_item(target)
+    def do_drop(self, obj):
+        self.location.add_item(obj)
+        self.simple_action("$N $vdrop $o.", obj)
