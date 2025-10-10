@@ -104,6 +104,10 @@
   code to make it pass. Keep tests focused, deterministic, and aligned with
   the current map/verb conventions.
 
+Messaging
+- When implementing or modifying verbs or behaviors that produce output,
+  always read `MESSAGES.md` and follow its delivery/token rules.
+
 ### Robustness vs. Known Types
 - When implementing verbs that operate on known engine types (e.g., `Living`),
   avoid defensive `getattr/hasattr` checks for attributes guaranteed by the
