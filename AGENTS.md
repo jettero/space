@@ -194,6 +194,33 @@ Messaging
 - Keep Pythonic: small pure functions for token parsing/expansion; avoid hidden
   globals. Any defaults/templates live on the mixin/class, not modules.
 
+## Pattern Fidelity (Strong Emphasis)
+
+- When implementing fixes or features that touch messaging, parsing, verbs, or
+  tokens, you must follow established patterns in three places:
+  - `t/` tests: extend existing tests in-place using their current structure
+    and parametrization style instead of creating parallel or one-off tests.
+  - `space/` Python code: mirror the module’s current helpers, regexes, and
+    capitalization/qualifier handling. Prefer shims that integrate with
+    existing functions over introducing new entry points.
+  - `contrib/lpc/` reference: treat it as the behavioral model. Port semantics
+    into idiomatic Python while keeping token names, defaults, and subject/
+    target indexing consistent unless there is a documented divergence.
+
+- Do not introduce new testing styles, helper functions, or token shapes when a
+  matching pattern already exists. Extend parametrized cases rather than adding
+  new test functions for near-identical coverage.
+
+- For token work specifically:
+  - Reuse the current regex tokenization shapes; add minimal deltas (e.g.,
+    including a new leading tag) instead of wholesale rewrites.
+  - Route behavior through existing helpers (e.g., `_name_for`, `_agree`) so
+    capitalization, perspective, and defaults stay uniform.
+
+- Any intentional divergence from `contrib/lpc` must be small, justified, and
+  captured in tests first. Prefer pronoun-based simplifications over adding
+  state unless tests require the more complex behavior.
+
 ## Git Usage Policy
 
 - Using `git diff` and `git log` for context is encouraged.
