@@ -100,6 +100,10 @@
  - Do not add conversational or meta comments in code. Comments must be about
    the code itself, not about prior discussion or rationale external to the
    codebase.
+- Logging: do not configure global logging in scripts or modules. Use the
+  project pattern: `import logging` and `log = logging.getLogger(__name__)`,
+  then emit `log.debug/info/warning/error/exception` as needed. Global
+  formatting/handlers are configured elsewhere.
 - We favor TDD: add a failing test first, then implement the minimal
   code to make it pass. Keep tests focused, deterministic, and aligned with
   the current map/verb conventions.
@@ -125,6 +129,9 @@ Messaging
   If the parser allows invoking a verb on a player character, those attributes
   exist. Prefer direct attribute access to keep code clear and fail fast on
   actual programmer errors.
+- STRONGER EMPHASIS: do not use getattr/hasattr without a very good reason.
+  Provide justification and ask first. You're simply unable to understand when
+  they should be used.
 
 ### Parser/Verb Tasks
 - Before implementing or modifying verbs, skim `PARSER.md` for naming and
