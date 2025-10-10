@@ -50,7 +50,7 @@ class Humanoid(Living):
         for h in (self.slots.right_hand_slot, self.slots.left_hand_slot):
             try:
                 if h.accept(obj):
-                    return True, {"target": obj}
+                    return True, {"obj": obj}
             except E.ContainerError:
                 pass
         return False, {"error": f"It's not possible to get {obj}."}
