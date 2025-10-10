@@ -87,6 +87,7 @@ class Humanoid(Living):
     def do_open_obj(self, obj: Door):
         log.debug("do_open_obj(%s)", obj)
         obj.do_open()
+        self.simple_action("$N $vopen $o.", obj)
 
     def can_close_obj(self, obj: Door):
         ok, err = obj.can_close()
@@ -99,6 +100,7 @@ class Humanoid(Living):
     def do_close_obj(self, obj: Door):
         log.debug("do_sclose_obj(%s)", obj)
         obj.do_close()
+        self.simple_action("$N $vclose $o.", obj)
 
 
 class Human(Humanoid):

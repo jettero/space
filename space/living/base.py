@@ -61,10 +61,12 @@ class CanMove:
     def do_move_words(self, *moves):
         log.debug("do_move_words(%s)", moves)
         self.move(*moves)
+        self.simple_action("$N $vmove.")
 
     def do_move_obj_words(self, obj, *moves):
         log.debug("do_move_obj_words(%s, %s)", obj, moves)
         obj.move(*moves)
+        self.simple_action("$N $vmove $o.", obj)
 
 
 class Living(ReceivesMessages, CanMove, StdObj):
@@ -167,8 +169,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
         # XXX: any time we deliver a message to a player, we should deliver
         # something to all players in view and that should automatically parse
         # context, e.g.: $N $vattack $t causing $o damage.
-        self.tell(f"You attack {other} causing {d} damage.")
-        other.tell(f"{self} attacks you causing {d} damage")
+        self.targeted_action("$N $vattack $t causing $o damage.", other, d)
 
         log.debug("%s .attack( %s ) weapon=%s damage=%s", self, other, w, d)
         other.hurt(d)
@@ -213,8 +214,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
 
     def do_look(self):
         from ..shell.message import MapMessage
-
-        self.tell("You look around.")
+        self.simple_action("$N $vlook around.")
         self.tell(MapMessage(self.location.map.visicalc_submap(self)))
 
     @property
