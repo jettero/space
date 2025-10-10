@@ -32,6 +32,14 @@ Actor Side (Living)
   - The `can_...` method validates and may enrich arguments (e.g., resolve
     targets). Return `(False, {"error": "message"})` to produce a user error.
   - The `do_...` method performs the action with validated args.
+  - Important: the dict returned by `can_*` is passed as keyword arguments to
+    the chosen `do_*`. Its keys must exactly match the parameter names expected
+    by `do_*`. This is enforced by the parser/router pipeline:
+    `space/parser.py:PSNode.evaluate()` merges filled tokens and `can_*`
+    returns into `do_args`, and `PState.__call__()` invokes
+    `MethodArgsRouter(..., f"do_{verb}")(**do_args)`. See also
+    `space/router.py:MethodArgsRouter.__call__`, which forwards those kwargs to
+    the `do_*` implementation.
 - Naming controls routing specificity: longer suffixes win. For example,
   `can_move_obj_words` is chosen over `can_move_words` when both fit.
 - Examples in `space/living/base.py`:

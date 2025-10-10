@@ -104,6 +104,16 @@
   code to make it pass. Keep tests focused, deterministic, and aligned with
   the current map/verb conventions.
 
+### Parser/Router Respect
+- Treat `space/router.py` and `space/parser.py` as core, high‑risk modules.
+- Do not modify these files unless explicitly requested for that task.
+- When a failure appears to originate from parsing/routing, first look for
+  simpler explanations (e.g., parameter naming mismatches between `can_*`
+  and `do_*` methods, or recent changes in verb implementations).
+- Prefer minimal, surgical fixes in verb or actor classes (e.g., aligning
+  `do_*` parameter names with keys returned by `can_*`) over changes to
+  router/parser behavior.
+
 Messaging
 - When implementing or modifying verbs or behaviors that produce output,
   always read `MESSAGES.md` and follow its delivery/token rules.
@@ -119,6 +129,10 @@ Messaging
 ### Parser/Verb Tasks
 - Before implementing or modifying verbs, skim `PARSER.md` for naming and
   routing conventions (e.g., `can_<verb>_obj` implies StdObj matching).
+ - For command parsing or verb feature work, check `PARSER.md` first. It
+   documents the `can_*`/`do_*` contract: the dict returned by `can_*` is
+   forwarded as keyword args to `do_*`, so its keys must match the `do_*`
+   parameter names.
 - Prefer using the shell for compound commands in tests (e.g.,
   `me.do('open door; sSW6s3w')`).
 - Do not change router hint logic in `space/args.py` to fit a single verb.
