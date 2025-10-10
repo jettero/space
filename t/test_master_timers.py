@@ -35,4 +35,3 @@ def test_every_repeats_and_cancel():
     time.sleep(0.06)
     assert len(called) == n
     mcp.stop_timers()
-

@@ -127,7 +127,7 @@ class Skeleton(Humanoid):
 
     def do_receive(self, msg, your_turn=False):
         if your_turn:
-            self.simple_action('$N $vgnash $p teeth in impotent rage.')
+            self.simple_action("$N $vgnash $p teeth in impotent rage.")
 
 
 class HumanSkeleton(Skeleton):

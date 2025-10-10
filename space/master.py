@@ -8,6 +8,7 @@ import time
 import heapq
 from typing import Callable
 import logging
+
 log = logging.getLogger(__name__)
 
 from space.living.msg import HasShell
@@ -98,11 +99,11 @@ class MasterControlProgram:
 
     def call_out(self, fn: Callable, delay, *args, **kwargs):
         """Schedule a one-shot call roughly after `delay` seconds."""
-        return self._schedule(delay, 0.0, fn, args, kwargs, kwargs.pop('label', None))
+        return self._schedule(delay, 0.0, fn, args, kwargs, kwargs.pop("label", None))
 
     def every(self, interval, fn: Callable, *args, **kwargs):
         """Schedule a repeating call roughly every `interval` seconds."""
-        return self._schedule(interval, interval, fn, args, kwargs, kwargs.pop('label', None))
+        return self._schedule(interval, interval, fn, args, kwargs, kwargs.pop("label", None))
 
     def cancel(self, label):
         """Cancel tasks matching `label`. Best-effort; O(n) prune on next tick."""
