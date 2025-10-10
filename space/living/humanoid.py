@@ -112,6 +112,10 @@ class Human(Humanoid):
     def __init__(self, proper_name=None, short=None, **kw):
         super().__init__(proper_name=proper_name, short=short, **kw)
 
+    def do_receive(self, msg, your_turn=False):
+        if your_turn:
+            self.simple_action('$N $vsay, "Hi there!"')
+
 
 class Skeleton(Humanoid):
     s = l = "skeleton"
@@ -120,6 +124,10 @@ class Skeleton(Humanoid):
 
     def __init__(self, long=None, short=None, **kw):
         super().__init__(long=long, short=short, **kw)
+
+    def do_receive(self, msg, your_turn=False):
+        if your_turn:
+            self.simple_action('$N $vgnash $p teeth in impotent rage.')
 
 
 class HumanSkeleton(Skeleton):
