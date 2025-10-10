@@ -10,7 +10,7 @@ def test_simple_and_targeted_delivery(a_map, objs):
 
     objs.me.do("open door; sSW6s3w; look")
     assert len(objs.me.shell.msgs) == 6  # open door, move, look,map, look,map
-    assert len(objs.dig_dug.shell.msgs) == 4 # open, move, look, look
+    assert len(objs.dig_dug.shell.msgs) == 4  # open, move, look, look
 
     objs.me.simple_action("$N $vwave.")
     assert len(objs.me.shell.msgs) == 7

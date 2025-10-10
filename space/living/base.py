@@ -61,6 +61,7 @@ class CanMove:
     def do_move_words(self, *moves):
         log.debug("do_move_words(%s)", moves)
         from ..map.dir_util import moves_to_description
+
         desc = moves_to_description(moves)
         self.move(*moves)
         self.simple_action(f"$N $vmove {desc}.")
@@ -68,6 +69,7 @@ class CanMove:
     def do_move_obj_words(self, obj, *moves):
         log.debug("do_move_obj_words(%s, %s)", obj, moves)
         from ..map.dir_util import moves_to_description
+
         desc = moves_to_description(moves)
         obj.move(*moves)
         self.simple_action(f"$N $vmove $o {desc}.", obj)
@@ -202,7 +204,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
             log.debug("can_attack_living() considering %s at a distance of %s", targ, dist)
             if dist is not None and dist <= self.reach:
                 log.debug("  … seems good, returning")
-                return (True, {"target": targ}) # "target" is do_attack argument name
+                return (True, {"target": targ})  # "target" is do_attack argument name
         log.debug("  … nothing seemed to match")
         return (False, {"error": "There's no targets with that name in range."})
 
@@ -218,6 +220,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
 
     def do_look(self):
         from ..shell.message import MapMessage
+
         self.simple_action("$N $vlook around.")
         self.tell(MapMessage(self.location.map.visicalc_submap(self)))
 
