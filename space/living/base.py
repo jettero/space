@@ -60,13 +60,17 @@ class CanMove:
 
     def do_move_words(self, *moves):
         log.debug("do_move_words(%s)", moves)
+        from ..map.dir_util import moves_to_description
+        desc = moves_to_description(moves)
         self.move(*moves)
-        self.simple_action("$N $vmove.")
+        self.simple_action(f"$N $vmove {desc}.")
 
     def do_move_obj_words(self, obj, *moves):
         log.debug("do_move_obj_words(%s, %s)", obj, moves)
+        from ..map.dir_util import moves_to_description
+        desc = moves_to_description(moves)
         obj.move(*moves)
-        self.simple_action("$N $vmove $o.", obj)
+        self.simple_action(f"$N $vmove $o {desc}.", obj)
 
 
 class Living(ReceivesMessages, CanMove, StdObj):

@@ -124,3 +124,54 @@ DIR_STRING = re.compile(r"^(?:\d*(NE|SE|NW|SW|[nsewNSEW]|(?i:north|south|east|we
 
 def is_direction_string(moves_str):
     return bool(DIR_STRING.match(moves_str))
+
+
+def moves_to_description(moves):
+    """Summarize a sequence of moves into a single descriptive string.
+
+    Heuristics:
+    - If only one axis moved: "{n}m north|south|east|west".
+    - If both axes moved and magnitudes are close (ratio <= 1.5):
+      "about {r}m {diagonal}" where r is rounded length.
+    - If both axes moved and magnitudes differ (ratio > 1.5):
+      "about {major}m {major_dir} and {minor}m {minor_dir}".
+    - If no net movement: "in place".
+    """
+    from ..vv import VV
+
+    dx = dy = 0
+    for m in moves:
+        m = str(m).lower()
+        if "n" in m:
+            dy -= 1
+        if "s" in m:
+            dy += 1
+        if "e" in m:
+            dx += 1
+        if "w" in m:
+            dx -= 1
+    v = VV(dx, dy)
+    dist = float(v.length)
+    if dx == 0 and dy == 0:
+        return "in place"
+    if dx == 0:
+        return f"{abs(dy)}m {('north' if dy < 0 else 'south')}"
+    if dy == 0:
+        return f"{abs(dx)}m {('east' if dx > 0 else 'west')}"
+
+    ax = abs(dx)
+    ay = abs(dy)
+    # close magnitudes -> diagonal summary
+    major_ratio = max(ax, ay) / max(1, min(ax, ay))
+    if major_ratio <= 1.5:
+        diag = ("north" if dy < 0 else "south") + ("east" if dx > 0 else "west")
+        return f"about {dist:0.0f}m {diag}"
+
+    # different enough -> describe components
+    major_is_x = ax >= ay
+    major = ax if major_is_x else ay
+    minor = ay if major_is_x else ax
+    major_dir = ("east" if dx > 0 else "west") if major_is_x else ("north" if dy < 0 else "south")
+    minor_dir = ("north" if dy < 0 else "south") if major_is_x else ("east" if dx > 0 else "west")
+    desc = f"about {major}m {major_dir} and {minor}m {minor_dir}"
+    return desc
