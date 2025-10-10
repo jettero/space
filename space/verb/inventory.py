@@ -20,7 +20,7 @@ class Action(Verb):
             framed.append(top)
             return "\n".join(framed)
 
-        self.tell("You inventory your stuff.")
+        self.simple_action("$N $vinventory $p stuff.")
         entries = []  # (slot_label, item_name, mass_str)
         # collect primary slot items
         for slot in self.slots:
@@ -49,7 +49,7 @@ class Action(Verb):
                 pass
 
         if not entries:
-            self.tell("You are carrying nothing.")
+            self.my_action("$N $vare carrying nothing.")
             return
 
         # compute column widths for alignment; keep colon attached to label
