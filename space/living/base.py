@@ -45,7 +45,7 @@ class CanMove:
                 return False, {"error": "there's something in the way"}
             except E.ContainerError as e:
                 return False, {"error": e}
-        return True, {"moves": moves}
+        return True, {"moves": moves}  # keys must match do_move_words args
 
     def can_move_obj_words(self, obj: StdObj, *moves):
         if not obj:
@@ -56,7 +56,7 @@ class CanMove:
         # XXX: if the obj doesn't want to move, we should have some sort of ability contest here
         if isinstance(obj, (list, tuple)):
             obj = obj[0]
-        return True, {"obj": obj}
+        return True, {"obj": obj}  # keys must match do_move_obj_words args
 
     def do_move_words(self, *moves):
         log.debug("do_move_words(%s)", moves)
@@ -198,7 +198,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
             log.debug("can_attack_living() considering %s at a distance of %s", targ, dist)
             if dist is not None and dist <= self.reach:
                 log.debug("  … seems good, returning")
-                return (True, {"target": targ})
+                return (True, {"target": targ}) # "target" is do_attack argument name
         log.debug("  … nothing seemed to match")
         return (False, {"error": "There's no targets with that name in range."})
 

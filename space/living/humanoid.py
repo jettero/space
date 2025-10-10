@@ -72,8 +72,7 @@ class Humanoid(Living):
     def can_drop_obj(self, obj: StdObj):
         if obj.owner != self:
             return False, {"error": f"You don't have {obj}."}
-        # do_drop expects parameter name 'obj'; return key must match
-        return True, {"obj": obj}
+        return True, {"obj": obj}  # keys must match do_drop args
 
     def do_drop(self, obj):
         self.location.add_item(obj)

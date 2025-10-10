@@ -35,7 +35,7 @@ class Door(StdObj):
             return False, {"error": f"{self} is locked"}
         if self.stuck:
             return False, {"error": f"{self} appears to be stuck"}
-        return True, {"target": self}
+        return True, {"target": self}  # keys must match do_open args
 
     def do_open(self):
         self.open = True

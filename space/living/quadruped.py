@@ -23,8 +23,7 @@ class Quadruped(Living):
             dist = self.unit_distance_to(targ)
             if dist <= self.reach:
                 if self.slots.mouth.accept(targ):
-                    # do_get expects 'obj'; align return key
-                    return True, {"obj": targ}
+                    return True, {"obj": targ}  # keys must match do_get args
         return False, {"error": "There's nothing like that nearby."}
 
     def do_get(self, obj):
@@ -37,10 +36,10 @@ class Quadruped(Living):
             if loc is None:
                 continue
             if loc is self.pack:
-                return True, {"obj": targ}
+                return True, {"obj": targ}  # keys must match do_drop args
             try:
                 if loc.owner is self:
-                    return True, {"obj": targ}
+                    return True, {"obj": targ}  # keys must match do_drop args
             except Exception:
                 pass
         return False, {"error": "You aren't holding that."}
