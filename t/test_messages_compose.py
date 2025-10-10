@@ -105,3 +105,11 @@ def test_pronouns_in_messages(GCls, objs):
     assert " your" in msg_poss.them.lower()
     # Others: both sides render third-person possessives without perspective shifts
     assert " vs " in msg_poss.other
+
+    # Also check $p behaves like $n0p (subject default) and equals $np
+    msg_np = _compose(objs.me, objs.stupid, "drop $np rock")
+    msg_p = _compose(objs.me, objs.stupid, "drop $p rock")
+    assert msg_np.us == "drop your rock"
+    assert msg_p.us == msg_np.us
+    assert msg_p.them == msg_np.them
+    assert msg_p.other == msg_np.other

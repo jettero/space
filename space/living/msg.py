@@ -88,6 +88,18 @@ class ReceivesMessages(HasShell):
                 qual = rest[1:]
             else:
                 qual = rest
+            # Top-level possessive: $p/$P behaves like $n0p/$N0p
+            if tag in ("p", "P"):
+                if idx is None:
+                    idx = 0
+                if idx >= len(who) or not isinstance(who[idx], ReceivesMessages):
+                    name = "someone"
+                else:
+                    subj = who[idx]
+                    name = self._name_for(forwhom, subj, "p")
+                if tag == "P":
+                    return name[:1].upper() + name[1:]
+                return name
             if tag in ("N", "n", "T", "t"):
                 if tag in ("T", "t"):
                     if idx is None:
@@ -148,7 +160,7 @@ class ReceivesMessages(HasShell):
                 return (f"an {w}") if w[:1].lower() in "aeiou" else (f"a {w}")
             return t
 
-        return re.sub(r"\$[MNVTTPPOOnnvtto][a-z0-9]*", sub_token, msg)
+        return re.sub(r"\$[MNVTTPPOOnnvttoPp][a-z0-9]*", sub_token, msg)
 
     def compose(self, forwhom, msg, who, *obs):
         return self._expand(forwhom, msg, who, obs)
