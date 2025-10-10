@@ -42,17 +42,72 @@ class Female(Gender):
     reflexive = "herself"
 
 
-class Other(Gender):
-    a = "O"
-    s = "other"
-    l = "other reproductive modality"
-
-
 class Not(Gender):
     a = "N"
-    s = "not applicable"
+    s = "non reproductive modality"
 
     subject = "they"
     objective = "them"
     possessive = "their"
     reflexive = "themself"
+
+
+class Neuter(Gender):
+    a = "0"
+    s = "neuter"
+    l = "non-gender"
+
+    subject = "it"
+    objective = "it"
+    possessive = "its"
+    reflexive = "itself"
+
+
+class Unknown(Neuter):
+    a = "U"
+    s = "unknown"
+    l = "gender unknown"
+
+
+class GenderNeutral(Gender):
+    a = "X"
+    s = "neutral"
+    l = "gender neutral"
+
+    subject = "they"
+    objective = "them"
+    possessive = "their"
+    reflexive = "themself"
+
+
+class Xe(Gender):
+    a = "X"
+    s = "xe"
+    l = "Xe neo-pronoun set"
+
+    subject = "xe"
+    objective = "xem"
+    possessive = "xyr"
+    reflexive = "xemself"
+
+
+class Ze(Gender):
+    a = "Z"
+    s = "ze"
+    l = "Ze neo-pronoun set"
+
+    subject = "ze"
+    objective = "hir"
+    possessive = "hir"
+    reflexive = "hirself"
+
+
+class Ey(Gender):
+    a = "E"
+    s = "ey"
+    l = "Ey neo-pronoun set"
+
+    subject = "ey"
+    objective = "em"
+    possessive = "eir"
+    reflexive = "emself"
