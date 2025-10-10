@@ -76,9 +76,9 @@ class Living(ReceivesMessages, CanMove, StdObj):
     d = "a living object"
 
     # XXX: these should all be computed from our hight and body shape I guess
-    reach = 1.42 # arm reach for closing doors and grabbing things
-    sight_range = None # our visual range is forever
-    hearing_range = None # we hear forever too
+    reach = 1.42  # arm reach for closing doors and grabbing things
+    sight_range = None  # our visual range is forever
+    hearing_range = None  # we hear forever too
 
     @property
     def abbr(self):
@@ -224,6 +224,14 @@ class Living(ReceivesMessages, CanMove, StdObj):
     @property
     def conscious(self):
         return self.hp > 0
+
+    @property
+    def unconscious(self):
+        return -10 <= self.hp <= 0
+
+    @property
+    def alive(self):
+        return self.hp >= -10
 
     @property
     def dead(self):

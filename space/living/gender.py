@@ -19,6 +19,7 @@ class Gender(Named):
     possessive = "its"
     reflexive = "itself"
 
+
 class Male(Gender):
     a = "M"
     s = "male"
@@ -45,6 +46,7 @@ class Other(Gender):
     a = "O"
     s = "other"
     l = "other reproductive modality"
+
 
 class Not(Gender):
     a = "N"

@@ -3,12 +3,14 @@
 import pytest
 from space.living.msg import Actors, Messages
 
+
 def _compose(me, targ, msg):
     return Messages(
         me.compose(me, msg, [me, targ]),
         me.compose(targ, msg, [me, targ]),
         me.compose(None, msg, [me, targ]),
     )
+
 
 def test_compose_basic_pronouns_and_verb(objs):
     msg = _compose(objs.me, objs.dig_dug, "$N $vattack $t.")
