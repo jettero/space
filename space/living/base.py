@@ -123,6 +123,22 @@ class Living(ReceivesMessages, CanMove, StdObj):
         self.xp = ExperiencePoints(0)
         self.damage = Damage()
 
+    @property
+    def subject(self):  # e.g., he/she/they/it
+        return self.gender.subject
+
+    @property
+    def objective(self):  # e.g., him/her/them/it
+        return self.gender.objective
+
+    @property
+    def possessive(self):  # e.g., his/her/their/its
+        return self.gender.possessive
+
+    @property
+    def reflexive(self):  # e.g., himself/herself/themself/itself
+        return self.gender.reflexive
+
     def hurt(self, damage):
         h1 = self.hp
         self.damage.add(damage)

@@ -14,11 +14,20 @@ class Gender(Named):
     s = "unknown"
     l = "unknown reproductive modality"
 
+    subject = "it"
+    objective = "it"
+    possessive = "its"
+    reflexive = "itself"
 
 class Male(Gender):
     a = "M"
     s = "male"
     l = "male reproductive modality"
+
+    subject = "he"
+    objective = "him"
+    possessive = "his"
+    reflexive = "himself"
 
 
 class Female(Gender):
@@ -26,13 +35,22 @@ class Female(Gender):
     s = "female"
     l = "female reproductive modality"
 
+    subject = "she"
+    objective = "her"
+    possessive = "her"
+    reflexive = "herself"
+
 
 class Other(Gender):
     a = "O"
     s = "other"
     l = "other reproductive modality"
 
-
 class Not(Gender):
     a = "N"
     s = "not applicable"
+
+    subject = "they"
+    objective = "them"
+    possessive = "their"
+    reflexive = "themself"

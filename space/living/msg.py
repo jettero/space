@@ -42,19 +42,19 @@ class ReceivesMessages(HasShell):
         if mode == "o":  # objective
             if subj is forwhom:
                 return "you"
-            return getattr(subj, "objective", "them")
+            return subj.objective
         if mode == "r":  # reflexive
             if subj is forwhom:
                 return "yourself"
-            return getattr(subj, "reflexive", "themself")
+            return subj.reflexive
         if mode == "p":  # possessive
             if subj is forwhom:
                 return "your"
-            return getattr(subj, "possessive", "their")
-        # subject
+            return subj.possessive
+        # subjective
         if subj is forwhom:
-            return "You"
-        return getattr(subj, "subjective", getattr(subj, "short", str(subj)))
+            return "you"
+        return subj.subject
 
     def _agree(self, forwhom_is_subject, verb):
         # We only handle verbs written in second-person present.
@@ -100,11 +100,29 @@ class ReceivesMessages(HasShell):
                     return "someone"
                 subj = who[idx]
                 if qual in ("o", "r", "p"):
-                    return self._name_for(forwhom, subj, qual)
-                if qual == "a":
-                    return subj.a_short
-                # default subject/short
-                return self._name_for(forwhom, subj, "s")
+                    name = self._name_for(forwhom, subj, qual)
+                elif qual == "a":
+                    name = subj.a_short
+                else:
+                    # Defaults: $n/$N -> subject; $t/$T -> a_short (use article),
+                    # matching tests that expect indefinite for non-unique mobs.
+                    if tag in ("T", "t"):
+                        # If the recipient is the target, use objective pronoun "you"
+                        if subj is forwhom:
+                            name = self._name_for(forwhom, subj, "o")
+                        else:
+                            name = subj.a_short
+                    else:
+                        # For $N/$n default to subject perspective ("you" when recipient is subject)
+                        name = self._name_for(forwhom, subj, "s")
+                # Capitalize for upper-case tokens ($N/$T) when possible.
+                if tag in ("N", "T"):
+                    # For $N, when referring to a person and not the recipient, prefer short name capitalized
+                    if tag == "N" and subj is not forwhom and qual not in ("o", "r", "p"):
+                        return subj.short[:1].upper() + subj.short[1:]
+                    return name[:1].upper() + name[1:]
+                # Lower-case for $n/$t; but keep exact if it already starts uppercase (proper name)
+                return name if (name and name[0].isupper()) else name.lower()
             if tag in ("O", "o"):
                 # Objects default to first observed ($o0), not second
                 if idx is None:
