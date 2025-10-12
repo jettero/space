@@ -3,6 +3,8 @@
 
 import pytest
 from space.roll import Roll, Check
+import space.exceptions as E
+from space.living.humanoid import Humanoid
 
 
 def test_roll():
@@ -201,6 +203,37 @@ def test_check_neq_set():
     # Probability of NOT hitting {2,3,4,5} on d10 is 6/10
     assert t > 0
     assert f > 0
+
+
+def test_check_dc_requires_actor():
+    c = Check("Dip DC 10")
+    with pytest.raises(E.ParseError):
+        bool(c)
+
+
+def test_check_dc_works_with_actor(a_map, objs):
+    # Use a humanoid from fixtures; ensure it has BaseBonus stats like Dip
+    h = Humanoid("tester")
+    # Over many trials, we should see both outcomes
+    c = Check("Dip DC 10")
+    t = f = 0
+    for _ in range(500):
+        if c(h):
+            t += 1
+        else:
+            f += 1
+    assert t > 0
+    assert f > 0
+
+
+def test_check_dc_non_basebonus_raises():
+    class Dummy:
+        def __init__(self):
+            self.dip = 5  # not a BaseBonus
+
+    c = Check("Dip DC 10")
+    with pytest.raises(E.ParseError):
+        c(Dummy())
 
 
 # The old set-selection syntax has been removed as not useful.
