@@ -27,7 +27,7 @@ from space.nico import nico
 from space.vv import VV
 from space.pv import PV
 from space.dn import DN
-from space.roll import Roll
+from space.roll import Roll, roll
 from space.parser import Parser
 
 import sys
