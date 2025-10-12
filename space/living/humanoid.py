@@ -131,6 +131,4 @@ class Skeleton(PointLessVoiceLines, Humanoid):
     ]
 
     class Choices(Living.Choices):
-        gender = (
-            Unknown,
-        )
+        gender = (Unknown,)
