@@ -9,7 +9,6 @@ from .obj import baseobj
 FORMAT_RE = re.compile(r"^(.*?)(?:\b|[~])?(a|s|l|d|abbr|short|long|desc)?$")
 log = logging.getLogger(__name__)
 
-
 class Named(Serial, baseobj):
     a = "~"
     s = "object"
@@ -27,16 +26,18 @@ class Named(Serial, baseobj):
     class Meta:
         save = "asld"
 
-    def __init__(self, short=None, abbr=None, long=None, proper_name=None, **kw):
+    def __init__(self, short=None, abbr=None, long=None, proper_name=None, unique=None, **kw):
         super().__init__(**kw)  # if Serial and baseobj had __init__, they'd both get called via MRO/super()
-        if abbr:
+        if abbr is not None:
             self.a = abbr
-        if proper_name:
+        if proper_name is not None:
             self.proper_name = proper_name
-        elif long:
+        if long is not None:
             self.l = long
-        if short:
+        if short is not None:
             self.s = short
+        if unique is not None:
+            self.unique = bool(unique)
         self.tokens = self._tokenize()
 
     def __format__(self, spec):
@@ -58,19 +59,55 @@ class Named(Serial, baseobj):
 
     @property
     def proper_name(self):
+        """Getter/setter for the object's proper name.
+
+        Behavior
+        - Setting a non-empty value marks the object `unique` and updates
+          both names.
+        - With `~` in the value: replace `~` with spaces; set both `long` and
+          `short` to the resulting full string.
+        - Without `~`: set `long` to the full string and `short` to the first
+          whitespace-delimited token.
+        - With a falsey value: reset `short` and `long` to "something" and
+          clear `unique`.
+
+        Examples
+        - Simple name
+          obj.proper_name = "Jordan Schitzo Blueberry"
+          obj.long  -> "Jordan Schitzo Blueberry"
+          obj.short -> "Jordan"
+          obj.unique is True
+
+        - Quoted/nickname style: set fields directly for custom forms
+          obj.short = "Schitzo"
+          obj.long  = "Jordan \"Schitzo\" Blueberry"
+          obj.unique = True
+          # or equivalently at construction:
+          #   Human(short="Schitzo", long="Jordan \"Schitzo\" Blueberry", unique=True)
+
+        - Tilde compaction to a single full token for both
+          obj.proper_name = "Dig~Dug"
+          obj.long  -> "Dig Dug"
+          obj.short -> "Dig Dug"
+          obj.unique is True
+
+        - Reset to generic
+          obj.proper_name = None
+          obj.long  -> "something"
+          obj.short -> "something"
+          obj.unique is False
+        """
         return self.l
 
     @proper_name.setter
     def proper_name(self, v):
-        # Setting a proper name assigns long and short as indicated
-        # to set something fancier, like 'Jordan "Schitzo" Blueberry', do this instead:
-        # self.s = 'Schitzo'
-        # self.l = 'Jordan "Schitzo" Blueberry'
-        # self.unique = True
         name = str(v) if v is not None else None
         if name:
-            self.l = name
-            self.s = name.split()[0]
+            if '~' in v:
+                self.s = self.l = v.replace('~', ' ')
+            else:
+                self.l = name
+                self.s = name.split()[0]
             self.unique = True
         else:
             self.s = self.l = "something"

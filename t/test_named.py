@@ -45,3 +45,27 @@ def test_tokens(Thingy):
 
     assert t1.tokens == {"thingy", "T", "thing", "longer"}
     assert t2.tokens == {"thingy", "T", "blah", "random", "keymashing"}
+
+
+def test_proper_name_sets_long_short_and_unique(Thingy):
+    t = Thingy()
+    t.proper_name = "Jordan Schitzo Blueberry"
+    assert t.long == "Jordan Schitzo Blueberry"
+    assert t.short == "Jordan"
+    assert t.unique is True
+
+
+def test_proper_name_with_tilde_sets_full_for_both(Thingy):
+    t = Thingy()
+    t.proper_name = "Dig~Dug"
+    assert t.long == "Dig Dug"
+    assert t.short == "Dig Dug"
+    assert t.unique is True
+
+
+def test_proper_name_falsey_resets_generic_and_not_unique(Thingy):
+    t = Thingy()
+    t.proper_name = None
+    assert t.long == "something"
+    assert t.short == "something"
+    assert t.unique is False
