@@ -187,11 +187,37 @@ class Roll:
     def __repr__(self):
         return repr(self._roller)
 
+    def __call__(self):
+        """Allow instances to be called like functions to roll.
+
+        Example: r = Roll('1d10'); r() == r.roll()
+        """
+        return self.roll()
+
     def roll(self):
         try:
             return self._roller.roll()
         except LarkError as e:
             raise RollError() from e
+
+    # Comparison operators trigger a roll and compare its value.
+    def __eq__(self, other):
+        return self.roll() == other
+
+    def __ne__(self, other):
+        return self.roll() != other
+
+    def __lt__(self, other):
+        return self.roll() < other
+
+    def __le__(self, other):
+        return self.roll() <= other
+
+    def __gt__(self, other):
+        return self.roll() > other
+
+    def __ge__(self, other):
+        return self.roll() >= other
 
     @property
     def mean(self):
@@ -208,6 +234,102 @@ class Roll:
 
 def roll(desc):
     return Roll(desc).roll()
+
+
+class Check:
+    """Boolean-like roll expression with simple comparisons.
+
+    Examples:
+    - "1d10=1"  → True when a 1 is rolled
+    - "1d10<2"  → True when result < 2
+    - "1d10>9"  → True when result > 9
+    - "1d10={3..5,2}" → True when result is in {2,3,4,5}
+    """
+
+    def __init__(self, desc):
+        self.text = str(desc)
+        # Very small parser: split into left roll and a right predicate.
+        # Supported operators: =, !=, <, <=, >, >=, :{a,b,c}
+        s = self.text
+
+        # set membership forms: "<roll>={a,b,c}" or ranges "{3..5,2}", and negation "!={...}"
+        if ("={" in s or "!={" in s) and s.endswith("}"):
+            if "!={" in s:
+                left, right = s.split("!=", 1)
+                set_op = "!=set"
+            else:
+                left, right = s.split("=", 1)
+                set_op = "=set"
+            self._roll = Roll(left.strip())
+            inner = right.strip()
+            assert inner[0] == "{" and inner[-1] == "}"
+            parts = [p.strip() for p in inner[1:-1].split(",") if p.strip()]
+            values = []
+            for p in parts:
+                if ".." in p:
+                    a, b = p.split("..", 1)
+                    a = int(a)
+                    b = int(b)
+                    lo = min(a, b)
+                    hi = max(a, b)
+                    values.extend(range(lo, hi + 1))
+                else:
+                    values.append(int(p))
+            self._op = set_op
+            # store as tuple for immutability
+            self._values = tuple(values)
+            return
+
+        # comparison forms
+        # try longest operators first to avoid prefix issues
+        for op in ("<=", ">=", "!=", "=", "<", ">"):
+            if op in s:
+                left, right = s.split(op, 1)
+                self._roll = Roll(left.strip())
+                self._op = op
+                self._rhs = int(right.strip())
+                return
+
+        # If we get here, the expression wasn't understood.
+        raise RollError()
+
+    def __call__(self):
+        return self.eval()
+
+    def __bool__(self):
+        return self.eval()
+
+    def __str__(self):
+        return self.text
+
+    def eval(self):
+        if self._op == "=set":
+            v = self._roll.roll()
+            return v in self._values
+        if self._op == "!=set":
+            v = self._roll.roll()
+            return v not in self._values
+
+        v = self._roll.roll()
+        op = self._op
+        rhs = self._rhs
+        if op == "=":
+            return v == rhs
+        if op == "!=":
+            return v != rhs
+        if op == "<":
+            return v < rhs
+        if op == "<=":
+            return v <= rhs
+        if op == ">":
+            return v > rhs
+        if op == ">=":
+            return v >= rhs
+        return False
+
+# Aliases
+Gate = Check
+Chance = Check
 
 
 class AttrChoices:
