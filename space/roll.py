@@ -312,7 +312,11 @@ class Check:
         return f"Check({self.text})"
 
     def __call__(self, *args, **kwargs):
-        return self.eval(*args)
+        if self._is_dc:
+            return self.eval(*args)
+        if args or kwargs:
+            raise E.ParseError("This check does not take arguments")
+        return self.eval()
 
     def __bool__(self):
         # For DC checks, an actor context is required.

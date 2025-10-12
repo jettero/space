@@ -236,4 +236,10 @@ def test_check_dc_non_basebonus_raises():
         c(Dummy())
 
 
+def test_check_no_args_allowed_for_roll_checks():
+    c = Check('1d10=1')
+    with pytest.raises(E.ParseError):
+        c(object())
+
+
 # The old set-selection syntax has been removed as not useful.
