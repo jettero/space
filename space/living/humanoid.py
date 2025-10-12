@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 import space.exceptions as E
 from .base import Living
+from .behavior import PointLessVoiceLines
 from .gender import Male, Female
 from .slots import Slots as BaseSlots, BeltSlot, HandSlot, LegsSlot, TorsoSlot, HeadSlot, FeetSlot, PackSlot
 from ..door import Door
@@ -105,29 +106,27 @@ class Humanoid(Living):
         self.simple_action("$N $vclose $o.", obj)
 
 
-class Human(Humanoid):
+class Human(PointLessVoiceLines, Humanoid):
     s = l = "human"
     d = "a human"
 
     def __init__(self, proper_name=None, short=None, **kw):
         super().__init__(proper_name=proper_name, short=short, **kw)
+    voicelines = [
+        '$N $vsay, "Hi there!"',
+    ]
 
-    def do_receive(self, msg, your_turn=False):
-        if your_turn:
-            self.simple_action('$N $vsay, "Hi there!"')
 
-
-class Skeleton(Humanoid):
+class Skeleton(PointLessVoiceLines, Humanoid):
     s = l = "skeleton"
     a = "s"
     d = "a skeleton"
 
     def __init__(self, long=None, short=None, **kw):
         super().__init__(long=long, short=short, **kw)
-
-    def do_receive(self, msg, your_turn=False):
-        if your_turn:
-            self.simple_action("$N $vgnash $p teeth in impotent rage.")
+    voicelines = [
+        "$N $vgnash $p teeth in impotent rage.",
+    ]
 
 
 class HumanSkeleton(Skeleton):

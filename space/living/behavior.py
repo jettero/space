@@ -28,7 +28,7 @@ class PointLessVoiceLines:
         # Initialize behavior defaults before chaining.
         self.voiceline_frequency = Chance("1d10=1")
         self.voicelines = list()  # [(msg, weight), ...]
-        super().__init__(*a, **kw)
+        super().__init__(**kw)
 
     def do_receive(self, msg, your_turn=False):  # pylint: disable=unused-argument
         if super().do_receive(msg, your_turn=your_turn):
