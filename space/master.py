@@ -12,7 +12,7 @@ import logging
 log = logging.getLogger(__name__)
 
 from space.living.msg import HasShell
-from space.shell import ReadlineShell
+from space.shell import PromptShell
 from space.shell.mob import Shell as MobShell
 
 
@@ -68,7 +68,7 @@ class MasterControlProgram:
             # periodically step mob shells on this map
             self.every(4.0, self._step_map_shells)
 
-        shell = ReadlineShell(owner=body, init=init)
+        shell = PromptShell(owner=body, init=init)
         shell.loop()
 
     # --- Timers -----------------------------------------------------------
