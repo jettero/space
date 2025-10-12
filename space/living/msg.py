@@ -212,4 +212,5 @@ class ReceivesMessages(HasShell):
         Messages won't be delivered until it's the mob's turn and which point the mob will receive the nonsense message:
           `:EOF:YOUR_TURN:` and the your_turn flag (to this function) will be set to true.
         """
-        raise NotImplementedError()
+        # super().do_receive(msg, your_turn=your_turn)
+        # raise NotImplementedError()

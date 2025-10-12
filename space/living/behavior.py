@@ -32,14 +32,17 @@ class PointLessVoiceLines:
 
     def do_receive(self, msg, your_turn=False):  # pylint: disable=unused-argument
         if super().do_receive(msg, your_turn=your_turn):
+            log.debug("do_receive() handled above")
             return True
 
         if not your_turn:
             return
 
         if not self.voiceline_frequency:
+            log.debug("do_receive() it's not our time yet")
             return
 
+        log.debug("do_receive() selecting voiceline")
         if line := self._pick_weighted_voiceline():
             self.simple_action(line)
 
