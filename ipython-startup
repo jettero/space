@@ -27,37 +27,14 @@ from space.nico import nico
 from space.vv import VV
 from space.pv import PV
 from space.dn import DN
+from space.roll import Roll
 from space.parser import Parser
-
-import space.container as container
-import space.living as liv
-
-import space.item as sitem
-import space.roll as sroll
-import space.map as smap
-from space.map.generate import *
-import space.find as sfind
-
-import space.map.dir_util as dutil
-import space.map.util as mutil
-import space.router as srt
 
 import sys
 sys.path.insert(0, 't')
 from troom import a_map, o
 
 P = Parser()
-mmr = srt.MethodArgsRouter(o.me, 'can_move', multi=True)
-v_map = a_map.visicalc_submap(o.me, maxdist=5)
-
-def vmap(maxdist=5):
-    v_map = a_map.visicalc_submap(o.me, maxdist=maxdist)
-    print(a_map)
-    print(v_map)
-    return v_map
-
-def p(cmd):
-    return P.parse(o.me, cmd)
 
 def do(cmd):
     return o.me.do(cmd)
