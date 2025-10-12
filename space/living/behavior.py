@@ -17,18 +17,26 @@ class PointLessVoiceLines:
 
     Attributes
     - voicelines: list of (message, weight) tuples. Message is a "$N $v..." string.
-    - voiceline_frequency: Roll describing chance per turn (e.g., "1d10").
+    - voiceline_frequency: space.roll.Chance("1d6=1")
 
     Conventions
     - If any super().do_receive(...) returns True, we consider the message handled
       and skip emitting a voice line.
     """
 
-    def __init__(self, voiceline_frequency="1d10", **kw):  # pylint: disable=unused-argument
-        # Initialize behavior defaults before chaining.
-        self.voiceline_frequency = Chance("1d10=1")
-        self.voicelines = list()  # [(msg, weight), ...]
-        super().__init__(**kw)
+    voiceline_frequency = Chance('1d6=1') 
+    voicelines = list()
+
+    def __init__(self, *a, voiceline_frequency=None, **kw):  # pylint: disable=unused-argument
+        if isinstance(voiceline_frequency, str):
+            self.voiceline_frequency = Chance(voiceline_frequency)
+        elif isinstance(voiceline_frequency, Chance):
+            self.voiceline_frequency = voiceline_frequency
+        if self.voicelines is None:
+            self.voicelines = list()
+        if a:
+            self.voicelines = list(a)
+        super().__init__(*a, **kw)
 
     def do_receive(self, msg, your_turn=False):  # pylint: disable=unused-argument
         if super().do_receive(msg, your_turn=your_turn):
@@ -60,6 +68,7 @@ class PointLessVoiceLines:
             pairs.append((msg, w))
             total += w
 
+        log.debug("_pick_weighted_voiceline() lines=%d total-line-weights=%d", len(pairs), total)
         if total <= 0:
             return
 

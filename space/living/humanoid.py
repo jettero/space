@@ -6,7 +6,7 @@ from collections import OrderedDict
 import space.exceptions as E
 from .base import Living
 from .behavior import PointLessVoiceLines
-from .gender import Male, Female
+from .gender import Male, Female, Unknown
 from .slots import Slots as BaseSlots, BeltSlot, HandSlot, LegsSlot, TorsoSlot, HeadSlot, FeetSlot, PackSlot
 from ..door import Door
 from ..stdobj import StdObj
@@ -130,8 +130,7 @@ class Skeleton(PointLessVoiceLines, Humanoid):
         "$N $vgnash $p teeth in impotent rage.",
     ]
 
-
-class HumanSkeleton(Skeleton):
-    s = l = "skeleton"
-    a = "s"
-    d = "a human skeleton"
+    class Choices(Living.Choices):
+        gender = (
+            Unknown,
+        )
