@@ -371,7 +371,9 @@ class Check:
             return v >= rhs
         return False
 
+
 Chance = Gate = Check
+
 
 class AttrChoices:
     _ordered = tuple()

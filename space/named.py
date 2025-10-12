@@ -9,6 +9,7 @@ from .obj import baseobj
 FORMAT_RE = re.compile(r"^(.*?)(?:\b|[~])?(a|s|l|d|abbr|short|long|desc)?$")
 log = logging.getLogger(__name__)
 
+
 class Named(Serial, baseobj):
     a = "~"
     s = "object"
@@ -103,8 +104,8 @@ class Named(Serial, baseobj):
     def proper_name(self, v):
         name = str(v) if v is not None else None
         if name:
-            if '~' in v:
-                self.s = self.l = v.replace('~', ' ')
+            if "~" in v:
+                self.s = self.l = v.replace("~", " ")
             else:
                 self.l = name
                 self.s = name.split()[0]

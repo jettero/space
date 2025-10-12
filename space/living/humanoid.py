@@ -112,6 +112,7 @@ class Human(PointLessVoiceLines, Humanoid):
 
     def __init__(self, proper_name=None, short=None, **kw):
         super().__init__(proper_name=proper_name, short=short, **kw)
+
     voicelines = [
         '$N $vsay, "Hi there!"',
     ]
@@ -124,6 +125,7 @@ class Skeleton(PointLessVoiceLines, Humanoid):
 
     def __init__(self, long=None, short=None, **kw):
         super().__init__(long=long, short=short, **kw)
+
     voicelines = [
         "$N $vgnash $p teeth in impotent rage.",
     ]

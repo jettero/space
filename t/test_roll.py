@@ -123,6 +123,7 @@ def test_grime_second_cycle():
         "2 magenta",
     )
 
+
 def test_roll_callable_and_compare():
     r = Roll("1d10")
     v1 = r()
@@ -237,7 +238,7 @@ def test_check_dc_non_basebonus_raises():
 
 
 def test_check_no_args_allowed_for_roll_checks():
-    c = Check('1d10=1')
+    c = Check("1d10=1")
     with pytest.raises(E.ParseError):
         c(object())
 

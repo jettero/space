@@ -24,7 +24,7 @@ class PointLessVoiceLines:
       and skip emitting a voice line.
     """
 
-    def __init__(self, voiceline_frequency='1d10', **kw):  # pylint: disable=unused-argument
+    def __init__(self, voiceline_frequency="1d10", **kw):  # pylint: disable=unused-argument
         # Initialize behavior defaults before chaining.
         self.voiceline_frequency = Chance("1d10=1")
         self.voicelines = list()  # [(msg, weight), ...]
