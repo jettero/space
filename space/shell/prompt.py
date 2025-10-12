@@ -48,6 +48,17 @@ class _WordCompleter(Completer):
                 yield Completion(w + " ", start_position=-len(frag))
 
 
+class KeywordFilter(logging.Filter):
+    def __init__(self, *name_filters):
+        self.name_filters = [re.compile(x) for x in name_filters]
+
+    def filter(self, record):
+        for nf in self.name_filters:
+            if nf.search(record.name):
+                return False
+        return True
+
+
 class Shell(BaseShell):
     """prompt_toolkit-powered interactive shell.
 
@@ -60,6 +71,7 @@ class Shell(BaseShell):
     _patch_cm = None
     _printing_lock = threading.Lock()
     color = True
+    _logging_opts = None
 
     def startup(self, init=None):
         # Build session with our completer
@@ -81,6 +93,13 @@ class Shell(BaseShell):
         # Install stdout patching so prints during prompts render cleanly
         self._patch_cm = patch_stdout(raw=True)
         self._patch_cm.__enter__()
+
+        # Match readline shell logging setup
+        self.reconfigure_logging(
+            filename="shell.log",
+            format="%(asctime)s %(name)17s %(levelname)5s %(message)s",
+            level=logging.DEBUG,
+        )
 
         if isinstance(init, (tuple, list)):
             for cmd in init:
@@ -110,26 +129,14 @@ class Shell(BaseShell):
         if line.startswith("/"):
             cmd, *args = line[1:].split()
             if cmd == "debug":
-                # Toggle debug/info by reusing logging.root level
-                cl = logging.getLogger().level
+                cl = self._logging_opts.get("level")
                 nl = logging.INFO if cl == logging.DEBUG else logging.DEBUG
-                logging.getLogger().setLevel(nl)
+                self.reconfigure_logging(level=nl)
             elif cmd == "logfile":
-                # Delegate to base behavior by sending owner a help text
                 if not args or args[0] in ("off", "0", "false"):
-                    # Users of prompt_toolkit shell likely rely on external logging
-                    # Keep semantics minimal: disable FileHandlers if present
-                    root = logging.getLogger()
-                    for h in list(root.handlers):
-                        if getattr(h, "baseFilename", None):
-                            root.removeHandler(h)
+                    self.reconfigure_logging(filename=None)
                 else:
-                    fn = args[0]
-                    root = logging.getLogger()
-                    fh = logging.FileHandler(fn)
-                    fmt = logging.Formatter("%(asctime)s %(name)17s %(levelname)5s %(message)s")
-                    fh.setFormatter(fmt)
-                    root.addHandler(fh)
+                    self.reconfigure_logging(filename=args[0])
             elif cmd in ("exit", "quit"):
                 self.stop()
             else:
@@ -137,6 +144,24 @@ class Shell(BaseShell):
                 self.owner.tell("/logfile  set the logfile location (default: shell.log)")
                 self.owner.tell("/quit     exit the shell")
             return True
+
+    def reconfigure_logging(self, **kw):
+        def mydl(*dl):
+            norepeat = set()
+            for d in dl:
+                if isinstance(d, dict):
+                    for k, v in d.items():
+                        if k not in norepeat:
+                            if v is not None:
+                                yield k, v
+                        norepeat.add(k)
+
+        self._logging_opts = {k: v for k, v in mydl(kw, self._logging_opts)}
+        logging.root.handlers = []
+        logging.basicConfig(**self._logging_opts)
+        kwf = KeywordFilter("space.args")  # XXX: should be configurable
+        for handler in logging.root.handlers:
+            handler.addFilter(kwf)
 
     def do_step(self, cmd):
         if cmd and not self.internal_command(cmd):
