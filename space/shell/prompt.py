@@ -177,7 +177,7 @@ class Shell(BaseShell):
             if app is not None and getattr(app, "_is_running", False):
                 return
             # Provide completer each prompt to honor dynamic parser.words
-            line = self._session.prompt("ssr> ", completer=self._completer).strip()
+            line = self._session.prompt("/space/ ", completer=self._completer).strip()
             self.do_step(line)
         except (EOFError, KeyboardInterrupt):
             self.stop()

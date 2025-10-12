@@ -115,7 +115,7 @@ class Shell(BaseShell):
     def step(self):
         self.at_prompt = True
         try:
-            cmd = input("ssr> ").strip()
+            cmd = input("/space/ ").strip()
             self.at_prompt = False
             self.do_step(cmd)
         except (EOFError, KeyboardInterrupt):
