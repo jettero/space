@@ -7,7 +7,7 @@ PointLessVoiceLines emits occasional weighted voice lines during turns.
 
 import logging
 import random
-from ..roll import Roll
+from ..roll import Chance
 
 log = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class PointLessVoiceLines:
 
     def __init__(self, voiceline_frequency='1d10', **kw):  # pylint: disable=unused-argument
         # Initialize behavior defaults before chaining.
-        self.voiceline_frequency = Roll("1d10")
+        self.voiceline_frequency = Chance("1d10=1")
         self.voicelines = list()  # [(msg, weight), ...]
         super().__init__(*a, **kw)
 
@@ -37,7 +37,7 @@ class PointLessVoiceLines:
         if not your_turn:
             return
 
-        if self.voiceline_frequency.roll() != 1:
+        if not self.voiceline_frequency:
             return
 
         if line := self._pick_weighted_voiceline():
