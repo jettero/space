@@ -3,6 +3,7 @@
 import random
 from lark import Lark, Transformer
 from lark.exceptions import LarkError
+import space.exceptions as E
 
 
 class ARoll(int):
@@ -252,6 +253,17 @@ class Check:
         # Supported operators: =, !=, <, <=, >, >=, :{a,b,c}
         s = self.text
 
+        # DC phrase: "<Stat> DC <INT>" (case-insensitive)
+        self._is_dc = False
+        low = s.lower()
+        if " dc " in low:
+            parts = s.split()
+            if len(parts) == 3 and parts[1].lower() == "dc":
+                self._is_dc = True
+                self._stat = parts[0].lower()
+                self._dc = int(parts[2])
+                return
+
         # set membership forms: "<roll>={a,b,c}" or ranges "{3..5,2}", and negation "!={...}"
         if ("={" in s or "!={" in s) and s.endswith("}"):
             if "!={" in s:
@@ -293,16 +305,44 @@ class Check:
         # If we get here, the expression wasn't understood.
         raise RollError()
 
-    def __call__(self):
-        return self.eval()
+    def __repr__(self):
+        if self._is_dc:
+            return f"Check({self._stat} DC {self._dc})"
+        # Keep original text for non-DC forms; brief and faithful
+        return f"Check({self.text})"
+
+    def __call__(self, *args, **kwargs):
+        return self.eval(*args)
 
     def __bool__(self):
+        # For DC checks, an actor context is required.
+        if self._is_dc:
+            raise E.ParseError("DC check requires an actor; call the check with the actor, e.g., Check('Dip DC 10')(actor)")
         return self.eval()
 
     def __str__(self):
         return self.text
 
-    def eval(self):
+    def eval(self, *args):
+        if self._is_dc:
+            if not args:
+                raise E.ParseError("DC check requires an actor argument")
+            actor = args[0]
+            attr = self._stat
+            # direct attribute access; raise if missing
+            try:
+                from .living.stats import BaseBonus  # local import to avoid cycle
+            except Exception as exc:  # pragma: no cover
+                raise
+            try:
+                stat = getattr(actor, attr)
+            except AttributeError as exc:
+                raise E.ParseError(f"unknown stat '{attr}' for actor") from exc
+            if not isinstance(stat, BaseBonus):
+                raise E.ParseError(f"stat '{attr}' is not a BaseBonus")
+            v = stat.roll()
+            return v >= self._dc
+
         if self._op == "=set":
             v = self._roll.roll()
             return v in self._values
@@ -327,10 +367,7 @@ class Check:
             return v >= rhs
         return False
 
-# Aliases
-Gate = Check
-Chance = Check
-
+Chance = Gate = Check
 
 class AttrChoices:
     _ordered = tuple()
