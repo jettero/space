@@ -12,6 +12,6 @@ def load_verbs():
     if os.environ.get("SPACE_DISABLE_EMOTE_REGISTRY", False):
         return [c() for c in find_verbs()]
 
-    from .emote.gen import REGISTRY
+    from .emote.gen import load_emotes
 
-    return [c() for c in find_verbs()] + REGISTRY
+    return [c() for c in find_verbs()] + load_emotes()

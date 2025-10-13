@@ -124,11 +124,4 @@ class Emote(Verb):
 
 
 def load_emotes():
-    ret = list()
-    for name, patterns in SOUL["emotes"].items():
-        ret.append(Emote(name=name, patterns=patterns))
-    return ret
-
-
-REGISTRY = load_emotes()
-del load_emotes
+    return list( Emote(name=name, patterns=patterns) for name, patterns in SOUL["emotes"].items() )
