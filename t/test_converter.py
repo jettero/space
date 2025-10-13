@@ -24,4 +24,3 @@ def test_converter_matches_expected():
     syn = to_synthetic_map(text)
     data = parse(syn)
     assert _normalize(data) == expected
-

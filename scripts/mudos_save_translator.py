@@ -17,6 +17,7 @@ import sys
 
 from contrib.tools.lpc_parser import parse
 import re
+
 try:
     from black import format_str, FileMode
 except Exception:  # pragma: no cover - optional dependency at runtime
@@ -52,13 +53,13 @@ def to_synthetic_map(text: str) -> str:
             break
         # read name token until whitespace or '('
         start = j
-        while j < n and not s[j].isspace() and s[j] != '(':
+        while j < n and not s[j].isspace() and s[j] != "(":
             j += 1
         name = s[start:j]
         # skip whitespace
         while j < n and s[j].isspace():
             j += 1
-        if j >= n or s[j] != '(':
+        if j >= n or s[j] != "(":
             # malformed; stop
             break
         # scan payload starting at '('
@@ -71,16 +72,16 @@ def to_synthetic_map(text: str) -> str:
             if in_str:
                 if escape:
                     escape = False
-                elif ch == '\\':
+                elif ch == "\\":
                     escape = True
                 elif ch == '"':
                     in_str = False
             else:
                 if ch == '"':
                     in_str = True
-                elif ch == '(':
+                elif ch == "(":
                     depth += 1
-                elif ch == ')':
+                elif ch == ")":
                     depth -= 1
                     if depth == 0:
                         k += 1

@@ -13,6 +13,7 @@ from space.verb.emote.soul import SOUL
 from space.verb.base import Verb
 from space.living.base import Living
 
+
 class EmoteVerb(Verb):
     """Minimal emote verb container.
 
@@ -138,12 +139,16 @@ class EmoteVerb(Verb):
         setattr(Living, f"can_{name}_living_object", can_fn)
         setattr(Living, f"do_{name}_living_object", do_fn)
 
+
 REGISTRY = list()
+
+
 def load_emotes():
     """Build a registry of EmoteVerb objects from `SOUL` data."""
     global REGISTRY
     for name, patterns in SOUL["emotes"].items():
-        REGISTRY.append( EmoteVerb(name=name, patterns=patterns) )
+        REGISTRY.append(EmoteVerb(name=name, patterns=patterns))
+
 
 load_emotes()
 del load_emotes

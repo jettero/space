@@ -50,9 +50,7 @@ SOUL = {
             "": '$N $vexclaim, "Eek!!"',
         },
         "sick": {"": "$N $vlook sick."},
-        "chant": {
-            "STR": '%^BOLD%^%^BLUE%^$N $vchant%^RESET%^, "$o ... $o ... $o ... $o ..."'
-        },
+        "chant": {"STR": '%^BOLD%^%^BLUE%^$N $vchant%^RESET%^, "$o ... $o ... $o ... $o ..."'},
         "strip": {"": "$N $vremove $p clothes seductively."},
         "jslowclap": {"LIV": "$N $vjoin $p1 slowclap.", "": "$N $vjoin the slowclap."},
         "pout": {
@@ -61,9 +59,7 @@ SOUL = {
             "": "$N $vpout.",
         },
         "dill": {"": "The Dill has no soul."},
-        "sdance": {
-            "LIV": "$N $vput $p arms around $p1 waist and $vshare a slow dance with $t."
-        },
+        "sdance": {"LIV": "$N $vput $p arms around $p1 waist and $vshare a slow dance with $t."},
         "me2": {"": '$N $vsay, "ME TOO"'},
         "flip": {
             "WRD": "$N $vflip $o.",
@@ -82,9 +78,7 @@ SOUL = {
             "STR": "$N $vblink $o.",
             "": "$N $vblink.",
         },
-        "movievoice": {
-            "STR": '%^BLUE%^BOLD%^$N $vboom in the movie guy voice%^RESET%^, "$o"'
-        },
+        "movievoice": {"STR": '%^BLUE%^BOLD%^$N $vboom in the movie guy voice%^RESET%^, "$o"'},
         "belch": {
             "LIV": "$N $vbelch in $p1 face!",
             "STR": "$N $vbelch $o.",
@@ -219,9 +213,7 @@ SOUL = {
             "LIV": '%^CYAN%^$N $vbreak $p mouse and $vblame $t%^RESET%^, "This game is a MESS!"',
             "": "$N literally cannot operate channels.",
         },
-        "details": {
-            "": "$N $vinterject every little mundane detail about $p stupid long boring day."
-        },
+        "details": {"": "$N $vinterject every little mundane detail about $p stupid long boring day."},
         "outass": {"LIV": "$N can *SO* outass $t."},
         "frolick": {
             "LIV": "$N $vfrolick about with $t.",
@@ -247,9 +239,7 @@ SOUL = {
             "LIV": "$N $vstorm about, gesturing wildly, and throwing things at $t.",
             "STR": "$N $vstorm around angrily cursing and gesturing wildly about $o.",
         },
-        "ohohoh": {
-            "": '$N $vraise $p hand, $vjump up and down, and excitedly $vscream, "Oh! Oh! Oh!"'
-        },
+        "ohohoh": {"": '$N $vraise $p hand, $vjump up and down, and excitedly $vscream, "Oh! Oh! Oh!"'},
         "smiel": {
             "LIV": "$N $vsmiel at $t.",
             "STR at LIV": "$N $vsmiel $o at $t.",
@@ -265,9 +255,7 @@ SOUL = {
             "": "$N $vflutter $p eyelashes.",
         },
         "choke": {"LIV": "$N $vchoke $t!", "": "$N $vlaugh so hard $n $vchoke."},
-        "quotewrong": {
-            "STR": '%^BOLD%^%^BLUE%^$N $vremember something like%^RESET%^, "$o."'
-        },
+        "quotewrong": {"STR": '%^BOLD%^%^BLUE%^$N $vremember something like%^RESET%^, "$o."'},
         "tengu": {"": "$N $vremembered that wrong."},
         "grimace": {
             "LIV": "$N $vgrimace at the very thought of life with $t.",
@@ -331,12 +319,8 @@ SOUL = {
         },
         "clear": {"": "$N $vclear $p throat... *ahem*"},
         "impatient": {"": "$N $vare getting impatient!"},
-        "neurotic": {
-            "": "$N $vpoint out $n $vare only neurotic, so there is nothing to worry about."
-        },
-        "soapbox": {
-            "STR": '%^BOLD%^%^BLUE%^$N $vstep on the soapbox and $vstate%^RESET%^, "$o."'
-        },
+        "neurotic": {"": "$N $vpoint out $n $vare only neurotic, so there is nothing to worry about."},
+        "soapbox": {"STR": '%^BOLD%^%^BLUE%^$N $vstep on the soapbox and $vstate%^RESET%^, "$o."'},
         "curses": {"": "$N $vcurse."},
         "tap": {
             "LIV": "$N $vtap $t on the shoulder.",
@@ -360,9 +344,7 @@ SOUL = {
             "": "$N $vsalute.",
         },
         "molest": {"LIV": "$N $vmolest $t."},
-        "giantairquotes": {
-            "STR": "%^BOLD%^%^BLUE%^$N $vuse giant air quotes%^RESET%^, 66 $o 99"
-        },
+        "giantairquotes": {"STR": "%^BOLD%^%^BLUE%^$N $vuse giant air quotes%^RESET%^, 66 $o 99"},
         "windex": {
             "LIV": '$N $vask $t, "Do you wash your pants in windex?"',
             "": "$N $vlook like $n $vwant to wash some windows.",
@@ -456,9 +438,7 @@ SOUL = {
             "": "$N $vwave $p hands in the air.",
         },
         "er": {"": '$N $vstumble, "er..."'},
-        "loserl": {
-            "": "$N $vmake an L with $p right hand and $vhold it up to $p forehead."
-        },
+        "loserl": {"": "$N $vmake an L with $p right hand and $vhold it up to $p forehead."},
         "snore": {
             "LIV": "$N $vsnore at $t.",
             "LIV STR": "$N $vsnore $o at $t.",
@@ -515,9 +495,7 @@ SOUL = {
             "STR": "$N $vbow $o.",
             "": "$N $vbow.",
         },
-        "sever": {
-            "LIV": "$N calmly $vdraw $p katana and $vsever $p1 head from $p1 body. Nothing personal, you know."
-        },
+        "sever": {"LIV": "$N calmly $vdraw $p katana and $vsever $p1 head from $p1 body. Nothing personal, you know."},
         "quiver": {
             "WRD LIV": "$N $vquiver $o all over $t.",
             "LIV": "$N $vquiver all over $t.",
@@ -640,9 +618,7 @@ SOUL = {
         "ld": {"LIV WRD": "$N1 $v1have gone $o-dead.", "": "$N $vhave gone link-dead."},
         "bleed": {"LIV": "$N $vbleed on $t.", "": "$N $vbleed."},
         "keycaps": {"": "$N $vsay: All wiyht. Rho sritched mg kegtops awound?"},
-        "hkill": {
-            "": "$N $vare going to kill until no Harkonnen breathes Arakeen air."
-        },
+        "hkill": {"": "$N $vare going to kill until no Harkonnen breathes Arakeen air."},
         "mmm": {
             "STR": '$N $vdrool and $vmoan, "Mmm... $o."',
             "": '$N $vrub $p tummy and $vgo, "Mmmm..."',
@@ -658,18 +634,14 @@ SOUL = {
         "saysing": {"": '$N $vadjust $p paper hat and $vsing, "Ding! Fries are done!"'},
         "suffer": {"": "$N $vsuffer horribly."},
         "facepalm": {"": "$N $vdrop $p head into $p hand and $vsigh."},
-        "dielaff": {
-            "": "$N $vfall on the floor and slowly $vchoke to death laughing...."
-        },
+        "dielaff": {"": "$N $vfall on the floor and slowly $vchoke to death laughing...."},
         "clap": {"LIV": "$N $vclap for $t.", "STR": "$N $vclap $o.", "": "$N $vclap."},
         "eyerape": {
             "LIV": "$N $vrape $t in $p1 eyehole.",
             "": "$N $vact like the Corinthian.",
         },
         "boogie": {"": "$N $vget $p groove on."},
-        "cockslap": {
-            "LIV": "$N {{$vsmash $p cock on $p1 face,,$vslap $p1 [[silly little cock++dripping pussy]]}}."
-        },
+        "cockslap": {"LIV": "$N {{$vsmash $p cock on $p1 face,,$vslap $p1 [[silly little cock++dripping pussy]]}}."},
         "mock": {
             "LIV": "$N $vmock $t.",
             "LIV STR": '%^BOLD%^%^BLUE%^$N $vmock $t%^RESET%^, "$o"',
@@ -686,9 +658,7 @@ SOUL = {
         },
         "hiss": {"LIV": "$N $vhiss at $t.", "STR": "$N $vhiss $o.", "": "$N $vhiss."},
         "nardkick": {"LIV": "$N $vkick $t in the nards."},
-        "evil": {
-            "": "$N $vsprout little horns and a tail and $vturn into a cute little devil."
-        },
+        "evil": {"": "$N $vsprout little horns and a tail and $vturn into a cute little devil."},
         "muah": {"": '$N $vgo, "Muahahahahahaaaa!"'},
         "bleh": {"": '$N $vmutter, "Bleh."'},
         "jaw": {"": "$P jaw hits the floor."},
@@ -746,12 +716,8 @@ SOUL = {
             "LIV": "$N $veye $t suspiciously.",
             "": "$N $veye everyone suspiciously.",
         },
-        "wake": {
-            "LIV": '$N $vgrab $t by $p1 shoulders and $vshake $to violently, screaming, "WAKE UP!"'
-        },
-        "roflmaobbq": {
-            "": "$N $vroll on the floor laughing so hard $n $vdie and $vleak the magic BBQ sauce."
-        },
+        "wake": {"LIV": '$N $vgrab $t by $p1 shoulders and $vshake $to violently, screaming, "WAKE UP!"'},
+        "roflmaobbq": {"": "$N $vroll on the floor laughing so hard $n $vdie and $vleak the magic BBQ sauce."},
         "sniff": {"LIV": "$N $vsniff $t.", "STR": "$N $vsniff $o.", "": "$N $vsniff."},
         "npoke": {"LIV": "$N $vpoke $t in the [[anus++hooter]]."},
         "shiver": {"": "$N $vshiver."},
@@ -784,9 +750,7 @@ SOUL = {
             "STR": '%^BOLD%^%^BLUE%^$N $vmoan and $vsay%^RESET%^, "Woah: $o"',
             "": '%^BOLD%^%^BLUE%^$N $vmoan and $vsay%^RESET%^, "Woah!"',
         },
-        "frustrated": {
-            "": "$N $vthrow $p hands up in the air and $vgive up in frustration."
-        },
+        "frustrated": {"": "$N $vthrow $p hands up in the air and $vgive up in frustration."},
         "notme": {
             "LIV": '$N $vshake $p head at $t and $vdeclare, "Not me!"',
             "": '$N $vdeclare, "Not me!"',
@@ -804,9 +768,7 @@ SOUL = {
             "": "$N $vcough.",
         },
         "lol": {"LIV": "$N $vlaugh out loud at $t.", "": "$N $vlaugh out loud."},
-        "supz": {
-            "": '$N $vput a serious mug on and $vsay, "Supz" as if it means something threatening.'
-        },
+        "supz": {"": '$N $vput a serious mug on and $vsay, "Supz" as if it means something threatening.'},
         "mourn": {
             "LIV": "$N $vexpress $p grief at $p1 loss.",
             "STR": "$N $vmourn for $o.",
@@ -846,9 +808,7 @@ SOUL = {
             "LIV": "$N $vglare at $t with hatred.",
             "": "$N $vhate using random...",
         },
-        "shandoryawn": {
-            "": "$N $vchoose to ignore Shandor regarding his correctness and simply $vyawn instead."
-        },
+        "shandoryawn": {"": "$N $vchoose to ignore Shandor regarding his correctness and simply $vyawn instead."},
         "stomp": {
             "LIV": "$N $vstomp on $p1 head.",
             "STR": "$N $vstomp $p feet $o.",
@@ -874,20 +834,14 @@ SOUL = {
         },
         "ew": {"": '%^CYAN%^$N $vshriek%^RESET%^, "Ew! Gross!"'},
         "flick": {"LIV": "$N $vflick $p1 ear."},
-        "dwowy": {
-            "STR": "%^BOLD%^%^BLUE%^$N $vdeclare that the new dirty word of the week is%^RESET%^: $o"
-        },
+        "dwowy": {"STR": "%^BOLD%^%^BLUE%^$N $vdeclare that the new dirty word of the week is%^RESET%^: $o"},
         "hmm": {
             "STR": '%^CYAN%^$N $vponder%^RESET%^, "Hmmm, $o"',
             "": '$N $vscratch $p chin and thoughtfully $vsay, "Hmmm..."',
         },
         "complain": {"STR": "$N $vcomplain $o.", "": "$N $vcomplain."},
-        "nice": {
-            "STR": '$N $vhave no idea what $n $vare doing, but $vthink $o is "neat," ... how nice.'
-        },
-        "fool": {
-            "": '$N $vask, "Who\'s more foolish, the fool or the fool who follows him?"'
-        },
+        "nice": {"STR": '$N $vhave no idea what $n $vare doing, but $vthink $o is "neat," ... how nice.'},
+        "fool": {"": '$N $vask, "Who\'s more foolish, the fool or the fool who follows him?"'},
         "jig": {
             "LIV": "$N $vlace on $p black leather shoes and $vdo a fine Irish jig around $t.",
             "OBJ": "$N $vlace on $p black leather shoes and $vdo a fine Irish jig around the $o.",
@@ -950,9 +904,7 @@ SOUL = {
         },
         "sob": {"STR": "$N $vsob $o.", "": "$N $vsob."},
         "hanghead": {"": "$N $vhang $p head in disappointment."},
-        "ahem": {
-            "": "$N $vclear $p throat and $vlook around as if someone might buy that."
-        },
+        "ahem": {"": "$N $vclear $p throat and $vlook around as if someone might buy that."},
         "nerdslam": {
             "LIV": "$N $vgo all %^YELLOW%^Scorpion%^RESET%^, $vhook $t with ninja magic (GET OVER HERE) and $vperform a shoulder-slam-upper-cut thing. $N1 $v1are so p0wned."
         },
@@ -998,9 +950,7 @@ SOUL = {
         "iso": {"LIV": "$N $vfind $t out of conformance to the ISO standard."},
         "mae": {"": "$N $vsay: All wiyht. Rho sritched mg kegtops awound?"},
         "scratch": {"LIV": "$N $vscratch $p1 head.", "": "$N $vscratch $p head."},
-        "bc": {
-            "": '$N $vraise $p weapon to the sky and $vscream, "On with the body count!"'
-        },
+        "bc": {"": '$N $vraise $p weapon to the sky and $vscream, "On with the body count!"'},
         "flash": {
             "LIV": "$N $vflash $t. $T1s $v1are impressed.",
             "LIV STR": "$N $vflash $t. $T1s $v1are $o.",
@@ -1018,9 +968,7 @@ SOUL = {
             "STR": "$N $vwhine $o.",
             "": "$N $vwhine.",
         },
-        "gentoo": {
-            "STR": "%^BOLD%^%^GREEN%^ * %^RESET%^$o -$n %^BOLD%^%^BLUE%^[ %^GREEN%^ok%^BLUE%^ ]"
-        },
+        "gentoo": {"STR": "%^BOLD%^%^GREEN%^ * %^RESET%^$o -$n %^BOLD%^%^BLUE%^[ %^GREEN%^ok%^BLUE%^ ]"},
         "luck": {"LIV": "$N $vwish $t good luck.", "": "$N $vare very lucky."},
         "beatings": {
             "LIV": "$N $vdecide to keep beating $t until morale improves.",
@@ -1038,9 +986,7 @@ SOUL = {
             "LIV": "$N $vserenade $t by humming a romantic tune.",
             "": "$N $ventertain $r by humming a tune.",
         },
-        "toomanypeople": {
-            "": "$N $vdecide there are too many people logged on, and $vponder a desting spree."
-        },
+        "toomanypeople": {"": "$N $vdecide there are too many people logged on, and $vponder a desting spree."},
         "jizzcuit": {
             "LIV": "$N $vmake a jizzcuit and $vhand it to $t.",
             "": "$N $vmake $r a jizzcuit.",
@@ -1075,9 +1021,7 @@ SOUL = {
         },
         "checked": {"STR": "[x] $o"},
         "dhs": {"": "$N $vhope DHS didn't hear that."},
-        "gah": {
-            "": '%^BOLD%^%^BLUE%^$N $vscream%^RESET%^, "GAH! Why are people doing this to me!??!"'
-        },
+        "gah": {"": '%^BOLD%^%^BLUE%^$N $vscream%^RESET%^, "GAH! Why are people doing this to me!??!"'},
         "snuggle": {
             "LIV": "$N $vsnuggle with $t.",
             "": [
@@ -1131,17 +1075,13 @@ SOUL = {
             "": "Nadya smokes pole.",
         },
         "pounce": {"LIV": "$N $vpounce on $t."},
-        "semishandor": {
-            "": ";;;;;;;;;;;;;; for Shandor ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"
-        },
+        "semishandor": {"": ";;;;;;;;;;;;;; for Shandor ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"},
         "soviet": {
             "STR WRD": "In Soviet Russia, $o $o1 YOU.",
             "WRD WRD": "In Soviet Russia, $o $o1 YOU.",
         },
         "skip": {"STR": "$N $vskip $o.", "": "$N $vskip."},
-        "diku": {
-            "": "$N $vpoint out that even a stock merc diku can do it, so why can't Lima."
-        },
+        "diku": {"": "$N $vpoint out that even a stock merc diku can do it, so why can't Lima."},
         "blow": {
             "LIV": "$N $vattach to $p1 loins with style and vigor.",
             "": "$N $vblow hot air.",
@@ -1191,9 +1131,7 @@ SOUL = {
             "STR": "$N $vwave a huge banner saying '$O'.",
         },
         "twirl": {"LIV": "$N $vtwirl $t in $p arms.", "": "$N $vtwirl around."},
-        "pocketkiss": {
-            "LIV": "$N $vsneak $p0 hands into $p1 back pockets and $vdraw $t close for a long, passionate kiss."
-        },
+        "pocketkiss": {"LIV": "$N $vsneak $p0 hands into $p1 back pockets and $vdraw $t close for a long, passionate kiss."},
         "zone": {
             "": "$N $vzone out and $vvisit strange lands of wonder, where magic reigns and dragons and gods roam the lands."
         },
@@ -1230,9 +1168,7 @@ SOUL = {
         },
         "fog": {"": "The fog lifts from $p0 eyes... $n $vare back."},
         "sing": {"STR": '%^BOLD%^%^BLUE%^$N $vsing%^RESET%^, "$o"', "": "$N $vsing."},
-        "potter": {
-            "": '%^BOLD%^%^BLUE%^$N very busily $vstate%^RESET%^, "Async potter mojo..."'
-        },
+        "potter": {"": '%^BOLD%^%^BLUE%^$N very busily $vstate%^RESET%^, "Async potter mojo..."'},
         "mumble": {
             "LIV": "$N $vmumble something about $t being a dork.",
             "STR": "$N $vmumble something about $o.",
@@ -1245,9 +1181,7 @@ SOUL = {
         },
         "egrin": {"": "$N $vgrin evilly."},
         "afaik": {"": '$N $vgo, "As Far As I Know."'},
-        "centmojo": {
-            "": '%^BOLD%^%^BLUE%^$N very busily $vstate%^RESET%^, "A Cent Mojo Sporty!"'
-        },
+        "centmojo": {"": '%^BOLD%^%^BLUE%^$N very busily $vstate%^RESET%^, "A Cent Mojo Sporty!"'},
         "swear": {"STR": "$N $vswear $o.", "": "$N $vswear."},
         "raspberry": {"LIV": "$N $vraspberry at $t.", "": "$N $vraspberry."},
         "thwap": {
@@ -1286,17 +1220,13 @@ SOUL = {
         },
         "softheadbang": {"": "$N $vheadnod mildly aggressively."},
         "grope": {"LIV": "$N $vgrope $t.", "": "$N $vgrope blindly."},
-        "horror": {
-            "": '$N $vhuddle in a corner whimpering "The Horror .. the Horror."'
-        },
+        "horror": {"": '$N $vhuddle in a corner whimpering "The Horror .. the Horror."'},
         "kaygg": {
             "LIV": "$N $vlaugh to the left of $t.",
             "STR": "$N $vlaugh to the left about: $o",
             "": "$N $vlaugh to the left.",
         },
-        "qed": {
-            "": '$N $vbelieve the above is quod erat demonstrandum ("that which was to be demonstrated").'
-        },
+        "qed": {"": '$N $vbelieve the above is quod erat demonstrandum ("that which was to be demonstrated").'},
         "oggle": {
             "LIV": "$N $voggle at $p1 body.",
             "": "$N $voggle at the concept. Shapely!",
@@ -1306,9 +1236,7 @@ SOUL = {
             "": "$N $vlook around for beer.",
         },
         "chortle": {"": "$N $vchortle."},
-        "excellent": {
-            "": '$N $vrub $p hands together mischievously and mutters, "Excellent."'
-        },
+        "excellent": {"": '$N $vrub $p hands together mischievously and mutters, "Excellent."'},
         "grunt": {
             "LIV": "$N $vgrunt at $t.",
             "STR": "$N $vgrunt $o.",
@@ -1327,12 +1255,8 @@ SOUL = {
             "LIV STR": "$N $vapplaud $t $o.",
             "": "$N $vapplaud.",
         },
-        "bojo": {
-            "": "$N $vstare out the window wondering what could have happened if $n had tried."
-        },
-        "likesonggenerically": {
-            "": "$N $vdo something a person would do when a cool song is on."
-        },
+        "bojo": {"": "$N $vstare out the window wondering what could have happened if $n had tried."},
+        "likesonggenerically": {"": "$N $vdo something a person would do when a cool song is on."},
         "scoff": {
             "LIV": "$N $vscoff at $t.",
             "STR": "$N $vscoff $o.",
@@ -1352,9 +1276,7 @@ SOUL = {
             "LIV": "$N $vkick $p1 junk in.",
             "": "$N really $vwant to kick someone's junk in.",
         },
-        "crikey": {
-            "": '$N $vexclaim, "Crikey! That Gah-geous \'ranatang just whizzed on me boots!"'
-        },
+        "crikey": {"": '$N $vexclaim, "Crikey! That Gah-geous \'ranatang just whizzed on me boots!"'},
         "console": {"LIV": "$N $vconsole $t."},
         "thumbup": {
             "LIV": "$N $vpoint $p thumb up at $t.",
@@ -1484,17 +1406,13 @@ SOUL = {
             "STR": "$N $vstrut $o.",
             "": "$N $vstrut $p stuff!",
         },
-        "mirmillo": {
-            "": "$N $vleave while everone responds to $p latest wave of questions and stories."
-        },
+        "mirmillo": {"": "$N $vleave while everone responds to $p latest wave of questions and stories."},
         "movie": {
             "LIV STR": '%^BOLD%^%^BLUE%^$N $vinform $t that the quote goes%^RESET%^, "$o"',
             "STR": '%^BOLD%^%^BLUE%^$N $vquote a movie%^RESET%^, "$o"',
             "": "$N $vcannot remember a quote from that movie.",
         },
-        "coot": {
-            "": '%^BOLD%^%^BLUE%^$N very busily $vstate%^RESET%^, "COOT PORN MAJESTY."'
-        },
+        "coot": {"": '%^BOLD%^%^BLUE%^$N very busily $vstate%^RESET%^, "COOT PORN MAJESTY."'},
         "flesh": {"": '$N $vsay "Bah! Merely a flesh wound! I\'ve had worse!"'},
         "lmao": {
             "LIV": "$N $vare laughing $p ass off at what $t said.",
@@ -1512,9 +1430,7 @@ SOUL = {
             "LIV": "$N $vbend over, $vpull $p pants down, exposing $p heiny, and $vshoot $t the moon!",
             "": "$N $vbend over and $vpull $p pants down, exposing $p heiny!",
         },
-        "disinme": {
-            "": '%^CYAN%^$N asks%^RESET%^, "Why you disin\' me? I thought you was my ace boon coon..."'
-        },
+        "disinme": {"": '%^CYAN%^$N asks%^RESET%^, "Why you disin\' me? I thought you was my ace boon coon..."'},
         "toodles": {
             "LIV": '$N $vwave goodby to $t and say, "Toodles!"',
             "OBJ": " begins playing with something in a magic bag, then disappears.",
@@ -1547,9 +1463,7 @@ SOUL = {
             "": "$N $vcurse, \"That's bullshit! It's rigged!\"",
         },
         "lkiss": {"LIV": "$N $vpress $p lips to $p1 in a gentle, lingering kiss."},
-        "roy": {
-            "": '$N $vlike to say, "%^RED%^r%^ORANGE%^o%^YELLOW%^y%^GREEN%^g%^BLUE%^bi%^MAGENTA%^v%^RESET%^."'
-        },
+        "roy": {"": '$N $vlike to say, "%^RED%^r%^ORANGE%^o%^YELLOW%^y%^GREEN%^g%^BLUE%^bi%^MAGENTA%^v%^RESET%^."'},
         "omfg": {
             "LIV": '$N can\'t believe what $t just said, and $vshout out, "Oh my fucking GOD!"',
             "": '$N $vexclaim, "Oh. My. Fucking. God."',
