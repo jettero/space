@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 class Action(Verb):
     name = "move"
-    score = 10.5
+    score = 15
 
     def preprocess_tokens(self, me, **tokens):
         tokens = super().preprocess_tokens(me, **tokens)
