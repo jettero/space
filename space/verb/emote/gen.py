@@ -12,6 +12,7 @@ later integration where the router can ask the verb itself for can_/do_ logic.
 from space.verb.emote.soul import SOUL
 from space.verb.base import Verb
 from space.living.base import Living
+from space.stdobj import StdObj
 
 
 class EmoteVerb(Verb):
@@ -70,74 +71,74 @@ class EmoteVerb(Verb):
         setattr(Living, f"do_{name}", do_fn)
 
     def _add_liv(self, name, template):
-        def can_fn(actor, living):
-            return True, {"living": living}
+        def can_fn(actor, LIV: Living):
+            return True, {"LIV": LIV}
 
-        def do_fn(actor, living):
-            actor.simple_action(template, living)
+        def do_fn(actor, LIV: Living):
+            actor.simple_action(template, LIV)
 
-        setattr(Living, f"can_{name}_living", can_fn)
-        setattr(Living, f"do_{name}_living", do_fn)
+        setattr(Living, f"can_{name}_LIV", can_fn)
+        setattr(Living, f"do_{name}_LIV", do_fn)
 
     def _add_str(self, name, template):
-        def can_fn(actor, str_):
-            return True, {"str_": str_}
+        def can_fn(actor, STR):
+            return True, {"STR": STR}
 
-        def do_fn(actor, str_):
-            actor.simple_action(template, str_)
+        def do_fn(actor, STR):
+            actor.simple_action(template, STR)
 
         setattr(Living, f"can_{name}", can_fn)
         setattr(Living, f"do_{name}", do_fn)
 
     def _add_wrd(self, name, template):
-        def can_fn(actor, wrd):
-            return True, {"wrd": wrd}
+        def can_fn(actor, WRD):
+            return True, {"WRD": WRD}
 
-        def do_fn(actor, wrd):
-            actor.simple_action(template, wrd)
+        def do_fn(actor, WRD):
+            actor.simple_action(template, WRD)
 
         setattr(Living, f"can_{name}", can_fn)
         setattr(Living, f"do_{name}", do_fn)
 
     def _add_obj(self, name, template):
-        def can_fn(actor, obj):
-            return True, {"obj": obj}
+        def can_fn(actor, OBJ: StdObj):
+            return True, {"OBJ": OBJ}
 
-        def do_fn(actor, obj):
-            actor.simple_action(template, obj)
+        def do_fn(actor, OBJ: StdObj):
+            actor.simple_action(template, OBJ)
 
-        setattr(Living, f"can_{name}_object", can_fn)
-        setattr(Living, f"do_{name}_object", do_fn)
+        setattr(Living, f"can_{name}_OBJ", can_fn)
+        setattr(Living, f"do_{name}_OBJ", do_fn)
 
     def _add_liv_str(self, name, template):
-        def can_fn(actor, living, str_):
-            return True, {"living": living, "str_": str_}
+        def can_fn(actor, LIV: Living, STR):
+            return True, {"LIV": LIV, "STR": STR}
 
-        def do_fn(actor, living, str_):
-            actor.simple_action(template, living, str_)
+        def do_fn(actor, LIV: Living, STR):
+            actor.simple_action(template, LIV, STR)
 
-        setattr(Living, f"can_{name}_living", can_fn)
-        setattr(Living, f"do_{name}_living", do_fn)
+        setattr(Living, f"can_{name}_LIV", can_fn)
+        setattr(Living, f"do_{name}_LIV", do_fn)
 
     def _add_liv_liv(self, name, template):
-        def can_fn(actor, living, living2):
-            return True, {"living": living, "living2": living2}
+        def can_fn(actor, LIV: Living, LIV2: Living):
+            return True, {"LIV": LIV, "LIV2": LIV2}
 
-        def do_fn(actor, living, living2):
-            actor.simple_action(template, living, living2)
+        def do_fn(actor, LIV: Living, LIV2: Living):
+            actor.simple_action(template, LIV, LIV2)
 
-        setattr(Living, f"can_{name}_living_living", can_fn)
-        setattr(Living, f"do_{name}_living_living", do_fn)
+        setattr(Living, f"can_{name}_LIV_LIV", can_fn)
+        setattr(Living, f"do_{name}_LIV_LIV", do_fn)
 
     def _add_liv_obj(self, name, template):
-        def can_fn(actor, living, obj):
-            return True, {"living": living, "obj": obj}
+        def can_fn(actor, LIV: Living, OBJ: StdObj):
+            return True, {"LIV": LIV, "OBJ": OBJ}
 
-        def do_fn(actor, living, obj):
-            actor.simple_action(template, living, obj)
+        def do_fn(actor, LIV: Living, OBJ: StdObj):
+            actor.simple_action(template, LIV, OBJ)
 
-        setattr(Living, f"can_{name}_living_object", can_fn)
-        setattr(Living, f"do_{name}_living_object", do_fn)
+        setattr(Living, f"can_{name}_LIV_OBJ", can_fn)
+        setattr(Living, f"do_{name}_LIV_OBJ", do_fn)
 
 
 REGISTRY = list()
