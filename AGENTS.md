@@ -9,7 +9,9 @@
 - Requirements: `requirements.txt` (runtime), `test-requirements.txt`
   (dev/test). Markers: `reqs`, `mods`.
 - after any edit of python files in this repo, be sure to run psf-black on the
-  file. we're using `black --line-length 127` (per `.pre-commit-config.yaml`)
+  file. we're using `black --line-length 127` (per `.pre-commit-config.yaml`);
+  this only counts for actual python files. ipython-startup can't be blacked
+  because it has ipython shenannigans in it.
 
 ## Build, Test, and Development Commands
 - `make` or `make test` — run test suite (`pytest t`).

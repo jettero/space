@@ -4,9 +4,8 @@
 import logging
 import re
 
-# amazeballz, make '@' into 'o' so I can @.me like in the old mud days kindof
 def fix_at(lines):
-    return [ re.sub(r'^\s*@', 'o', line) for line in lines ]
+    return [ re.sub(r'^(\s*)@(?:\.)?', 'o.', line) for line in lines ]
 get_ipython().input_transformers_post.append(fix_at)
 
 def mk_lots(cls, c=1000, *a, **kw):
