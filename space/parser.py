@@ -106,16 +106,20 @@ class PSNode:
 
     @property
     def score(self):
+        # these scores have special meanings
+        # 1 or more means filled
+        # 2 or more means can_do
+        # winner is selected from the 2+ states
         if self._score is None:
             if self.can_do is True:
-                self._score = self.verb.score + (len(self.do_args) / 100)
+                self._score = 2 + (len(self.do_args) / 100)
                 return self._score
             if self.rhint:
                 for hli in self.rhint.hlist:
                     if hli.aname not in self.filled:
-                        self._score = self.verb.score / 1000
-                        return self._score
-                self._score = self.verb.score * 0.9
+                        self._score = 0
+                        return self.score
+                self._score = 1
                 return self._score
             scores = [x.score for x in self if x is not self] + [0]
             self._score = max(scores) / 10

@@ -14,7 +14,6 @@ class VerbError(E.TargetError):
 class Verb:
     name = "verb"
     nick = None
-    score = 10
 
     def __init__(self):
         if self.name == "verb":
