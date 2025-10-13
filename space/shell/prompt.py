@@ -75,11 +75,9 @@ class Shell(BaseShell):
 
     def startup(self, init=None):
         def get_words():
-            # parser.words returns a generator; we iterate directly here.
             return self.parser.words
 
         def get_line_start(txt):
-            # strip leading spaces to emulate beginning-of-line behavior
             txt = txt.lstrip()
             return txt[:1] if txt else ""
 
