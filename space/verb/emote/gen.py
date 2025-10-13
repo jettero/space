@@ -1,10 +1,6 @@
 """
 Generate emote verbs from the MudOS soul data.
 
-This module exposes a lightweight `EmoteVerb` subclass and a `REGISTRY`
-mapping verb name -> EmoteVerb instance generated from
-`space.verb.emote.soul.SOUL`.
-
 Parser/router wiring is intentionally deferred. We keep the verbs ready for
 later integration where the router can ask the verb itself for can_/do_ logic.
 """
@@ -15,21 +11,7 @@ from space.living.base import Living
 from space.stdobj import StdObj
 
 
-class EmoteVerb(Verb):
-    """Minimal emote verb container.
-
-    - `name`: verb string (e.g., "smile").
-    - `patterns`: mapping of signature tags to template(s), e.g.:
-        "": "$N $vsmile.",
-        "LIV": "$N $vsmile at $t.",
-        "STR": "$N $vsmile $o.",
-        "LIV STR": "$N $vsmile at $t $o."
-
-    The `can_*`/`do_*` hooks are intentionally local to the verb so we don't
-    need to modify `Living` yet. They are stubs for now; parser integration
-    will call into these later.
-    """
-
+class Emote(Verb):
     def __init__(self, name, patterns):
         self.name = name
         self.patterns = patterns
@@ -141,15 +123,11 @@ class EmoteVerb(Verb):
         setattr(Living, f"do_{name}_LIV_OBJ", do_fn)
 
 
-REGISTRY = list()
-
-
 def load_emotes():
-    """Build a registry of EmoteVerb objects from `SOUL` data."""
-    global REGISTRY
+    ret = list()
     for name, patterns in SOUL["emotes"].items():
-        REGISTRY.append(EmoteVerb(name=name, patterns=patterns))
+        REGISTRY.append(Emote(name=name, patterns=patterns))
+    return ret
 
-
-load_emotes()
+REGISTRY = load_emotes()
 del load_emotes
