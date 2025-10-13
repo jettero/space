@@ -333,9 +333,7 @@ class Parser:
                             tokens[ihint.aname].append(pstate.tokens[pos])
                             pos += 1
                 if pos < end:
-                    log.debug(
-                        "[Parser] rejecting rhint=%s due to extra unmatched tokens=%s", rhint, pstate.tokens[pos:]
-                    )
+                    log.debug("[Parser] rejecting rhint=%s due to extra unmatched tokens=%s", rhint, pstate.tokens[pos:])
                     continue
                 pp_tok = verb.preprocess_tokens(pstate.me, **tokens)
                 log.debug("[Parser] preprocess tokens for rhint=%s; tokens=%s --> pp_tok=%s", rhint, tokens, pp_tok)
