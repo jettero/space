@@ -8,6 +8,8 @@
   `pylintrc`.
 - Requirements: `requirements.txt` (runtime), `test-requirements.txt`
   (dev/test). Markers: `reqs`, `mods`.
+- after any edit of python files in this repo, be sure to run psf-black on the
+  file. we're using `black --line-length 127` (per `.pre-commit-config.yaml`)
 
 ## Build, Test, and Development Commands
 - `make` or `make test` — run test suite (`pytest t`).
