@@ -5,6 +5,7 @@ import shlex
 
 from .verb import load_verbs
 from .router import MethodArgsRouter
+from .map.dir_util import is_direction_string
 import space.exceptions as E
 
 log = logging.getLogger(__name__)
@@ -284,14 +285,10 @@ class PState:
 class Parser:
     def parse(self, me, text_input):
         log.debug('[Parser] parsing "%s" for %s', text_input, me)
+        if is_direction_string(text_input):
+            text_input = f"move {text_input}"
+            log.debug('[Parser] parsing "%s" instead', text_input)
         pstate = PState(me, text_input)
-        if pstate.states is None:
-            from space.map.dir_util import is_direction_string
-
-            if is_direction_string(text_input):
-                text_input = f"move {text_input}"
-                log.debug('[Parser] parsing "%s" instead', text_input)
-                pstate = PState(me, text_input)
         if pstate.states is None:
             return pstate
         self.plan(pstate)
