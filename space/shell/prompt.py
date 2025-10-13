@@ -42,7 +42,7 @@ class _WordCompleter(Completer):
                     yield Completion(w, start_position=-len(frag))
             return
 
-        # Top-level words come from the parser
+        # Top-level words come from the parser words generator
         for w in self.get_words():
             if w.startswith(frag):
                 yield Completion(w + " ", start_position=-len(frag))
@@ -74,12 +74,9 @@ class Shell(BaseShell):
     _logging_opts = None
 
     def startup(self, init=None):
-        # Build session with our completer
         def get_words():
-            try:
-                return list(self.parser.words)
-            except Exception:  # pylint: disable=broad-except
-                return []
+            # parser.words returns a generator; we iterate directly here.
+            return self.parser.words
 
         def get_line_start(txt):
             # strip leading spaces to emulate beginning-of-line behavior
@@ -121,9 +118,27 @@ class Shell(BaseShell):
 
     # Messages arriving asynchronously while prompting are safely printed
     def receive_message(self, msg):
+        # Route output through the prompt_toolkit app so the prompt redraws
+        # without leaving extra lines below it. Assume app is present.
+        rendered = msg.render_text(color=self.color)
+        if self._session.app._is_running:
+            # Schedule a background task to print via the app. This avoids
+            # re-entrancy and cooperates with the event loop.
+            def _do_print():
+                with self._printing_lock:
+                    self._session.app.print_text(rendered + "\n")
+                    self._session.app.invalidate()
+
+            # create_background_task expects a coroutine; wrap sync fn
+            async def _task():  # type: ignore
+                _do_print()
+
+            self._session.app.create_background_task(_task())
+            return
+
+        # Fallback: rely on patch_stdout to keep things tidy during prompts
         with self._printing_lock:
-            # patch_stdout ensures clean line handling during prompts
-            print(msg.render_text(color=self.color))
+            print(rendered)
 
     def internal_command(self, line):
         if line.startswith("/"):
@@ -173,11 +188,11 @@ class Shell(BaseShell):
     def step(self):
         try:
             # Avoid re-entrant prompts (e.g., MCP stepping other shells)
-            app = getattr(self._session, "app", None)
-            if app is not None and getattr(app, "_is_running", False):
+            if self._session.app._is_running:
                 return
             # Provide completer each prompt to honor dynamic parser.words
-            line = self._session.prompt("/space/ ", completer=self._completer).strip()
+            # Reserve no extra space below the prompt for menus to keep it at bottom.
+            line = self._session.prompt("/space/ ", completer=self._completer, reserve_space_for_menu=False).strip()
             self.do_step(line)
         except (EOFError, KeyboardInterrupt):
             self.stop()
