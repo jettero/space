@@ -28,12 +28,12 @@ repos:
     hooks:
       - id: pylint
         name: pylint
-        entry: ./pathed-pylintest pylint
+        entry: ./scripts/pathed-pylintest pylint
         language: system
         types: [python]
       - id: pytest
         name: pytest
-        entry: ./pathed-pylintest pytest t
+        entry: ./scripts/pathed-pylintest pytest t
         always_run: true
         language: system
         pass_filenames: false
