@@ -1,0 +1,12 @@
+{
+  "emotes": {
+    "grind": {
+      "LIV": "$N $vgrind $r against $t.",
+      "": "$N $vbump and $vgrind."
+    }
+  },
+  "adverbs": [
+    "absently",
+    "absentmindedly"
+  ]
+}
