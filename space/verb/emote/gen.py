@@ -49,8 +49,10 @@ class Emote(Verb):
             actor.simple_action(template)
 
         # Attach to Living so router can find them without changes
-        setattr(Living, f"can_{name}", can_fn)
-        setattr(Living, f"do_{name}", do_fn)
+        can_fn.__name__ = f"can_{name}"
+        do_fn.__name__ = f"do_{name}"
+        setattr(Living, can_fn.__name__, can_fn)
+        setattr(Living, do_fn.__name__, do_fn)
 
     def _add_liv(self, name, template):
         def can_fn(actor, LIV: Living):
@@ -59,8 +61,10 @@ class Emote(Verb):
         def do_fn(actor, LIV: Living):
             actor.simple_action(template, LIV)
 
-        setattr(Living, f"can_{name}_LIV", can_fn)
-        setattr(Living, f"do_{name}_LIV", do_fn)
+        can_fn.__name__ = f"can_{name}_LIV"
+        do_fn.__name__ = f"do_{name}_LIV"
+        setattr(Living, can_fn.__name__, can_fn)
+        setattr(Living, do_fn.__name__, do_fn)
 
     def _add_str(self, name, template):
         def can_fn(actor, STR):
@@ -69,8 +73,10 @@ class Emote(Verb):
         def do_fn(actor, STR):
             actor.simple_action(template, STR)
 
-        setattr(Living, f"can_{name}", can_fn)
-        setattr(Living, f"do_{name}", do_fn)
+        can_fn.__name__ = f"can_{name}"
+        do_fn.__name__ = f"do_{name}"
+        setattr(Living, can_fn.__name__, can_fn)
+        setattr(Living, do_fn.__name__, do_fn)
 
     def _add_wrd(self, name, template):
         def can_fn(actor, WRD):
@@ -79,8 +85,10 @@ class Emote(Verb):
         def do_fn(actor, WRD):
             actor.simple_action(template, WRD)
 
-        setattr(Living, f"can_{name}", can_fn)
-        setattr(Living, f"do_{name}", do_fn)
+        can_fn.__name__ = f"can_{name}"
+        do_fn.__name__ = f"do_{name}"
+        setattr(Living, can_fn.__name__, can_fn)
+        setattr(Living, do_fn.__name__, do_fn)
 
     def _add_obj(self, name, template):
         def can_fn(actor, OBJ: StdObj):
@@ -89,8 +97,10 @@ class Emote(Verb):
         def do_fn(actor, OBJ: StdObj):
             actor.simple_action(template, OBJ)
 
-        setattr(Living, f"can_{name}_OBJ", can_fn)
-        setattr(Living, f"do_{name}_OBJ", do_fn)
+        can_fn.__name__ = f"can_{name}_OBJ"
+        do_fn.__name__ = f"do_{name}_OBJ"
+        setattr(Living, can_fn.__name__, can_fn)
+        setattr(Living, do_fn.__name__, do_fn)
 
     def _add_liv_str(self, name, template):
         def can_fn(actor, LIV: Living, STR):
@@ -99,8 +109,10 @@ class Emote(Verb):
         def do_fn(actor, LIV: Living, STR):
             actor.simple_action(template, LIV, STR)
 
-        setattr(Living, f"can_{name}_LIV", can_fn)
-        setattr(Living, f"do_{name}_LIV", do_fn)
+        can_fn.__name__ = f"can_{name}_LIV"
+        do_fn.__name__ = f"do_{name}_LIV"
+        setattr(Living, can_fn.__name__, can_fn)
+        setattr(Living, do_fn.__name__, do_fn)
 
     def _add_liv_liv(self, name, template):
         def can_fn(actor, LIV: Living, LIV2: Living):
@@ -109,8 +121,10 @@ class Emote(Verb):
         def do_fn(actor, LIV: Living, LIV2: Living):
             actor.simple_action(template, LIV, LIV2)
 
-        setattr(Living, f"can_{name}_LIV_LIV", can_fn)
-        setattr(Living, f"do_{name}_LIV_LIV", do_fn)
+        can_fn.__name__ = f"can_{name}_LIV_LIV"
+        do_fn.__name__ = f"do_{name}_LIV_LIV"
+        setattr(Living, can_fn.__name__, can_fn)
+        setattr(Living, do_fn.__name__, do_fn)
 
     def _add_liv_obj(self, name, template):
         def can_fn(actor, LIV: Living, OBJ: StdObj):
@@ -119,8 +133,10 @@ class Emote(Verb):
         def do_fn(actor, LIV: Living, OBJ: StdObj):
             actor.simple_action(template, LIV, OBJ)
 
-        setattr(Living, f"can_{name}_LIV_OBJ", can_fn)
-        setattr(Living, f"do_{name}_LIV_OBJ", do_fn)
+        can_fn.__name__ = f"can_{name}_LIV_OBJ"
+        do_fn.__name__ = f"do_{name}_LIV_OBJ"
+        setattr(Living, can_fn.__name__, can_fn)
+        setattr(Living, do_fn.__name__, do_fn)
 
 
 def load_emotes():
