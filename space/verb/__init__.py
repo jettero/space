@@ -13,4 +13,5 @@ def load_verbs():
         return [c() for c in find_verbs()]
 
     from .emote.gen import REGISTRY
+
     return [c() for c in find_verbs()] + REGISTRY
