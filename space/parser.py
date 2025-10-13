@@ -32,6 +32,7 @@ class PSNode:
         self.verb = verb
         self.next = self.__class__(*more) if more else None
         self.filled = dict()
+        self._score = None
 
     def verb_state(self, verb):
         cur = self
@@ -46,18 +47,20 @@ class PSNode:
         while cur.kid is not None:
             cur = cur.kid
         cur.kid = self.__class__(cur.verb)
+        self._score = None
         return cur.kid
 
     def add_rhint(self, verb, rhint):
         kid = self.new_kid(verb=verb)
         kid.rhint = rhint
         kid.fname = getattr(rhint.func, "__name__", str(rhint.func))
+        self._score = None
 
     @property
     def short(self):
         if self.fname:
-            return f"PSN[{self.score}]<{self.verb}:{self.fname}>"
-        return f"PSN[{self.score}]<{self.verb}>"
+            return f"PSN[{self.score:.4f}]<{self.verb}:{self.fname}>"
+        return f"PSN[{self.score:.4f}]<{self.verb}>"
 
     def __repr__(self):
         return self.short
@@ -86,6 +89,7 @@ class PSNode:
             self.next.fill(objs)
         if self.kid is not None:
             self.kid.fill(objs)
+        self._score = None
 
     def evaluate(self):
         res = self.rhint.evaluate(**self.filled)
@@ -96,21 +100,25 @@ class PSNode:
         self.do_args = dict(**self.filled)
         self.do_args.update(tmp_kwargs)
         log.debug("[PSNode] %s.evaluate() → can_do=%s do_args=%s", self.short, self.can_do, self.do_args)
+        self._score = None
         return res
 
     @property
     def score(self):
-        if self.can_do is True:
-            return 2 + (len(self.do_args) / 100)
-        if self.rhint:
-            for hli in self.rhint.hlist:
-                if hli.aname not in self.filled:
-                    return 0
-            return 1
-        scores = [x.score for x in self if x is not self]
-        if scores:
-            return max(scores) / 10
-        return 0
+        if self._score is None:
+            if self.can_do is True:
+                self._score = self.verb.score + (len(self.do_args) / 100)
+                return self._score
+            if self.rhint:
+                for hli in self.rhint.hlist:
+                    if hli.aname not in self.filled:
+                        self._score = self.verb.score / 1000
+                        return self._score
+                self._score = self.verb.score * 0.9
+                return self._score
+            scores = [x.score for x in self if x is not self] + [0]
+            self._score = max(scores) / 10
+        return self._score
 
     @property
     def winner(self):
@@ -324,7 +332,9 @@ class Parser:
                             tokens[ihint.aname].append(pstate.tokens[pos])
                             pos += 1
                 if pos < end:
-                    log.debug("[Parser] rejecting rhint=%s due to extra unmatched tokens=%s", rhint, pstate.tokens[pos:])
+                    log.debug(
+                        "[Parser] rejecting rhint=%s due to extra unmatched tokens=%s", rhint, pstate.tokens[pos:]
+                    )
                     continue
                 pp_tok = verb.preprocess_tokens(pstate.me, **tokens)
                 log.debug("[Parser] preprocess tokens for rhint=%s; tokens=%s --> pp_tok=%s", rhint, tokens, pp_tok)

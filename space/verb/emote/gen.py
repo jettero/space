@@ -12,6 +12,8 @@ from space.stdobj import StdObj
 
 
 class Emote(Verb):
+    score = 1
+
     def __init__(self, name, patterns):
         self.name = name
         self.patterns = patterns
