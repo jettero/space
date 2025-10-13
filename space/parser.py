@@ -346,8 +346,22 @@ class Parser:
             log.debug("[Parser] %s.evaluate()", item)
             item.evaluate()
 
-        for item in sorted(pstate.iter_can_do, key=lambda x: 0 - x.score):
-            log.debug("[Parser] %s is the winner", item)
-            pstate.winner = item
-            break
+        # Select winner in one pass without materializing the iterator.
+        best = None
+        best_score = None
+        tied = False
+        for item in pstate.iter_can_do:
+            s = item.score
+            if best is None or s > best_score:
+                best = item
+                best_score = s
+                tied = False
+            elif s == best_score:
+                tied = True
+        if best is not None and not tied:
+            log.debug("[Parser] %s is the winner", best)
+            pstate.winner = best
+        else:
+            log.debug("[Parser] there were multiple winners, we choose to not select one randomly.")
+            pstate.winner = None
         log.debug("[Parser] pstate evaluation result:\n%s", pstate)
