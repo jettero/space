@@ -129,5 +129,6 @@ def load_emotes():
         REGISTRY.append(Emote(name=name, patterns=patterns))
     return ret
 
+
 REGISTRY = load_emotes()
 del load_emotes
