@@ -122,8 +122,11 @@ class PSNode:
                         return self.score
                 self._score = 1
                 return self._score
-            scores = [x.score for x in self if x is not self] + [0]
-            self._score = max(scores) / 10
+            self._score = 0
+            # I really want this below sub-scoring, but it's not worth it it
+            # takes %prun o.me.shell.parser.parse(o.me, "") from 1.8 seconds to
+            # 8 seconds just to get a partial score that's never going to decide a winner anyway
+            # self._score = max((x.score for x in self if x is not self), default=0) / 10
         return self._score
 
     @property

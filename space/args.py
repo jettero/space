@@ -50,6 +50,8 @@ class IntroHint(namedtuple("IntroHint", ["aname", "tlist"])):
         return f"('{self.aname}', [{tl}])"
 
 
+from functools import lru_cache
+@lru_cache
 def introspect_hints(fn, add_kwonly=False):
     """try to guess the needed argument types for the given function"""
     # pylint: disable=import-outside-toplevel
@@ -74,9 +76,10 @@ def introspect_hints(fn, add_kwonly=False):
         if an is not None:
             ih.tlist.append(an)
         else:
-            if ih.aname.startswith("obj"):
+            ihal = ih.aname.lower()
+            if ihal.startswith("ob"):
                 ih.tlist.append(StdObj)
-            elif ih.aname.startswith("living") or ih.aname.startswith("target"):
+            elif ihal.startswith("liv") or ihal.startswith("targ"):
                 ih.tlist.append(Living)
             else:
                 ih.tlist.append(str)
