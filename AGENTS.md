@@ -159,6 +159,9 @@ Messaging
   like `assert ps, ps.error`.
 - Comments: avoid adding comments unless necessary for code clarity; keep any
   comments short and about the code only.
+  - Do not add comments that merely restate what the code does by direct
+    inspection (e.g., rephrasing conditionals or trivial guards). Prefer
+    self-explanatory code over explanatory comments.
 
 ## Messaging System (Planning Notes)
 

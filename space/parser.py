@@ -18,11 +18,12 @@ def find_verb(x):
     global VERBS
     if not VERBS:
         VERBS = {v.name: v for v in load_verbs()}
+    if x is None or not isinstance(x, str):
+        return []
     if not x:
-        return VERBS.values()
+        return []
     x = x.lower()
-    v = VERBS.get(x)
-    if v:
+    if v := VERBS.get(x):
         return [v]
     return [v for n, v in VERBS.items() if v.match(x)]
 
@@ -337,7 +338,9 @@ class Parser:
                             tokens[ihint.aname].append(pstate.tokens[pos])
                             pos += 1
                 if pos < end:
-                    log.debug("[Parser] rejecting rhint=%s due to extra unmatched tokens=%s", rhint, pstate.tokens[pos:])
+                    log.debug(
+                        "[Parser] rejecting rhint=%s due to extra unmatched tokens=%s", rhint, pstate.tokens[pos:]
+                    )
                     continue
                 pp_tok = verb.preprocess_tokens(pstate.me, **tokens)
                 log.debug("[Parser] preprocess tokens for rhint=%s; tokens=%s --> pp_tok=%s", rhint, tokens, pp_tok)
