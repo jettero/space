@@ -6,6 +6,7 @@ import shlex
 from .verb import load_verbs
 from .router import MethodArgsRouter
 from .map.dir_util import is_direction_string
+from .find import set_this_body
 import space.exceptions as E
 
 log = logging.getLogger(__name__)
@@ -274,10 +275,10 @@ class PState:
     def __call__(self):
         if self:
             mr = MethodArgsRouter(self.me, f"do_{self.winner.verb.name}")
-            self.me.active = True
+            set_this_body(self.me)
             log.debug("[PState] invoking %s(**%s) with active living %s", mr, self.winner.do_args, self.me)
             mr(**self.winner.do_args)
-            self.me.active = False
+            set_this_body()
         else:
             log.error("tried to invoke an untrue pstate: %s", self)
             e = self.error

@@ -3,14 +3,26 @@
 import gc
 import pkgutil
 import importlib
+import logging
+
+log = logging.getLogger(__name__)
+
+_this_body = None
+
+
+def set_this_body(b=None):
+    from .living import Living
+
+    global _this_body
+    if isinstance(_this_body, Living):
+        _this_body.active = False
+    _this_body = b
+    if b is not None:
+        _this_body.active = True
 
 
 def this_body():
-    from .living.base import Living
-
-    for obj in objects(Living):
-        if obj.active:
-            return obj
+    return _this_body
 
 
 def objects(of_types=None):
