@@ -2,6 +2,7 @@
 
 import inspect
 import logging
+from functools import lru_cache
 from collections import namedtuple
 import space.exceptions as E
 
@@ -48,9 +49,6 @@ class IntroHint(namedtuple("IntroHint", ["aname", "tlist"])):
         # mimic list-of-pairs form for readability in tests
         tl = ", ".join([x.__name__ for x in self.tlist])
         return f"('{self.aname}', [{tl}])"
-
-
-from functools import lru_cache
 
 
 @lru_cache
