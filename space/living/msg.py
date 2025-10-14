@@ -1,12 +1,9 @@
 # coding: utf-8
 
 import re
-import logging
 from collections import namedtuple
 import space.exceptions as E
 from ..stdobj import StdObj
-
-log = logging.getLogger(__name__)
 
 Messages = namedtuple("Messages", ["us", "them", "other"])
 Actors = namedtuple("Actors", ["actor", "target"])
