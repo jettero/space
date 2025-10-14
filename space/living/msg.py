@@ -1,12 +1,23 @@
 # coding: utf-8
 
 import re
+import logging
 from collections import namedtuple
 import space.exceptions as E
 from ..stdobj import StdObj
 
+log = logging.getLogger(__name__)
+
 Messages = namedtuple("Messages", ["us", "them", "other"])
 Actors = namedtuple("Actors", ["actor", "target"])
+
+
+class Talks:
+    def can_say_words(self, *words):
+        return True, {"words": " ".join(words)}
+
+    def do_say_words(self, words):
+        self.simple_action('$N $vsay, "$O."', words)
 
 
 class HasShell:
@@ -36,7 +47,7 @@ class HasShell:
         self.shell.receive(msg)
 
 
-class ReceivesMessages(HasShell):
+class ReceivesMessages(HasShell, Talks):
 
     def _name_for(self, forwhom, subj, mode):
         if mode == "o":  # objective
@@ -145,19 +156,12 @@ class ReceivesMessages(HasShell):
                 # Qualifiers: default -> a_short, 's' -> short, 't' -> the_short, 'a' -> a_short
                 if isinstance(obj, StdObj):
                     if qual == "t":
-                        return obj.the_short
+                        return obj.the_short if tag == "o" else obj.the_short.capitalize()
                     if qual == "s":
-                        return obj.short
+                        return obj.short if tag == "o" else obj.short.capitalize()
                     # default and 'a'
-                    return obj.a_short
-                # Non-StdObj fallback (strings)
-                if qual == "t":
-                    return f"the {obj}"
-                if qual == "s":
-                    return str(obj)
-                # default/a
-                w = str(obj)
-                return (f"an {w}") if w[:1].lower() in "aeiou" else (f"a {w}")
+                    return obj.a_short if tag == "o" else obj.a_short.capitalize()
+                return str(obj) if tag == "o" else str(obj).capitalize()
             return t
 
         return re.sub(r"\$[MNVTTPPOOnnvttoPp][a-z0-9]*", sub_token, msg)
