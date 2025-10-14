@@ -5,8 +5,8 @@ import logging
 import pytest
 
 from space.living import Human
-from space.parser import Parser, find_verb
 from space.map import Room
+import space.parser as sp
 
 import space.exceptions as E
 
@@ -42,14 +42,14 @@ def bystander(people):
 
 
 def test_attack_parse(me, target, room):
-    p = Parser()
+    p = sp.Parser()
     pstate = p.parse(me, "attack jaime")
     assert pstate.winner.verb.name == "attack"
     assert pstate.winner.do_args.get("target") == target
 
 
 def test_attack_exec(me, target, room):
-    p = Parser()
+    p = sp.Parser()
     hp1 = target.hp
     p.parse(me, "attack jaime")()
     hp2 = target.hp
@@ -57,7 +57,7 @@ def test_attack_exec(me, target, room):
 
 
 def test_move_parse(me, room):
-    p = Parser()
+    p = sp.Parser()
     dt = {
         "n": "north North NORTH nOrth n".split(),
         "s": "south South s".split(),
@@ -74,7 +74,7 @@ def test_move_parse(me, room):
 
 
 def test_move(me, target, room):
-    p = Parser()
+    p = sp.Parser()
     assert me.location.pos == (2, 3)
     p.parse(me, "move north")()
     assert me.location.pos == (2, 2)
@@ -88,7 +88,7 @@ def test_move(me, target, room):
 
 
 def test_naked_dir_move_cmds(me, bystander, room):
-    p = Parser()
+    p = sp.Parser()
     pstate = p.parse(me, "move 2sse")
     tsse = ("s", "s", "s", "e")
     assert pstate
@@ -116,7 +116,7 @@ def test_naked_dir_move_cmds(me, bystander, room):
 
 
 def test_extra_args_fail(me, room):
-    p = Parser()
+    p = sp.Parser()
 
     pstate = p.parse(me, "move around stuff")
     assert bool(pstate) is False
@@ -133,15 +133,31 @@ def test_extra_args_fail(me, room):
 
 
 def test_pstate_nodes(me, room):
-    V = find_verb(False)
-    p = Parser()
+    p = sp.Parser()
     pstate = p.parse(me, "")
 
-    for v in V:
-        cur = pstate.states.verb_state(v)
-        assert cur is not None
-        assert cur.verb is v
+    # Empty input no longer matches verbs; ensure pstate reflects that.
+    assert pstate.states is None
+    assert bool(pstate) is False
+    assert "unable to understand" in pstate.error
 
-    for psn in pstate.states:  # iterate all verbs and kids
+
+def test_all_verbs_fname_contains_name(objs):
+    sp.find_verb(False)
+    assert sp.VERBS, "expected find_verb/parse to construct all verbs by now"
+
+    # Construct a PSNode chain via Parser.plan/evaluate by seeding PState
+    # Use empty input to avoid leftover tokens from a bogus verb; then seed states.
+    ps = sp.PState(objs.me, "")
+    # Seed all verbs; PSNode expects positional verbs, not the verb dict
+    ps.states = sp.PSNode(*sp.VERBS.values())
+    # Ensure a fresh fill/plan and no extra tokens to mismatch rhints.
+    ps.filled = False
+    ps.tokens = []
+    p = sp.Parser()
+    p.plan(ps)
+    p.evaluate(ps)
+
+    for psn in ps.states:  # iterate all verbs and kids
         if psn.fname:
             assert psn.verb.name in psn.fname
