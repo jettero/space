@@ -116,25 +116,30 @@ class Shell(BaseShell):
 
     # Messages arriving asynchronously while prompting are safely printed
     def receive_message(self, msg):
-        # Route output through the prompt_toolkit app so the prompt redraws
-        # without leaving extra lines below it. Assume app is present.
+        # Always route output through the prompt_toolkit application so the
+        # current input line is preserved and the prompt is redrawn.
         rendered = msg.render_text(color=self.color)
-        if self._session.app._is_running:
-            # Schedule a background task to print via the app. This avoids
-            # re-entrancy and cooperates with the event loop.
-            def _do_print():
+
+        app = getattr(self._session, "app", None) if self._session else None
+        if app is not None:
+            # run_in_terminal prints outside the prompt area and then restores
+            # the prompt, preventing interleaving with user input.
+            def _flush():
                 with self._printing_lock:
-                    self._session.app.print_text(rendered + "\n")
-                    self._session.app.invalidate()
+                    # Using print here is safe because run_in_terminal moves
+                    # the cursor out of the prompt and restores it afterwards.
+                    print(rendered)
 
-            # create_background_task expects a coroutine; wrap sync fn
-            async def _task():  # type: ignore
-                _do_print()
-
-            self._session.app.create_background_task(_task())
+            try:
+                app.run_in_terminal(_flush)
+                app.invalidate()
+            except Exception:  # pylint: disable=broad-except
+                # As a last resort, fall back to stdout (still under patch_stdout).
+                with self._printing_lock:
+                    print(rendered)
             return
 
-        # Fallback: rely on patch_stdout to keep things tidy during prompts
+        # If no session/app yet (early startup), just print.
         with self._printing_lock:
             print(rendered)
 
