@@ -51,6 +51,8 @@ class IntroHint(namedtuple("IntroHint", ["aname", "tlist"])):
 
 
 from functools import lru_cache
+
+
 @lru_cache
 def introspect_hints(fn, add_kwonly=False):
     """try to guess the needed argument types for the given function"""
