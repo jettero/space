@@ -2,12 +2,10 @@
 
 pytest
 pytest-pythonpath
+pytest-coverage
 
-# not used yet, but should be
-pydot
-hypothesis
-
-# not really required for testing, but helpful to have around
 pylint
-pre-commit
-build
+
+pytest-parallel
+pytest-timeout
+coverage-enable-subprocess
