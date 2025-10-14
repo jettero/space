@@ -242,3 +242,10 @@ Messaging
   function signatures (no `def fn(...) -> T` or union `A | B`).
 - Prefer classic style definitions without return‑type annotations. Use docstrings
   or comments for type hints where helpful.
+- Pytest note: the repo enables `pytest-parallel` by default via `pytest.ini`'s
+  `addopts`. When running in restricted or sandboxed environments where
+  multiprocessing managers/sockets are not permitted, disable the plugin or
+  force single-process mode:
+  - `pytest -p no:pytest_parallel …` (disable the plugin for that run), or
+  - `pytest -p pytest_parallel --workers 0 …` (keep plugin loaded, no workers).
+  - You can also override `addopts` temporarily: `pytest -o addopts= …`.
