@@ -24,12 +24,10 @@ class Verb:
             self.nick.insert(0, self.name)
 
     def match(self, tok):
-        # avoid confusing single-letter direction tokens with verbs
-        if len(tok) == 1 and tok.lower() in set("nsewud"):  # includes diagonals via parser rewrite
-            return False
-        for i in self.nick:
-            if i.startswith(tok):
-                return True
+        if tok:
+            for i in self.nick:
+                if i.startswith(tok):
+                    return True
 
     def __repr__(self):
         return f"Verb({self.name})"
