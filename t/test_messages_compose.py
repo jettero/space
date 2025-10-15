@@ -62,52 +62,35 @@ def _all_gender_classes():
             continue
         if obj is base:
             continue
-        # Skip abstract/compat classes that are aliases via inheritance if any
         yield obj
 
 
 @pytest.mark.parametrize("GCls", list(_all_gender_classes()))
 def test_pronouns_in_messages(GCls, objs):
-    # Assign both actor and target this gender and check token expansion
     g = GCls()
     objs.dig_dug.gender = g
     objs.stupid.gender = g
 
-    # Exercise subjective ($N), objective ($t), possessive ($Np), reflexive ($Nr)
-    # Use lowercase variants for others where capitalization differs.
     msg = _compose(objs.dig_dug, objs.stupid, "$N $vpoke $t with $Np stick, then $N $vadmire $nr in the reflection.")
 
-    # Actor view (subjective for self -> You; target objective -> you/em/etc.; possessive -> Your; reflexive -> yourself)
     assert msg.us.startswith("You poke ") and " with Your stick, then You admire yourself" in msg.us
-
-    # Target view (actor name third-person; target objective -> you)
     assert " you with " in msg.them.lower()
-    # Reflexive refers to target (themself/emself/etc.)
     assert msg.them.lower().endswith("self in the reflection.")
-
-    # Others view: third-person forms; reflexive of subject resolves via gender; target may be pronoun ($to)
     assert objs.dig_dug.a_short in msg.other
 
-    # Parity: $to and $n1o should be identical (both objective pronouns); $t may differ (articles)
     msg_t = _compose(objs.dig_dug, objs.stupid, "$t")
     msg_to = _compose(objs.dig_dug, objs.stupid, "$to")
     msg_n1o = _compose(objs.dig_dug, objs.stupid, "$n1o")
     assert msg_to.us == msg_n1o.us
     assert msg_to.them == msg_n1o.them
     assert msg_to.other == msg_n1o.other
-    # $t differs from pronoun tokens for non-recipient perspectives (uses a_short)
     assert msg_t.them.lower() == msg_to.them.lower() == msg_n1o.them.lower() == "you"
 
-    # Possessives: $Np (actor possessive) vs $n1p (target possessive)
     msg_poss = _compose(objs.dig_dug, objs.stupid, "$Np vs $n1p")
-    # Actor view: Your vs your
     assert msg_poss.us.startswith("Your vs ")
-    # Target view: actor's possessive is name/Their/etc.; target possessive becomes your
     assert " your" in msg_poss.them.lower()
-    # Others: both sides render third-person possessives without perspective shifts
     assert " vs " in msg_poss.other
 
-    # Also check $p behaves like $n0p (subject default) and equals $np
     msg_np = _compose(objs.me, objs.stupid, "drop $np rock")
     msg_p = _compose(objs.me, objs.stupid, "drop $p rock")
     assert msg_np.us == "drop your rock"
@@ -131,6 +114,5 @@ def test_reflexive_and_possessive_with_target(objs):
         msg = _compose(a, b, "$N $vsee $t pat $tr on $tp head.")
 
         assert msg.us == f"You see {b.a_short} pat {b.reflexive} on {b.possessive} head."
-        # Target view uses $N rendered for the subject from target perspective: that's $N -> actor's name (no article)
         assert msg.them == f"{capitalize(a.short)} sees you pat yourself on your head."
         assert msg.other == f"{capitalize(a.short)} sees {b.a_short} pat {b.reflexive} on {b.possessive} head."
