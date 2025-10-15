@@ -152,7 +152,7 @@ def test_reflexive_and_possessive_subject_only(me, dd, ss):
 
 
 def test_reflexive_and_possessive_with_target(me, dd, ss):
-    triplets = itertools.combindations((me, dd, ss), 3)
+    triplets = itertools.combinations((me, dd, ss), 3)
 
     for a, b, c in triplets:
         a.targeted_action("$N $vsee $t pat $tr on $tp head.", b)
@@ -161,6 +161,6 @@ def test_reflexive_and_possessive_with_target(me, dd, ss):
         them = b.shell.msgs[-1]
         other = c.shell.msgs[-1]
 
-        assert us == f"You see {b.a_short} pat {b.reflexive} on {b.posessive} head."
+        assert us == f"You see {b.a_short} pat {b.reflexive} on {b.possessive} head."
         assert them == f"{a.a_short} sees you pat yourself on your head."
-        assert other == f"You see sees you pat yourself on your head."
+        assert other == f"{a.a_short} sees {b.a_short} pat {b.reflexive} on {b.possessive} head."
