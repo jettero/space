@@ -2,6 +2,7 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
+from space.shell.list import Shell as ListShell
 
 
 class TRoom:
@@ -41,3 +42,25 @@ def eroom():
 @pytest.fixture
 def e_map(eroom):
     return eroom.e_map
+
+@pytest.fixture
+def me_dd_ss(objs):
+    objs.me.do("open door; sSWss")
+    objs.me.shell = ListShell()
+    objs.dig_dug.shell = ListShell()
+    objs.stupid.shell = ListShell()
+    return objs.me, objs.dig_dug, objs.stupid
+
+@pytest.fixture
+def me(me_dd_ss):
+    return me_dd_ss[0]
+
+@pytest.fixture
+def dd(me_dd_ss):
+    return me_dd_ss[1]
+
+@pytest.fixture
+def ss(me_dd_ss):
+    return me_dd_ss[2]
+
+
