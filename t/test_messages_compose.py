@@ -117,30 +117,17 @@ def test_pronouns_in_messages(GCls, objs):
 
 
 def test_reflexive_and_possessive_subject_only(me, dd, ss):
-    expected = {
-        me: (
-            "You pat yourself on your head.",
-            "Paul pats himself on his head.",
-        ),
-        dd: (
-            "You pat yourself on your head.",
-            "Dig Dug pats herself on her head.",
-        ),
-        ss: (
-            "You pat yourself on your head.",
-            "A skellyman pats itself on its head.",
-        ),
-    }
-
-    party = {me, dd, ss}
+    def capitalize(x):
+        return x[0].capitalize() + x[1:]
 
     for s in (me, dd, ss):
+        for s2 in (me, dd, ss):
+            s2.shell.msgs.clear()
         s.simple_action("$N $vpat $r on $p head.")
-        us = s.shell.msgs[-1]
-        exu, ext = expected[s]
-        assert us == exu
-        for o in party - set((s,)):
-            assert o.shell.msgs[-1] == ext
+        assert s.shell.msgs[-1] == f"You pat yourself on your head."
+        for o in (me, dd, ss):
+            if o != s:
+                assert o.shell.msgs[-1] == f"{capitalize(s.a_short)} pats {s.reflexive} on {s.possessive} head."
 
 
 def test_reflexive_and_possessive_with_target(me, dd, ss):

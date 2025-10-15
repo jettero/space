@@ -10,6 +10,10 @@ Messages = namedtuple("Messages", ["us", "them", "other"])
 Actors = namedtuple("Actors", ["actor", "target"])
 
 
+def capitalize(s):
+    return s[:1].upper() + s[1:]
+
+
 class Talks:
     def can_say_words(self, *words):
         return True, {"words": " ".join(words)}
@@ -111,7 +115,7 @@ class ReceivesMessages(HasShell, Talks):
                     mode = "p" if tag in ("p", "P") else "r"
                     name = self._name_for(forwhom, subj, mode)
                 if tag in ("P", "R"):
-                    return name[:1].upper() + name[1:]
+                    return capitalize(name)
                 return name
             if tag in ("N", "n", "T", "t"):
                 if tag in ("T", "t"):
@@ -144,8 +148,8 @@ class ReceivesMessages(HasShell, Talks):
                 if tag in ("N", "T"):
                     # For $N, when referring to a person and not the recipient, prefer short name capitalized
                     if tag == "N" and subj is not forwhom and qual not in ("o", "r", "p"):
-                        return subj.short[:1].upper() + subj.short[1:]
-                    return name[:1].upper() + name[1:]
+                        return capitalize(subj.short)
+                    return capitalize(name)
                 # Lower-case for $n/$t; but keep exact if it already starts uppercase (proper name)
                 return name if (name and name[0].isupper()) else name.lower()
             if tag in ("O", "o"):
@@ -158,12 +162,12 @@ class ReceivesMessages(HasShell, Talks):
                 # Qualifiers: default -> a_short, 's' -> short, 't' -> the_short, 'a' -> a_short
                 if isinstance(obj, StdObj):
                     if qual == "t":
-                        return obj.the_short if tag == "o" else obj.the_short.capitalize()
+                        return obj.the_short if tag == "o" else capitalize(obj.the_short)
                     if qual == "s":
-                        return obj.short if tag == "o" else obj.short.capitalize()
+                        return obj.short if tag == "o" else capitalize(obj.short)
                     # default and 'a'
-                    return obj.a_short if tag == "o" else obj.a_short.capitalize()
-                return str(obj) if tag == "o" else str(obj).capitalize()
+                    return obj.a_short if tag == "o" else capitalize(obj.a_short)
+                return str(obj) if tag == "o" else capitalize(str(obj))
             return t
 
         return re.sub(r"\$[MNVTTPPOOnnvttoPpRr][a-z0-9]*", sub_token, msg)
