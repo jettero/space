@@ -22,7 +22,7 @@ def gen_troom():
     a_map[8, 1] = od["me"] = Human("Paul Miller", "Paul", gender='male')
     a_map[4, 9] = od["ubi"] = Ubi()
     a_map[1, 2] = od["stupid"] = Skeleton("stupid skellyman", "skellyman")
-    a_map[8, 3] = od["dig_dug"] = Human("Dig~Dug", gener='male')
+    a_map[8, 3] = od["dig_dug"] = Human("Dig~Dug", gener='female')
     o = nico(**od)
 
     o.me.active = True
