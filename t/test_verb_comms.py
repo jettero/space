@@ -3,7 +3,6 @@
 
 import pytest
 from collections import namedtuple
-from space.shell.list import Shell as ListShell
 
 
 class SayParam(namedtuple("SayParam", ["variant", "us", "them"])):
@@ -11,25 +10,6 @@ class SayParam(namedtuple("SayParam", ["variant", "us", "them"])):
         return f"SayParam[{self.variant}]"
 
     __str__ = __repr__
-
-
-@pytest.fixture
-def me(objs):
-    objs.me.do("open door; sSWss")
-    objs.me.shell = ListShell()
-    return objs.me
-
-
-@pytest.fixture
-def dd(objs):
-    objs.dig_dug.shell = ListShell()
-    return objs.dig_dug
-
-
-@pytest.fixture
-def ss(objs):
-    objs.stupid.shell = ListShell()
-    return objs.stupid
 
 
 def test_say_basic(me, dd):
