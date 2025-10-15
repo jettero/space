@@ -3,7 +3,7 @@
 import pytest
 import inspect
 import itertools
-from space.living.msg import Messages
+from space.living.msg import Messages, capitalize
 from space.living import gender as gender_mod
 
 
@@ -116,30 +116,20 @@ def test_pronouns_in_messages(GCls, objs):
     assert msg_p.other == msg_np.other
 
 
-def test_reflexive_and_possessive_subject_only(me, dd, ss):
-    def capitalize(x):
-        return x[0].capitalize() + x[1:]
-
-    for s in (me, dd, ss):
-        for s2 in (me, dd, ss):
-            s2.shell.msgs.clear()
-        s.simple_action("$N $vpat $r on $p head.")
-        assert s.shell.msgs[-1] == f"You pat yourself on your head."
-        for o in (me, dd, ss):
-            if o != s:
-                assert o.shell.msgs[-1] == f"{capitalize(s.a_short)} pats {s.reflexive} on {s.possessive} head."
+def test_reflexive_and_possessive_subject_only(objs):
+    for s in (objs.me, objs.dig_dug, objs.stupid):
+        msg = _compose(s, objs.stupid, "$N $vpat $r on $p head.")
+        assert msg.us == "You pat yourself on your head."
+        expect_other = f"{capitalize(s.short)} pats {s.reflexive} on {s.possessive} head."
+        assert msg.other == expect_other
 
 
-def test_reflexive_and_possessive_with_target(me, dd, ss):
-    triplets = itertools.combinations((me, dd, ss), 3)
+def test_reflexive_and_possessive_with_target(objs):
+    triplets = itertools.permutations((objs.me, objs.dig_dug, objs.stupid), 3)
 
-    for a, b, c in triplets:
-        a.targeted_action("$N $vsee $t pat $tr on $tp head.", b)
+    for a, b, _c in triplets:
+        msg = _compose(a, b, "$N $vsee $t pat $tr on $tp head.")
 
-        us = a.shell.msgs[-1]
-        them = b.shell.msgs[-1]
-        other = c.shell.msgs[-1]
-
-        assert us == f"You see {b.a_short} pat {b.reflexive} on {b.possessive} head."
-        assert them == f"{a.a_short} sees you pat yourself on your head."
-        assert other == f"{a.a_short} sees {b.a_short} pat {b.reflexive} on {b.possessive} head."
+        assert msg.us == f"You see {b.a_short} pat {b.reflexive} on {b.possessive} head."
+        assert msg.them == f"{a.a_short} sees you pat yourself on your head."
+        assert msg.other == f"{a.a_short} sees {b.a_short} pat {b.reflexive} on {b.possessive} head."
