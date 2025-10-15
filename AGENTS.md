@@ -35,6 +35,12 @@
   all.
 - You may use try/except blocks in rare cases, but you should ask first because
   you probably don't actually need it.
+- fucking never assign some object's attr to a variable that you only use once.
+  DO NOT DO THIS:
+  ```
+  a = obj.something.blah.attributename
+  return a # I made a stupid dumb single use variable for no reason at all
+  ```
 - Lint: `pylint` (configured by `pylintrc`). Format: `black` (via pre-commit).
 - Indentation: 4 spaces; UTF-8; Unix newlines.
 - Naming: modules `snake_case.py`; classes `CamelCase`; functions/vars
@@ -62,6 +68,9 @@
 - Keep tests deterministic; avoid network; isolate I/O (tmp paths/fixtures).
 - Run `make test` before commits. Prefer small, verifiable changes; avoid
   unrelated fixes in the same patch.
+- consider the availbe fixtures in t/confest.py -- if you need a map or player
+  objects, the t/troom.py objects are the `objs` fixture and the troom itself is
+  the `a_map` fixture.
 
 ### Test Style
 - Prefer assertive code over comments; keep tests self-explanatory.
