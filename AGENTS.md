@@ -26,6 +26,15 @@
   (`make reqs`).
 
 ## Coding Style & Naming Conventions
+- you're not allowed to use getattr, hasattr, or comments without explicit
+  permission. You don't seem to know when to use them, so it's just irritating
+  when you try. If you think you need getattr/hasattr -- scan more of the repo
+  to see what you're missing. In particular, if there's a contract for a certain
+  class or if you're actually checking it with isinstance(x, Whatever); then you
+  know exactly what attrs are there and you don't need to getattr or hasattr at
+  all.
+- You may use try/except blocks in rare cases, but you should ask first because
+  you probably don't actually need it.
 - Lint: `pylint` (configured by `pylintrc`). Format: `black` (via pre-commit).
 - Indentation: 4 spaces; UTF-8; Unix newlines.
 - Naming: modules `snake_case.py`; classes `CamelCase`; functions/vars
