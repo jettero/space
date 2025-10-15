@@ -116,3 +116,42 @@ def test_reflexive_and_possessive_with_target(objs):
         assert msg.us == f"You see {b.a_short} pat {b.reflexive} on {b.possessive} head."
         assert msg.them == f"{capitalize(a.short)} sees you pat yourself on your head."
         assert msg.other == f"{capitalize(a.short)} sees {b.a_short} pat {b.reflexive} on {b.possessive} head."
+
+
+def test_repeated_subject_tokens_basic(objs):
+    msg = _compose(objs.me, objs.dig_dug, "$N $vare cool and $n $vare loud.")
+    assert msg.us == "You are cool and you are loud."
+    assert msg.them == f"{objs.dig_dug.a_short} is cool and {objs.dig_dug.subjective} is loud."
+    assert msg.other == f"{objs.dig_dug.a_short} is cool and {objs.dig_dug.subjective} is loud."
+
+def test_repeated_subject_tokens_basic(objs):
+    msg = _compose(objs.me, objs.dig_dug, "$N $vare cool and $n $vare loud.")
+    assert msg.us == "You are cool and you are loud."
+    assert msg.them == f"{objs.me.a_short} is cool and {objs.me.subjective} is loud."
+    assert msg.other == f"{objs.me.a_short} is cool and {objs.me.subjective} is loud."
+
+def test_repeated_subject_all_combos(objs):
+    # Note on reflexivity ... when the subject and object of a sentence are the
+    # same person we mark the pronoun with -self to indicate that.
+    #
+    # [subj==obj]: Paul slaps himself.
+    # [subj!=obj]: Paul slaps him. 
+    #
+    # There's no way in english to mark a propernoun with this property, so
+    # what is $R when it occurs before any other tag mention for the slot??
+    # 
+    # Well, realistically, $R should turn to $N if it occurs before any other
+    # tag, but I also think it's an error to write "$R $vare funny." So I'd
+    # prefer it comes out Paulself for fits and shiggles.
+    tags = (
+        ('$N', 'You', 'You', 'Paul', 'He'),
+        ('$P', 'Your', 'Your', "Paul's", "His"),
+        ('$R', 'Yourself', 'Yourself', "Paulself", "Himself"),
+        ('$n', 'you', 'you', 'Paul', 'he'),
+        ('$p', 'your', 'your', "Paul's", "his"),
+        ('$r', 'yourself', 'yourself', "paulself", "himself"),
+    )
+
+
+    for (lt,u0,u1,o0,o1),(rt,u0,u1,o0,o1)in itertools.permutations(tags, 2):
+        msg = _compose(objs.me, objs.dig_dug, f'{lt}/{rt}')
