@@ -16,6 +16,7 @@ class Talks:
 
     do_say_words = find_verb_method("say", "do_say_words")
 
+
 class HasShell:
     _shell = None
 
