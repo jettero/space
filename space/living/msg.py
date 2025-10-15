@@ -96,16 +96,21 @@ class ReceivesMessages(HasShell, Talks):
                 qual = rest[1:]
             else:
                 qual = rest
-            # Top-level possessive: $p/$P behaves like $n0p/$N0p
-            if tag in ("p", "P"):
+            # Top-level possessive/reflexive aliases:
+            # $p/$P == $n0p/$N0p (subject's possessive)
+            # $r/$R == $n0r/$N0r (subject's reflexive)
+            if tag in ("p", "P", "r", "R"):
                 if idx is None:
                     idx = 0
                 if idx >= len(who) or not isinstance(who[idx], ReceivesMessages):
+                    # Fallbacks: possessive -> "someone's" is awkward; keep "someone"
+                    # reflexive -> "themself" is also awkward; use "themself" only when we have a subject
                     name = "someone"
                 else:
                     subj = who[idx]
-                    name = self._name_for(forwhom, subj, "p")
-                if tag == "P":
+                    mode = "p" if tag in ("p", "P") else "r"
+                    name = self._name_for(forwhom, subj, mode)
+                if tag in ("P", "R"):
                     return name[:1].upper() + name[1:]
                 return name
             if tag in ("N", "n", "T", "t"):
@@ -161,7 +166,7 @@ class ReceivesMessages(HasShell, Talks):
                 return str(obj) if tag == "o" else str(obj).capitalize()
             return t
 
-        return re.sub(r"\$[MNVTTPPOOnnvttoPp][a-z0-9]*", sub_token, msg)
+        return re.sub(r"\$[MNVTTPPOOnnvttoPpRr][a-z0-9]*", sub_token, msg)
 
     def compose(self, forwhom, msg, who, *obs):
         return self._expand(forwhom, msg, who, obs)
