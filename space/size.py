@@ -52,7 +52,7 @@ class Size(SizeMeta):
         mass = height = width = depth = 0
 
     def __init__(self, mass=None, height=None, width=None, depth=None, volume=None, **kw):
-        super().__init__(**kw)
+        super().__init__()  # ancestor init never takes kwargs
         # confusingly, these properties are actually defined below (see: define_dimensional_property)
         self.mass = mass
         self.height = height
