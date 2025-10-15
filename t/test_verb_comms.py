@@ -30,7 +30,6 @@ def test_say_basic(me, dd):
     assert len(dd.shell.msgs) > 0 and dd.shell.msgs[-1] == 'Paul asks, "Er, gozer, are you a god?"'
 
 
-@pytest.mark.xfail(strict=False, reason="visicalc issues, will revisit")
 @pytest.mark.parametrize(
     "sp",
     [
@@ -40,8 +39,8 @@ def test_say_basic(me, dd):
         SayParam("say hi :0", 'You look shocked and say, "Hi."', 'Paul looks shocked and says, "Hi."'),
         SayParam("say hi :|", 'You sullenly state, "Hi."', 'Paul sullenly states, "Hi."'),
         SayParam("say hi :/", 'You smirk and say, "Hi."', 'Paul smirks and says, "Hi."'),
-        SayParam("say hi :P", 'You stick out your tongue and say, "Hi."', 'Paul sticks out her tongue and says, "Hi."'),
-        SayParam("say hi :p", 'You stick out your tongue and say, "Hi."', 'Paul sticks out her tongue and says, "Hi."'),
+        SayParam("say hi :P", 'You stick out your tongue and say, "Hi."', 'Paul sticks out his tongue and says, "Hi."'),
+        SayParam("say hi :p", 'You stick out your tongue and say, "Hi."', 'Paul sticks out his tongue and says, "Hi."'),
         SayParam("say hi =)", 'You smile brightly and say, "Hi."', 'Paul smiles brightly and says, "Hi."'),
         SayParam("say hi =<", 'You sarcastically state, "Hi."', 'Paul sarcastically states, "Hi."'),
         SayParam("say hi =>", 'You facetiously say, "Hi."', 'Paul facetiously says, "Hi."'),

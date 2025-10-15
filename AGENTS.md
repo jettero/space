@@ -170,6 +170,22 @@ Messaging
 ## Maintainer Preferences (Session Learnings)
 
 - Small, clear fixes: proceed without asking; validate with focused tests.
+  - Bias toward the smallest, test-local explanation first, but keep TDD in
+    mind. Use these signals to decide whether to adjust tests or code:
+    - If adjacent tests exercising the same subsystem are green and the
+      failing case differs only in its expected string/parameterization,
+      suspect a test expectation error first (inspect fixtures and ipython
+      output before proposing code changes).
+    - If writing a new feature/behavior (TDD), prefer adding a failing test
+      and then changing code minimally to satisfy it. Do not contort parser/
+      router/inform/compose to satisfy a single verb; align with
+      PARSER.md/contract instead.
+    - If multiple tests fail across modules after a change, suspect code.
+      Revert to the smallest code fix that restores prior passing behavior
+      while making the new test pass, or renegotiate the new test if it
+      contradicts established behavior documented in PARSER.md or MESSAGES.md.
+    - Always verify pronouns, names, token defaults, and fixtures (gender,
+      locations, visibility) before assuming systemic messaging issues.
 - Tests: prefer concise, targeted tests; avoid relying on complex fixtures
   when simpler environment-specific fixtures exist (e.g., use `e_map` over
   `a_map` for unobstructed movement).
