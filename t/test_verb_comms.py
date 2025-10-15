@@ -30,7 +30,7 @@ def test_say_basic(me, dd):
     assert len(dd.shell.msgs) > 0 and dd.shell.msgs[-1] == 'Paul asks, "Er, gozer, are you a god?"'
 
 
-@pytest.mark.xfail(reason="visicalc issues, will revisit")
+@pytest.mark.xfail(strict=False, reason="visicalc issues, will revisit")
 @pytest.mark.parametrize(
     "sp",
     [
