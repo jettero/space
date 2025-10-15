@@ -131,5 +131,6 @@ def test_reflexive_and_possessive_with_target(objs):
         msg = _compose(a, b, "$N $vsee $t pat $tr on $tp head.")
 
         assert msg.us == f"You see {b.a_short} pat {b.reflexive} on {b.possessive} head."
-        assert msg.them == f"{a.a_short} sees you pat yourself on your head."
-        assert msg.other == f"{a.a_short} sees {b.a_short} pat {b.reflexive} on {b.possessive} head."
+        # Target view uses $N rendered for the subject from target perspective: that's $N -> actor's name (no article)
+        assert msg.them == f"{capitalize(a.short)} sees you pat yourself on your head."
+        assert msg.other == f"{capitalize(a.short)} sees {b.a_short} pat {b.reflexive} on {b.possessive} head."
