@@ -139,7 +139,7 @@ def test_reflexive_and_possessive_subject_only(me, dd, ss):
         us = s.shell.msgs[-1]
         exu, ext = expected[s]
         assert us == exu
-        for o in party-{s,}:
+        for o in party - set((s,)):
             assert o.shell.msgs[-1] == ext
 
 
