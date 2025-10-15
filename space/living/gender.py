@@ -14,7 +14,7 @@ class Gender(Named):
     s = "unknown"
     l = "unknown reproductive modality"
 
-    subject = "it"
+    subjective = "it"
     objective = "it"
     possessive = "its"
     reflexive = "itself"
@@ -25,7 +25,7 @@ class Male(Gender):
     s = "male"
     l = "male reproductive modality"
 
-    subject = "he"
+    subjective = "he"
     objective = "him"
     possessive = "his"
     reflexive = "himself"
@@ -36,7 +36,7 @@ class Female(Gender):
     s = "female"
     l = "female reproductive modality"
 
-    subject = "she"
+    subjective = "she"
     objective = "her"
     possessive = "her"
     reflexive = "herself"
@@ -46,7 +46,7 @@ class Not(Gender):
     a = "N"
     s = "non reproductive modality"
 
-    subject = "they"
+    subjective = "they"
     objective = "them"
     possessive = "their"
     reflexive = "themself"
@@ -57,7 +57,7 @@ class Neuter(Gender):
     s = "neuter"
     l = "non-gender"
 
-    subject = "it"
+    subjective = "it"
     objective = "it"
     possessive = "its"
     reflexive = "itself"
@@ -74,7 +74,7 @@ class GenderNeutral(Gender):
     s = "neutral"
     l = "gender neutral"
 
-    subject = "they"
+    subjective = "they"
     objective = "them"
     possessive = "their"
     reflexive = "themself"
@@ -85,7 +85,7 @@ class Xe(Gender):
     s = "xe"
     l = "Xe neo-pronoun set"
 
-    subject = "xe"
+    subjective = "xe"
     objective = "xem"
     possessive = "xyr"
     reflexive = "xemself"
@@ -96,7 +96,7 @@ class Ze(Gender):
     s = "ze"
     l = "Ze neo-pronoun set"
 
-    subject = "ze"
+    subjective = "ze"
     objective = "hir"
     possessive = "hir"
     reflexive = "hirself"
@@ -107,7 +107,7 @@ class Ey(Gender):
     s = "ey"
     l = "Ey neo-pronoun set"
 
-    subject = "ey"
+    subjective = "ey"
     objective = "em"
     possessive = "eir"
     reflexive = "emself"

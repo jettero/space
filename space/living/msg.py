@@ -66,7 +66,7 @@ class ReceivesMessages(HasShell, Talks):
         # subjective
         if subj is forwhom:
             return "you"
-        return subj.subject
+        return subj.subjective
 
     def _agree(self, forwhom_is_subject, verb):
         # We only handle verbs written in second-person present.

@@ -133,8 +133,8 @@ class Living(ReceivesMessages, CanMove, StdObj):
         super().__init__(**kw)
 
     @property
-    def subject(self):  # e.g., he/she/they/it
-        return self.gender.subject
+    def subjective(self):  # e.g., he/she/they/it
+        return self.gender.subjective
 
     @property
     def objective(self):  # e.g., him/her/them/it
