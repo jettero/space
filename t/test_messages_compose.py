@@ -116,7 +116,7 @@ def test_pronouns_in_messages(GCls, objs):
     assert msg_p.other == msg_np.other
 
 
-def test_reflexive_and_possessive_subject_only(me,dd,ss):
+def test_reflexive_and_possessive_subject_only(me, dd, ss):
     expected = {
         me: (
             "You pat yourself on your head.",
@@ -132,10 +132,15 @@ def test_reflexive_and_possessive_subject_only(me,dd,ss):
         ),
     }
 
-    party = {me,dd,ss}
+    party = {me, dd, ss}
 
-    for s in (me,dd,ss):
-        o = tuple(party - {s,})
+    for s in (me, dd, ss):
+        o = tuple(
+            party
+            - {
+                s,
+            }
+        )
         s.simple_action("$N $vpat $r on $p head.")
         us = s.shell.msgs[-1]
         t1 = o[0].shell.msgs[-1]
@@ -146,8 +151,8 @@ def test_reflexive_and_possessive_subject_only(me,dd,ss):
         assert t2 == ext
 
 
-def test_reflexive_and_possessive_with_target(me,dd,ss):
-    triplets = itertools.combindations((me,dd,ss), 3)
+def test_reflexive_and_possessive_with_target(me, dd, ss):
+    triplets = itertools.combindations((me, dd, ss), 3)
 
     for a, b, c in triplets:
         a.targeted_action("$N $vsee $t pat $tr on $tp head.", b)
@@ -156,6 +161,6 @@ def test_reflexive_and_possessive_with_target(me,dd,ss):
         them = b.shell.msgs[-1]
         other = c.shell.msgs[-1]
 
-        assert us == f'You see {b.a_short} pat {b.reflexive} on {b.posessive} head.'
-        assert them == f'{a.a_short} sees you pat yourself on your head.'
-        assert other == f'You see sees you pat yourself on your head.'
+        assert us == f"You see {b.a_short} pat {b.reflexive} on {b.posessive} head."
+        assert them == f"{a.a_short} sees you pat yourself on your head."
+        assert other == f"You see sees you pat yourself on your head."
