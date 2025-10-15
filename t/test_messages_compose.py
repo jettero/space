@@ -135,20 +135,12 @@ def test_reflexive_and_possessive_subject_only(me, dd, ss):
     party = {me, dd, ss}
 
     for s in (me, dd, ss):
-        o = tuple(
-            party
-            - {
-                s,
-            }
-        )
         s.simple_action("$N $vpat $r on $p head.")
         us = s.shell.msgs[-1]
-        t1 = o[0].shell.msgs[-1]
-        t2 = o[1].shell.msgs[-1]
         exu, ext = expected[s]
         assert us == exu
-        assert t1 == ext
-        assert t2 == ext
+        for o in party-{s,}:
+            assert o.shell.msgs[-1] == ext
 
 
 def test_reflexive_and_possessive_with_target(me, dd, ss):
