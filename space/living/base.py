@@ -105,7 +105,6 @@ class Living(ReceivesMessages, CanMove, StdObj):
         health = lambda self: HitPoints("1d6+10")
 
     def __init__(self, long=None, short=None, **kw):
-        super().__init__(**kw)  # long and short might have otherwise been used via MRO/super... we use them below instead
         self.slots = self.Slots(self)
 
         if long:
@@ -125,11 +124,13 @@ class Living(ReceivesMessages, CanMove, StdObj):
         self.mor = Mor()
 
         self.initiative = Initiative(self.mar, self.mor, self.mass)
-        self.Choices.apply_attrs(self)
+        self.Choices.apply_attrs(self, **kw)
 
         self.level = ClassRank(1)
         self.xp = ExperiencePoints(0)
         self.damage = Damage()
+
+        super().__init__(**kw)
 
     @property
     def subject(self):  # e.g., he/she/they/it

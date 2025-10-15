@@ -109,6 +109,10 @@ class Roller:
         #     ...: [ r.mean, sum([ r.roll() for _ in range(50000) ]) / 50000 ]
         # Out[12]: [91.0, 91.02216]
 
+    def in_range(self, v):
+        return self.min <= v <= self.max
+    within = in_range
+
 
 def _lark():
     class MakeRoller(Transformer):
@@ -391,13 +395,38 @@ class AttrChoices:
                 yield k
 
     @classmethod
-    def apply_attrs(cls, target):
-        for k in cls.to_choose():
-            a = getattr(cls, k)
-            if isinstance(a, Roll):
-                a = a.roll()
-            if isinstance(a, (list, tuple)):
-                a = random.choice(a)
-            if callable(a):
-                a = a(target)
-            setattr(target, k, a)
+    def apply_attrs(cls, target, **kw):
+        def _tokenisze(cls):
+            cn = cls.__name__
+            yield cn
+            yield cn.lower()
+            if v:=getattr(cls, 's'):
+                yield v
+            if v:=getattr(cls, 'l'):
+                yield v
+        for attr_name in cls.to_choose():
+            cls_value = getattr(cls, attr_name)
+            kwa_value = kw.pop(attr_name, False)
+            if isinstance(cls_value, Roll):
+                if attr_name in kw:
+                    v = int(kwa_value)
+                    if not cls_value.in_range(kwa_value):
+                        raise ValueError(f"{kwa_value} is not in the range of {cls_value}")
+                    cls_value = v
+                else:
+                    cls_value = cls_value.roll()
+            if isinstance(cls_value, (list, tuple)):
+                if attr_name in kw:
+                    v = str(kwa_value)
+                    for item in cls_value:
+                        if v in _tokenize(item):
+                            cls_value = item
+                            break
+                    if isinstance(cls_value, (list,tuple)):
+                        raise ValueError(f"{kwa_value} is not a choice in {cls_value}")
+                    cls_value = found
+                else:
+                    cls_value = random.choice(cls_value)
+            if callable(cls_value):
+                cls_value = cls_value(target)
+            setattr(target, attr_name, cls_value)
