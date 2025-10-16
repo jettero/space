@@ -368,4 +368,6 @@ class Parser:
         else:
             log.debug("[Parser] there were multiple winners, we choose to not select one randomly.")
             pstate.winner = None
+            # XXX: should populate ... something with an error about how
+            # there's no clear winner and list the possible matches.
         log.debug("[Parser] pstate evaluation result:\n%s", pstate)
