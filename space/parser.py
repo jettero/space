@@ -13,6 +13,8 @@ log = logging.getLogger(__name__)
 
 VERBS = None
 
+FILLED_SCORE = 1
+CAN_DO_SCORE = 2
 
 def find_verb(x):
     global VERBS
@@ -108,25 +110,22 @@ class PSNode:
 
     @property
     def score(self):
-        # these scores have special meanings
-        # 1 or more means filled
-        # 2 or more means can_do
-        # winner is selected from the 2+ states
         if self._score is None:
             if self.can_do is True:
-                self._score = 2 + (len(self.do_args) / 100)
+                self._score = CAN_DO_SCORE + (len(self.do_args) / 100)
                 return self._score
             if self.rhint:
                 for hli in self.rhint.hlist:
                     if hli.aname not in self.filled:
                         self._score = 0
                         return self.score
-                self._score = 1
+                self._score = FILLED_SCORE
                 return self._score
             self._score = 0
             # I really want this below sub-scoring, but it's not worth it it
             # takes %prun o.me.shell.parser.parse(o.me, "") from 1.8 seconds to
             # 8 seconds just to get a partial score that's never going to decide a winner anyway
+            #
             # self._score = max((x.score for x in self if x is not self), default=0) / 10
         return self._score
 
