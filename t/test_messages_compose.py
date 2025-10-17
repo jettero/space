@@ -132,8 +132,24 @@ def test_repeated_subject_tokens_basic(objs):
     assert msg.other == f"{objs.me.a_short} is cool and {objs.me.subjective} is loud."
 
 
-@pytest.mark.parametrize("lt", "$N $n".split())
-@pytest.mark.parametrize("rt", "$N $n".split())
+# sloppy tableized bullshit below.
+C = capitalize
+L = lambda x: x
+T = {
+    "$N": (lambda x, y, w: "You" if x == w else C(x.a_short), lambda x, y, w: "You" if x == w else C(x.subjective)),
+    "$n": (lambda x, y, w: "you" if x == w else L(x.a_short), lambda x, y, w: "you" if x == w else L(x.subjective)),
+    # "$P": (lambda x, y, w: "Your" if x == w else C(x.po), lambda x, y, w: "You" if x == w else C(x.subjective)),
+    # "$P": (lambda x, y, w: "your" if x == w else L(x.a_short), lambda x, y, w: "you" if x == w else L(x.subjective)),
+    # ("$P", "Your", "Your", "Paul's", "His"),
+    # ("$R", "Yourself", "Yourself", "Paulself", "Himself"),
+    # ("$p", "your", "your", "Paul's", "his"),
+    # ("$r", "yourself", "yourself", "Paulself", "himself"),
+}
+K = list(T)
+
+
+@pytest.mark.parametrize("lt", K)
+@pytest.mark.parametrize("rt", K)
 def test_repeated_subject_all_combos(objs, lt, rt):
     # Note on reflexivity ... when the subject and object of a sentence are the
     # same person we mark the pronoun with -self to indicate that.
@@ -148,23 +164,10 @@ def test_repeated_subject_all_combos(objs, lt, rt):
     # tag, but I also think it's an error to write "$R $vare funny." So I'd
     # prefer it comes out Paulself for fits and shiggles.
 
-    C = capitalize
-    L = lambda x: x
-    T = {
-        "$N": (lambda x, y, w: "You" if x == w else C(x.a_short), lambda x, y, w: "You" if x == w else C(x.subjective)),
-        "$n": (lambda x, y, w: "you" if x == w else L(x.a_short), lambda x, y, w: "you" if x == w else L(x.subjective)),
-        # ("$P", "Your", "Your", "Paul's", "His"),
-        # ("$R", "Yourself", "Yourself", "Paulself", "Himself"),
-        # ("$p", "your", "your", "Paul's", "his"),
-        # ("$r", "yourself", "yourself", "Paulself", "himself"),
-    }
-
-    # NOTE:
-    # In [1]: import itertools;list(itertools.permutations((1,2), 2))
-    # Out[1]: [(1, 2), (2, 1)]
-    # In [2]: import itertools;list(itertools.product((1,2), (1,2)))
-    # Out[2]: [(1, 1), (1, 2), (2, 1), (2, 2)]
-
+    # XXX: # permutations() isn't with replacement like with the parametrized
+    # vars above to make it so uo==to, we'd have to use product((...),(...))
+    # instead.  we really should test uo==to, where $t goes to $n1r, but
+    # that'll have to be later
     for uo, to, oo in itertools.permutations((objs.me, objs.dig_dug, objs.stupid), 3):
         u, t, o = _compose(uo, to, f"{lt}/{rt}")
 
