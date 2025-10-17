@@ -3,7 +3,7 @@
 import logging
 import shlex
 
-from .verb import load_verbs
+from .verb import find_verb
 from .router import MethodArgsRouter
 from .map.dir_util import is_direction_string
 from .find import set_this_body
@@ -11,29 +11,8 @@ import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
-VERBS = None
-
 FILLED_SCORE = 1
 CAN_DO_SCORE = 2
-
-
-def find_verb(x):
-    global VERBS
-    if VERBS is None:
-        VERBS = {v.name: v for v in load_verbs()}
-        VERBS.update({n:v for v in VERBS.values() for n in v.nick if n not in d})
-        # 2025-10-17: I was today years old when I learned mapping_a |=
-        # mapping_b is mapping_a.(mapping_b) but the returns the updated dict
-        # instead of None. We don't use it here, but we could iff python is 3.9+
-    if x is None or not isinstance(x, str):
-        return []
-    if not x:
-        return []
-    x = x.lower()
-    if v := VERBS.get(x): # exact matching via get()
-        return {v,}
-    return {v for n, v in VERBS.items() if v.match(x)}
-
 
 class PSNode:
     can_do = do_args = kid = fname = rhint = None
@@ -308,18 +287,18 @@ class Parser:
         self.evaluate(pstate)
         return pstate
 
-    @property
-    def words(self):
-        # XXX: until we fix next words, just return the names of all the verbs we know about
-        yield from VERBS.keys()
+    # @property
+    # def words(self):
+    #     # XXX: until we fix next words, just return the names of all the verbs we know about
+    #     yield from VERBS.keys()
 
-    def next_words(self, me, text_input):
-        """try to guess what words will fit next"""
-        # XXX: we only consider the very first token and even that breaks if
-        # the word is directions 'sSW3s', needs work
-        pstate = self.parse(me, text_input)
-        for v in pstate.iter_verbs:
-            yield from v.nick
+    # def next_words(self, me, text_input):
+    #     """try to guess what words will fit next"""
+    #     # XXX: we only consider the very first token and even that breaks if
+    #     # the word is directions 'sSW3s', needs work
+    #     pstate = self.parse(me, text_input)
+    #     for v in pstate.iter_verbs:
+    #         yield from v.nick
 
     def plan(self, pstate):
         for verb in pstate.iter_verbs:
