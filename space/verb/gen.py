@@ -4,6 +4,7 @@
 import os
 from ..find import find_by_classname
 
+
 def find_action_classes():
     return find_by_classname("space.verb", "Action")
 
@@ -16,13 +17,15 @@ def load_verbs():
 
     return [c() for c in find_action_classes()] + load_emotes()
 
+
 VERBS = {v.name: v for v in load_verbs()}
-VERBS.update({n:v for v in VERBS.values() for n in v.nick if n not in VERBS})
+VERBS.update({n: v for v in VERBS.values() for n in v.nick if n not in VERBS})
+
 
 def find_verb(x):
     if x and isinstance(x, str):
         x = x.lower()
-        if v := VERBS.get(x): # exact matching via get()
+        if v := VERBS.get(x):  # exact matching via get()
             return {v}
         return {v for n, v in VERBS.items() if v.match(x)}
     return set()

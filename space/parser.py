@@ -14,6 +14,7 @@ log = logging.getLogger(__name__)
 FILLED_SCORE = 1
 CAN_DO_SCORE = 2
 
+
 class PSNode:
     can_do = do_args = kid = fname = rhint = None
 
