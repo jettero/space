@@ -1,5 +1,12 @@
 # Repository Guidelines
 
+## side note on project origins
+- if the symlink is good, `contrib/lpc` contains my old Bakhara mudlib, which is
+  MudOS v22 Lima LPC
+- we're trying to mimick the behaviors of the old mudlib in python, but we're
+  trying to do things pythonically instead of using LPC methods.
+- when in doubt about how something should work, go scan contrib/lpc for ideas.
+
 ## Project Structure & Module Organization
 - Package code: `space/` (see `setup.cfg` and `pyproject.toml`).
 - Tests: `t/` (configured via `pytest.ini:testpaths = t`).
