@@ -11,8 +11,6 @@ log = logging.getLogger(__name__)
 
 
 class Named(Serial, baseobj):
-    # "unique" means we refer to the object as "the thingy" rather than "a thingy."
-    # proper_name means we refer to the thing as thing.short, never thing.a_short or thing.the_short.
     a = "~"
     s = "object"
     l = "named object"
@@ -24,17 +22,17 @@ class Named(Serial, baseobj):
     d_fmt = "{l:{fmt}} :- {d}"
     r_fmt = "{c}({l})"
 
-    unique = False
-    plural = False
+    unique = False # uniques are "the thing" rather than "a thing"
+    plural = False # XXX: sissors? pants? I have to look this up
+    proper = False # properly named things are never "the Paul" or "a Paul", always "Paul"
 
     class Meta:
         save = "asld"
 
-    def __init__(self, short=None, abbr=None, long=None, proper_name=None, unique=None, plural=None, **kw):
+    def __init__(self, short=None, abbr=None, long=None, proper=None, proper_name=None, unique=None, plural=None, **kw):
         super().__init__(**kw)  # if Serial and baseobj had __init__, they'd both get called via MRO/super()
         if abbr is not None:
             self.a = abbr
-        self.proper_name = False
         if long is not None:
             self.l = long
         if short is not None:
@@ -43,15 +41,15 @@ class Named(Serial, baseobj):
             self.unique = bool(unique)
         if plural is not None:
             self.plural = bool(plural)
+        if proper is not None:
+            self.proper = bool(proper)
         if proper_name:
-            name = str(proper_name)
-            if "~" in name:
-                self.s = self.l = name.replace("~", " ")
+            if "~" in proper_name:
+                self.s = self.l = proper_name.replace("~", " ")
             else:
-                self.l = name
-                self.s = name.split()[0]
-            self.unique = True
-            self.proper_name = True
+                self.l = proper_name
+                self.s = proper_name.split()[0]
+            self.proper = True
         self.tokens = self._tokenize()
 
     def __format__(self, spec):
@@ -71,26 +69,31 @@ class Named(Serial, baseobj):
             return self._m_fmt(m_select, fmt=fmt)
         return super().__format__(spec)
 
-    # proper_name is a boolean; set during init when a proper name string is provided.
-
     @property
     def a_short(self):
-        s = self.short
-        if not s:
-            return s
-        if self.proper_name or self.unique or self.plural:
+        if self.proper or self.unique or self.plural:
             return self.the_short
         first = s[:1].lower()
-        return f"an {s}" if first in "aeiou" else f"a {s}"
+        return f"an {self.short}" if first in "aeiou" else f"a {self.short}"
 
     @property
     def the_short(self):
-        s = self.short
-        if not s:
-            return s
-        if self.proper_name:
-            return s
-        return f"the {s}"
+        if self.proper:
+            return self.short
+        return f"the {self.short}"
+
+    @property
+    def a_long(self):
+        if self.proper or self.unique or self.plural:
+            return self.the_long
+        first = s[:1].lower()
+        return f"an {self.long}" if first in "aeiou" else f"a {self.long}"
+
+    @property
+    def the_long(self):
+        if self.proper:
+            return self.long
+        return f"the {self.long}"
 
     def _m_fmt(self, var_name, fmt="", **kw):
         m = var_name.lower().strip()[0]
