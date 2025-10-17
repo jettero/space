@@ -22,14 +22,18 @@ class Named(Serial, baseobj):
     d_fmt = "{l:{fmt}} :- {d}"
     r_fmt = "{c}({l})"
 
-    unique = False # uniques are "the thing" rather than "a thing"
-    plural = False # XXX: sissors? pants? I have to look this up
-    proper = False # properly named things are never "the Paul" or "a Paul", always "Paul"
+    unique = False  # uniques are "the thing" rather than "a thing"
+    plural = False  # Inherently plural noun (no a/an); e.g., "scissors", "pants".
+    proper = False  # properly named things are never "the Paul" or "a Paul", always "Paul"
+
+    pair_word = "pair"  # word used for pluralia tantum: used in "a pair of X"
 
     class Meta:
         save = "asld"
 
-    def __init__(self, short=None, abbr=None, long=None, proper=None, proper_name=None, unique=None, plural=None, **kw):
+    def __init__(
+        self, short=None, abbr=None, long=None, proper=None, proper_name=None, unique=None, plural=None, pair_word=None, **kw
+    ):
         super().__init__(**kw)  # if Serial and baseobj had __init__, they'd both get called via MRO/super()
         if abbr is not None:
             self.a = abbr
@@ -43,6 +47,8 @@ class Named(Serial, baseobj):
             self.plural = bool(plural)
         if proper is not None:
             self.proper = bool(proper)
+        if pair_word is not None:
+            self.pair_word = pair_word
         if proper_name:
             if "~" in proper_name:
                 self.s = self.l = proper_name.replace("~", " ")
@@ -71,9 +77,13 @@ class Named(Serial, baseobj):
 
     @property
     def a_short(self):
-        if self.proper or self.unique or self.plural:
+        if self.proper or self.unique:
             return self.the_short
-        first = s[:1].lower()
+        if self.plural and self.pair_word:
+            return f"a {self.pair_word} of {self.short}"
+        if self.plural:
+            return self.the_short
+        first = self.short[:1].lower()
         return f"an {self.short}" if first in "aeiou" else f"a {self.short}"
 
     @property
@@ -84,9 +94,13 @@ class Named(Serial, baseobj):
 
     @property
     def a_long(self):
-        if self.proper or self.unique or self.plural:
+        if self.proper or self.unique:
             return self.the_long
-        first = s[:1].lower()
+        if self.plural and self.pair_word:
+            return f"a {self.pair_word} of {self.long}"
+        if self.plural:
+            return self.the_long
+        first = self.long[:1].lower()
         return f"an {self.long}" if first in "aeiou" else f"a {self.long}"
 
     @property
