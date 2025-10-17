@@ -16,6 +16,7 @@ VERBS = None
 FILLED_SCORE = 1
 CAN_DO_SCORE = 2
 
+
 def find_verb(x):
     global VERBS
     if not VERBS:
@@ -368,6 +369,18 @@ class Parser:
         else:
             log.debug("[Parser] there were multiple winners, we choose to not select one randomly.")
             pstate.winner = None
-            # XXX: should populate ... something with an error about how
-            # there's no clear winner and list the possible matches.
+            # populate a helpful error listing the possible matches by
+            # attaching an error to the current high-score state args so
+            # PState.error will surface it without extra attributes
+            choices = [f"{it.verb.name}:{it.fname}" for it in pstate.iter_can_do]
+            # Prefer leaving high_score_args alone when parse otherwise failed;
+            # only attach ambiguity when there were multiple valid can_do items.
+            if choices:
+                hs = pstate.high_score_state
+                if hs is not None and not (hs.do_args and hs.do_args.get("error")):
+                    msg = f"ambiguous: {', '.join(choices)}"
+                    if hs.do_args is None:
+                        hs.do_args = {"error": msg}
+                    else:
+                        hs.do_args["error"] = msg
         log.debug("[Parser] pstate evaluation result:\n%s", pstate)
