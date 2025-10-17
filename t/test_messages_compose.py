@@ -7,13 +7,12 @@ from space.living.msg import Messages, capitalize
 from space.living import gender as gender_mod
 
 
-def _compose(me, targ, msg, *obs):
+def _compose(subj, targ, msg, *obs):
     return Messages(
-        me.compose(me, msg, [me, targ], *obs),
-        me.compose(targ, msg, [me, targ], *obs),
-        me.compose(None, msg, [me, targ], *obs),
+        subj.compose(subj, msg, [subj, targ], *obs),
+        subj.compose(targ, msg, [subj, targ], *obs),
+        subj.compose(None, msg, [subj, targ], *obs),
     )
-
 
 def test_compose_basic_pronouns_and_verb(objs):
     msg = _compose(objs.me, objs.dig_dug, "$N $vattack $t.")
@@ -145,14 +144,30 @@ def test_repeated_subject_all_combos(objs):
     # Well, realistically, $R should turn to $N if it occurs before any other
     # tag, but I also think it's an error to write "$R $vare funny." So I'd
     # prefer it comes out Paulself for fits and shiggles.
+
+    C = capitalize
+    L = lambda x: x
+
     tags = (
-        ("$N", "You", "You", "Paul", "He"),
-        ("$P", "Your", "Your", "Paul's", "His"),
-        ("$R", "Yourself", "Yourself", "Paulself", "Himself"),
-        ("$n", "you", "you", "Paul", "he"),
-        ("$p", "your", "your", "Paul's", "his"),
-        ("$r", "yourself", "yourself", "paulself", "himself"),
+        ("$N", lambda x,y,w: "You" if x==w else C(x.a_short), lambda x,y,w: "You" if x==w else C(x.subjective)),
+        ("$n", lambda x,y,w: "you" if x==w else L(x.a_short), lambda x,y,w: "you" if x==w else L(x.subjective)),
+      # ("$P", "Your", "Your", "Paul's", "His"),
+      # ("$R", "Yourself", "Yourself", "Paulself", "Himself"),
+      # ("$p", "your", "your", "Paul's", "his"),
+      # ("$r", "yourself", "yourself", "Paulself", "himself"),
     )
 
-    for (lt, u0, u1, o0, o1), (rt, u0, u1, o0, o1) in itertools.permutations(tags, 2):
-        msg = _compose(objs.me, objs.dig_dug, f"{lt}/{rt}")
+    # NOTE:
+    # In [1]: import itertools;list(itertools.permutations((1,2), 2))
+    # Out[1]: [(1, 2), (2, 1)]
+    # In [2]: import itertools;list(itertools.product((1,2), (1,2)))
+    # Out[2]: [(1, 1), (1, 2), (2, 1), (2, 2)]
+
+    for (lt, first, _), (rt, _, second) in itertools.product(tags, tags):
+        pfft = f'{lt}/{rt}'
+        for uo, to, oo in itertools.permutations((objs.me, objs.dig_dug, objs.stupid), 3):
+            u,t,o = _compose(uo, to, pfft)
+
+            assert f'{pfft} {u}' == f'{pfft} {first(uo, to, uo)}/{second(uo, to, uo)}'
+            assert f'{pfft} {t}' == f'{pfft} {first(uo, to, to)}/{second(uo, to, to)}'
+            assert f'{pfft} {o}' == f'{pfft} {first(uo, to, oo)}/{second(uo, to, oo)}'
