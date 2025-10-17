@@ -26,6 +26,7 @@ def this_body():
 
 
 def objects(of_types=None):
+    # XXX: this is a really expensive way to do this
     if of_types is None:
         from .stdobj import StdObj
 
