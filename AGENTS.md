@@ -6,6 +6,8 @@
 - we're trying to mimick the behaviors of the old mudlib in python, but we're
   trying to do things pythonically instead of using LPC methods.
 - when in doubt about how something should work, go scan contrib/lpc for ideas.
+- if we're working on `space/names.py`; be sure to check `contrib/lpc/std/object/names.c`
+- working on `space/living/msg.py`; be sure to check `contrib/lpc/std/modules/m_messages.c` for ideas
 
 ## Project Structure & Module Organization
 - Package code: `space/` (see `setup.cfg` and `pyproject.toml`).
