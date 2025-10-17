@@ -120,3 +120,11 @@ class _LazyVerb:
 
 def lazy_find_verb_method(verb, method):
     return _LazyVerb(verb, method)
+
+
+def find_verb(x):
+    # also provide and lazy load this function
+    global find_verb
+    from .verb import find_verb
+
+    return find_verb(x)

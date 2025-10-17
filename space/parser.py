@@ -3,10 +3,9 @@
 import logging
 import shlex
 
-from .verb import find_verb
 from .router import MethodArgsRouter
 from .map.dir_util import is_direction_string
-from .find import set_this_body
+from .find import set_this_body, find_verb
 import space.exceptions as E
 
 log = logging.getLogger(__name__)
