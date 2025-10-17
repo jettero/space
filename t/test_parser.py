@@ -7,6 +7,7 @@ import pytest
 from space.living import Human
 from space.map import Room
 import space.parser as sp
+from space.verb import VERBS
 
 import space.exceptions as E
 
@@ -144,13 +145,13 @@ def test_pstate_nodes(me, room):
 
 def test_all_verbs_fname_contains_name(objs):
     sp.find_verb(False)
-    assert sp.VERBS, "expected find_verb/parse to construct all verbs by now"
+    assert VERBS, "expected find_verb/parse to construct all verbs by now"
 
     # Construct a PSNode chain via Parser.plan/evaluate by seeding PState
     # Use empty input to avoid leftover tokens from a bogus verb; then seed states.
     ps = sp.PState(objs.me, "")
     # Seed all verbs; PSNode expects positional verbs, not the verb dict
-    ps.states = sp.PSNode(*sp.VERBS.values())
+    ps.states = sp.PSNode(*VERBS.values())
     # Ensure a fresh fill/plan and no extra tokens to mismatch rhints.
     ps.filled = False
     ps.tokens = []
