@@ -83,3 +83,6 @@ class Verb:
 
     def can(self, me, **kw):
         return self._test_pcr(me.parse_can(self.name, **kw))
+
+    def __hash__(self):
+        return self.name.__hash__()

@@ -19,16 +19,20 @@ CAN_DO_SCORE = 2
 
 def find_verb(x):
     global VERBS
-    if not VERBS:
+    if VERBS is None:
         VERBS = {v.name: v for v in load_verbs()}
+        VERBS.update({n:v for v in VERBS.values() for n in v.nick if n not in d})
+        # 2025-10-17: I was today years old when I learned mapping_a |=
+        # mapping_b is mapping_a.(mapping_b) but the returns the updated dict
+        # instead of None. We don't use it here, but we could iff python is 3.9+
     if x is None or not isinstance(x, str):
         return []
     if not x:
         return []
     x = x.lower()
-    if v := VERBS.get(x):
-        return [v]
-    return [v for n, v in VERBS.items() if v.match(x)]
+    if v := VERBS.get(x): # exact matching via get()
+        return {v,}
+    return {v for n, v in VERBS.items() if v.match(x)}
 
 
 class PSNode:
