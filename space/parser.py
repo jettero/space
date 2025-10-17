@@ -288,18 +288,19 @@ class Parser:
         self.evaluate(pstate)
         return pstate
 
-    # @property
-    # def words(self):
-    #     # XXX: until we fix next words, just return the names of all the verbs we know about
-    #     yield from VERBS.keys()
+    @property
+    def words(self):
+        # XXX: until we fix next words, just return the names of all the verbs we know about
+        from space.verb import VERBS
+        yield from VERBS.keys()
 
-    # def next_words(self, me, text_input):
-    #     """try to guess what words will fit next"""
-    #     # XXX: we only consider the very first token and even that breaks if
-    #     # the word is directions 'sSW3s', needs work
-    #     pstate = self.parse(me, text_input)
-    #     for v in pstate.iter_verbs:
-    #         yield from v.nick
+    def next_words(self, me, text_input):
+        """try to guess what words will fit next"""
+        # XXX: we only consider the very first token and even that breaks if
+        # the word is directions 'sSW3s', needs work
+        pstate = self.parse(me, text_input)
+        for v in pstate.iter_verbs:
+            yield from v.nick
 
     def plan(self, pstate):
         for verb in pstate.iter_verbs:
