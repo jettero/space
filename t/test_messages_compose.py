@@ -14,6 +14,7 @@ def _compose(subj, targ, msg, *obs):
         subj.compose(None, msg, [subj, targ], *obs),
     )
 
+
 def test_compose_basic_pronouns_and_verb(objs):
     msg = _compose(objs.me, objs.dig_dug, "$N $vattack $t.")
     assert msg.us == f"You attack {objs.dig_dug.a_short}."
@@ -131,7 +132,9 @@ def test_repeated_subject_tokens_basic(objs):
     assert msg.other == f"{objs.me.a_short} is cool and {objs.me.subjective} is loud."
 
 
-def test_repeated_subject_all_combos(objs):
+@pytest.mark.parametrize("lt", "$N $n".split())
+@pytest.mark.parametrize("rt", "$N $n".split())
+def test_repeated_subject_all_combos(objs, lt, rt):
     # Note on reflexivity ... when the subject and object of a sentence are the
     # same person we mark the pronoun with -self to indicate that.
     #
@@ -147,15 +150,14 @@ def test_repeated_subject_all_combos(objs):
 
     C = capitalize
     L = lambda x: x
-
-    tags = (
-        ("$N", lambda x,y,w: "You" if x==w else C(x.a_short), lambda x,y,w: "You" if x==w else C(x.subjective)),
-        ("$n", lambda x,y,w: "you" if x==w else L(x.a_short), lambda x,y,w: "you" if x==w else L(x.subjective)),
-      # ("$P", "Your", "Your", "Paul's", "His"),
-      # ("$R", "Yourself", "Yourself", "Paulself", "Himself"),
-      # ("$p", "your", "your", "Paul's", "his"),
-      # ("$r", "yourself", "yourself", "Paulself", "himself"),
-    )
+    T = {
+        "$N": (lambda x, y, w: "You" if x == w else C(x.a_short), lambda x, y, w: "You" if x == w else C(x.subjective)),
+        "$n": (lambda x, y, w: "you" if x == w else L(x.a_short), lambda x, y, w: "you" if x == w else L(x.subjective)),
+        # ("$P", "Your", "Your", "Paul's", "His"),
+        # ("$R", "Yourself", "Yourself", "Paulself", "Himself"),
+        # ("$p", "your", "your", "Paul's", "his"),
+        # ("$r", "yourself", "yourself", "Paulself", "himself"),
+    }
 
     # NOTE:
     # In [1]: import itertools;list(itertools.permutations((1,2), 2))
@@ -163,11 +165,9 @@ def test_repeated_subject_all_combos(objs):
     # In [2]: import itertools;list(itertools.product((1,2), (1,2)))
     # Out[2]: [(1, 1), (1, 2), (2, 1), (2, 2)]
 
-    for (lt, first, _), (rt, _, second) in itertools.product(tags, tags):
-        pfft = f'{lt}/{rt}'
-        for uo, to, oo in itertools.permutations((objs.me, objs.dig_dug, objs.stupid), 3):
-            u,t,o = _compose(uo, to, pfft)
+    for uo, to, oo in itertools.permutations((objs.me, objs.dig_dug, objs.stupid), 3):
+        u, t, o = _compose(uo, to, f"{lt}/{rt}")
 
-            assert f'{pfft} {u}' == f'{pfft} {first(uo, to, uo)}/{second(uo, to, uo)}'
-            assert f'{pfft} {t}' == f'{pfft} {first(uo, to, to)}/{second(uo, to, to)}'
-            assert f'{pfft} {o}' == f'{pfft} {first(uo, to, oo)}/{second(uo, to, oo)}'
+        assert u == f"{T[lt][0](uo, to, uo)}/{T[rt][1](uo, to, uo)}"
+        assert t == f"{T[lt][0](uo, to, to)}/{T[rt][1](uo, to, to)}"
+        assert o == f"{T[lt][0](uo, to, oo)}/{T[rt][1](uo, to, oo)}"
