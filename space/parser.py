@@ -292,6 +292,7 @@ class Parser:
     def words(self):
         # XXX: until we fix next words, just return the names of all the verbs we know about
         from space.verb import VERBS
+
         yield from VERBS.keys()
 
     def next_words(self, me, text_input):

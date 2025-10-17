@@ -2,7 +2,7 @@
 
 import re
 from collections import namedtuple
-from space.find import find_verb_method
+from space.find import lazy_find_verb_method
 import space.exceptions as E
 from ..stdobj import StdObj
 
@@ -18,7 +18,7 @@ class Talks:
     def can_say_words(self, *words):
         return True, {"words": " ".join(words)}
 
-    do_say_words = find_verb_method("say", "do_say_words")
+    do_say_words = lazy_find_verb_method("say", "do_say_words")
 
 
 class HasShell:

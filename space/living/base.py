@@ -3,7 +3,7 @@
 import logging
 import space.exceptions as E
 
-from space.find import find_verb_method
+from space.find import lazy_find_verb_method
 from space.pv import INFINITY
 
 from ..vv import VV
@@ -297,9 +297,9 @@ class Living(ReceivesMessages, CanMove, StdObj):
     def can_inventory(self):
         return True, {}
 
-    do_inventory = find_verb_method("inventory", "do_inventory")
+    do_inventory = lazy_find_verb_method("inventory", "do_inventory")
 
     def can_sheet(self):
         return True, {}
 
-    do_sheet = find_verb_method("sheet", "do_sheet")
+    do_sheet = lazy_find_verb_method("sheet", "do_sheet")

@@ -97,7 +97,26 @@ def name_classlist_by_classname(classlist, suffix=None, inject=None):
     return r
 
 
-def find_verb_method(verb, method):
-    # XXX might this be more complicated later? for now, verbs are always here
-    # XXX should we find_by_classname('space.verb', 'Action') and go through the nics too?
-    return getattr(importlib.import_module(f"space.verb.{verb}").Action, method)
+class _LazyVerb:
+    def __init__(self, verb, method):
+        self.verb = verb
+        self.method = method
+        self._attr_name = None
+
+    def __set_name__(self, owner, name):
+        self._attr_name = name
+
+    def _resolve(self):
+        mod = importlib.import_module(f"space.verb.{self.verb}")
+        return getattr(mod.Action, self.method)
+
+    def __get__(self, obj, owner=None):
+        if owner is None:
+            owner = type(obj)
+        fn = self._resolve()
+        setattr(owner, self._attr_name or self.method, fn)
+        return fn.__get__(obj, owner)
+
+
+def lazy_find_verb_method(verb, method):
+    return _LazyVerb(verb, method)
