@@ -11,6 +11,8 @@ log = logging.getLogger(__name__)
 
 
 class Named(Serial, baseobj):
+    # "unique" means we refer to the object as "the thingy" rather than "a thingy."
+    # proper_name means we refer to the thing as thing.short, never thing.a_short or thing.the_short.
     a = "~"
     s = "object"
     l = "named object"
@@ -23,22 +25,33 @@ class Named(Serial, baseobj):
     r_fmt = "{c}({l})"
 
     unique = False
+    plural = False
 
     class Meta:
         save = "asld"
 
-    def __init__(self, short=None, abbr=None, long=None, proper_name=None, unique=None, **kw):
+    def __init__(self, short=None, abbr=None, long=None, proper_name=None, unique=None, plural=None, **kw):
         super().__init__(**kw)  # if Serial and baseobj had __init__, they'd both get called via MRO/super()
         if abbr is not None:
             self.a = abbr
-        if proper_name is not None:
-            self.proper_name = proper_name
+        self.proper_name = False
         if long is not None:
             self.l = long
         if short is not None:
             self.s = short
         if unique is not None:
             self.unique = bool(unique)
+        if plural is not None:
+            self.plural = bool(plural)
+        if proper_name:
+            name = str(proper_name)
+            if "~" in name:
+                self.s = self.l = name.replace("~", " ")
+            else:
+                self.l = name
+                self.s = name.split()[0]
+            self.unique = True
+            self.proper_name = True
         self.tokens = self._tokenize()
 
     def __format__(self, spec):
@@ -58,70 +71,15 @@ class Named(Serial, baseobj):
             return self._m_fmt(m_select, fmt=fmt)
         return super().__format__(spec)
 
-    @property
-    def proper_name(self):
-        """Getter/setter for the object's proper name.
-
-        Behavior
-        - Setting a non-empty value marks the object `unique` and updates
-          both names.
-        - With `~` in the value: replace `~` with spaces; set both `long` and
-          `short` to the resulting full string.
-        - Without `~`: set `long` to the full string and `short` to the first
-          whitespace-delimited token.
-        - With a falsey value: reset `short` and `long` to "something" and
-          clear `unique`.
-
-        Examples
-        - Simple name
-          obj.proper_name = "Jordan Schitzo Blueberry"
-          obj.long  -> "Jordan Schitzo Blueberry"
-          obj.short -> "Jordan"
-          obj.unique is True
-
-        - Quoted/nickname style: set fields directly for custom forms
-          obj.short = "Schitzo"
-          obj.long  = "Jordan \"Schitzo\" Blueberry"
-          obj.unique = True
-          # or equivalently at construction:
-          #   Human(short="Schitzo", long="Jordan \"Schitzo\" Blueberry", unique=True)
-
-        - Tilde compaction to a single full token for both
-          obj.proper_name = "Dig~Dug"
-          obj.long  -> "Dig Dug"
-          obj.short -> "Dig Dug"
-          obj.unique is True
-
-        - Reset to generic
-          obj.proper_name = None
-          obj.long  -> "something"
-          obj.short -> "something"
-          obj.unique is False
-        """
-        return self.l
-
-    @proper_name.setter
-    def proper_name(self, v):
-        name = str(v) if v is not None else None
-        if name:
-            if "~" in v:
-                self.s = self.l = v.replace("~", " ")
-            else:
-                self.l = name
-                self.s = name.split()[0]
-            self.unique = True
-        else:
-            self.s = self.l = "something"
-            self.unique = False
-        self.tokens = self._tokenize()
+    # proper_name is a boolean; set during init when a proper name string is provided.
 
     @property
     def a_short(self):
         s = self.short
         if not s:
             return s
-        if self.unique:
-            return s
+        if self.proper_name or self.unique or self.plural:
+            return self.the_short
         first = s[:1].lower()
         return f"an {s}" if first in "aeiou" else f"a {s}"
 
@@ -130,7 +88,7 @@ class Named(Serial, baseobj):
         s = self.short
         if not s:
             return s
-        if self.unique:
+        if self.proper_name:
             return s
         return f"the {s}"
 
