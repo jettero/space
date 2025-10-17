@@ -63,7 +63,6 @@ class ReceivesMessages(HasShell, Talks):
             if subj is forwhom:
                 return "your"
             return subj.possessive
-        # subjective
         if subj is forwhom:
             return "you"
         return subj.subjective
