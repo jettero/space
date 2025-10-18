@@ -50,6 +50,10 @@
   a = obj.something.blah.attributename
   return a # I made a stupid dumb single use variable for no reason at all
   ```
+  - Strengthened: Avoid single-use variables entirely when the value can be
+    returned or used inline. Prefer `return obj.attr` over `tmp = obj.attr; return tmp`.
+    Only introduce a local when it improves clarity or avoids repeated expensive
+    work.
 - Lint: `pylint` (configured by `pylintrc`). Format: `black` (via pre-commit).
 - Indentation: 4 spaces; UTF-8; Unix newlines.
 - Naming: modules `snake_case.py`; classes `CamelCase`; functions/vars
@@ -200,11 +204,13 @@ Messaging
   `a_map` for unobstructed movement).
 - Assertions: use `assert ps` for `PState` truthiness; avoid tuple messages
   like `assert ps, ps.error`.
-- Comments: avoid adding comments unless necessary for code clarity; keep any
-  comments short and about the code only.
-  - Do not add comments that merely restate what the code does by direct
-    inspection (e.g., rephrasing conditionals or trivial guards). Prefer
-    self-explanatory code over explanatory comments.
+- Comments: DO NOT ADD COMMENTS without prior, explicit permission.
+  - Ask only if something is genuinely unclear or cannot be expressed via
+    clear naming or small helper functions.
+  - If permission is granted, keep comments minimal and strictly about the
+    code; no restating obvious logic, no narratives, no meta or conversational
+    notes.
+  - Prefer self-explanatory code (good names, tiny functions) over comments.
 
 ## Messaging System (Planning Notes)
 

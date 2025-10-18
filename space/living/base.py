@@ -98,7 +98,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
         _ordered = ("gender", "height", "mass")
 
         gender = (Gender,)
-        height = Roll("5d6+30")
+        height = Roll("5d6+30")  # XXX: should use DN("5d6+30 cm") or whatever
         mass = Roll("6d8+40")
         width = lambda self: self.height * 0.42
         depth = lambda self: (self.mass / "50 kg").v
@@ -109,11 +109,6 @@ class Living(ReceivesMessages, CanMove, StdObj):
 
         if long:
             self.long = long
-            if not short:
-                if ", " in long:
-                    short = long.split(", ")[1]
-                elif " " in long:
-                    short = long.split()[0]
         if short:
             self.short = short
 

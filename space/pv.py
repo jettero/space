@@ -5,7 +5,6 @@ import operator
 import logging
 
 from pint import UnitRegistry, DimensionalityError
-from .named import FORMAT_RE
 
 INFINITY = float("inf")
 log = logging.getLogger(__name__)
@@ -84,29 +83,8 @@ class PV(PVMeta):
         return f"{self}"  # invoke __format__
 
     def __format__(self, spec):
-        if spec in ("a", "abbr"):
-            return self._q.__format__("~P")
-        if spec in ("s", "short"):
-            return self._q.__format__("~")
-        if spec in ("l", "long"):
-            return self._q.__format__("")
-        m = FORMAT_RE.match(spec)
-        if m:
-            fmt, m_select = m.groups()
-            if not m_select:
-                m_select = "a"
-            else:
-                m_select = m_select.lower().strip()[0]
-            if m_select == "a":
-                spec = "~P"
-            elif m_select == "s":
-                spec = "~"
-            elif m_select == "l":
-                spec = ""
-            else:
-                spec = "~P"
-            if fmt:
-                spec = fmt + spec
+        if not spec:
+            spec = "~P"
         return self._q.__format__(spec)
 
     def clone(self):

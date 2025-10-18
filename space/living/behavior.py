@@ -36,7 +36,7 @@ class PointLessVoiceLines:
             self.voicelines = list()
         if a:
             self.voicelines = list(a)
-        super().__init__(*a, **kw)
+        super().__init__(**kw)
 
     def do_receive(self, msg, your_turn=False):  # pylint: disable=unused-argument
         if super().do_receive(msg, your_turn=your_turn):

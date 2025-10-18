@@ -14,13 +14,7 @@ class Named(Serial, baseobj):
     a = "~"
     s = "object"
     l = "named object"
-    d = "an object with names and descriptions"
-
-    a_fmt = "{a:{fmt}}"
-    s_fmt = "{s:{fmt}}"
-    l_fmt = "{l:{fmt}}"
-    d_fmt = "{l:{fmt}} :- {d}"
-    r_fmt = "{c}({l})"
+    d = "normally, you put your names in here"
 
     unique = False  # uniques are "the thing" rather than "a thing"
     plural = False  # Inherently plural noun (no a/an); e.g., "scissors", "pants".
@@ -36,10 +30,16 @@ class Named(Serial, baseobj):
     ):
         super().__init__(**kw)  # if Serial and baseobj had __init__, they'd both get called via MRO/super()
         if abbr is not None:
+            if not isinstance(abbr, str):
+                raise TypeError(f"wtf is this? ({abbr!r})")
             self.a = abbr
         if long is not None:
+            if not isinstance(long, str):
+                raise TypeError(f"wtf is this? ({long!r})")
             self.l = long
         if short is not None:
+            if not isinstance(short, str):
+                raise TypeError(f"wtf is this? ({short!r})")
             self.s = short
         if unique is not None:
             self.unique = bool(unique)
@@ -50,84 +50,77 @@ class Named(Serial, baseobj):
         if pair_word is not None:
             self.pair_word = pair_word
         if proper_name:
-            if "~" in proper_name:
-                self.s = self.l = proper_name.replace("~", " ")
-            else:
-                self.l = proper_name
-                self.s = proper_name.split()[0]
-            self.proper = True
+            self.proper_name = proper_name
         self.tokens = self._tokenize()
 
-    def __format__(self, spec):
-        if spec in ("abbr", "a"):
-            return self.abbr
-        if spec in ("short", "s"):
-            return self.short
-        if spec in ("long", "l"):
-            return self.long
-        if spec in ("desc", "d"):
-            return self.desc
-        m = FORMAT_RE.match(spec)
-        if m:
-            fmt, m_select = m.groups()
-            if not m_select:
-                m_select = "s"
-            return self._m_fmt(m_select, fmt=fmt)
-        return super().__format__(spec)
+    @property
+    def proper_name(self):
+        if self.proper:
+            return self.l
+
+    @proper_name.setter
+    def proper_name(self, v):
+        if v:
+            if "~" in v:
+                self.s = self.l = v.replace("~", " ")
+            else:
+                self.l = v
+                self.s = v.split()[0]
+            self.proper = True
+        else:
+            self.proper = False
 
     @property
     def a_short(self):
         if self.proper or self.unique:
             return self.the_short
         if self.plural and self.pair_word:
-            return f"a {self.pair_word} of {self.short}"
+            first = self.pair_word[:1].lower()
+            return f"an {self.pair_word} of {self.l}" if first in aeiou else f"an {self.pair_word} of {self.l}"
         if self.plural:
             return self.the_short
-        first = self.short[:1].lower()
-        return f"an {self.short}" if first in "aeiou" else f"a {self.short}"
+        first = self.s[:1].lower()
+        return f"an {self.s}" if first in "aeiou" else f"a {self.s}"
 
     @property
     def the_short(self):
         if self.proper:
-            return self.short
-        return f"the {self.short}"
+            return self.s
+        return f"the {self.s}"
 
     @property
     def a_long(self):
         if self.proper or self.unique:
             return self.the_long
         if self.plural and self.pair_word:
-            return f"a {self.pair_word} of {self.long}"
+            first = self.pair_word[:1].lower()
+            return f"an {self.pair_word} of {self.l}" if first in aeiou else f"an {self.pair_word} of {self.l}"
         if self.plural:
             return self.the_long
-        first = self.long[:1].lower()
-        return f"an {self.long}" if first in "aeiou" else f"a {self.long}"
+        first = self.l[:1].lower()
+        return f"an {self.l}" if first in "aeiou" else f"a {self.l}"
 
     @property
     def the_long(self):
         if self.proper:
-            return self.long
-        return f"the {self.long}"
-
-    def _m_fmt(self, var_name, fmt="", **kw):
-        m = var_name.lower().strip()[0]
-        return getattr(self, f"{m}_fmt").format(**self.as_dict(fmt=fmt, **kw))
+            return self.l
+        return f"the {self.l}"
 
     @property
     def abbr(self):
-        return self._m_fmt("a")
+        return self.a
 
     @property
     def short(self):
-        return self._m_fmt("s")
+        return self.a_short
 
     @property
     def long(self):
-        return self._m_fmt("l")
+        return self.a_long
 
     @property
     def desc(self):
-        return self._m_fmt("d")
+        return self.d
 
     @abbr.setter
     def abbr(self, v):

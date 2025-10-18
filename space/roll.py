@@ -1,9 +1,13 @@
 # coding: utf-8
 
 import random
+import inspect
+import logging
 from lark import Lark, Transformer
 from lark.exceptions import LarkError
 import space.exceptions as E
+
+log = logging.getLogger(__name__)
 
 
 class ARoll(int):
@@ -416,6 +420,7 @@ class AttrChoices:
         for attr_name in cls.to_choose():
             cls_value = getattr(cls, attr_name)
             kwa_value = kw.pop(attr_name, False)
+            log.debug(f"apply_attrs({target!r}).{attr_name} TOP {cls_value} (kwa_value: {kwa_value})")
             if isinstance(cls_value, Roll):
                 if kwa_value:
                     v = int(kwa_value)
@@ -435,6 +440,11 @@ class AttrChoices:
                         raise ValueError(f"{kwa_value} is not a choice in {'/'.join(sorted(_tokenize(*cls_value)))}")
                 else:
                     cls_value = random.choice(cls_value)
-            if callable(cls_value):
+            if inspect.isclass(cls_value):
+                log.debug(f"apply_attrs({target!r}).{attr_name} INIT {cls_value}()")
+                cls_value = cls_value()
+            elif inspect.isfunction(cls_value):
+                log.debug(f"apply_attrs({target!r}).{attr_name} INIT {cls_value}({target})")
                 cls_value = cls_value(target)
+            log.debug(f"apply_attrs({target!r}).{attr_name} = {cls_value!r}")
             setattr(target, attr_name, cls_value)

@@ -1,17 +1,13 @@
 # coding: utf-8
 
+import re
 from .pv import PV
 from .named import Named
 from .roll import roll, Roll, RollError
 
 
-class DN(PV, Named):
+class DN(PV):
     d = "supposedly descriptive number"
-
-    a_fmt = "{v:{fmt}} {a}"
-    s_fmt = "{v:{fmt}} {s}"
-    l_fmt = "{v:{fmt}} {l}"
-    d_fmt = "{v:{fmt}} {l} :- {d}"
 
     def __init_subclass__(cls):
         super().__init_subclass__()
@@ -20,6 +16,8 @@ class DN(PV, Named):
 
     def __init__(self, value=0, **kw):
         if isinstance(value, str):
+            # if m:=re.match('(\d*d\d+(?:\s*[+-]\s*\d*)\s*(.+)', value):
+            #     value = f'{roll(m.group(1))} {m.group(2)}'
             try:
                 value = roll(value)
             except RollError:
@@ -33,13 +31,7 @@ class DN(PV, Named):
         save = "vs\0"
 
     def __repr__(self):
-        return f"<{self.abbr}>"
-
-    def __str__(self):
-        return f"{self.abbr}"
-
-    def __format__(self, spec):
-        return Named.__format__(self, spec)
+        return f"<{self}>"
 
 
 DescriptiveNumber = DN
