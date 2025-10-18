@@ -77,15 +77,29 @@ class ReceivesMessages(HasShell, Talks):
                 idx = 1 if tag == "t" else 0
                 qual = rest
 
-            if tag in "prtn" and not (idx < len(who) and isinstance(who[idx], ReceivesMessages)):
-                if tag == "p":
-                    return "Someone's" if cap else "someone's"
-                if tag == "r":
-                    return "Itself" if cap else "itself"
-                if tag in ("t", "n"):
-                    return "Someone" if cap else "someone"
-            elif tag == "o" and idx >= len(obs):
-                return "Something" if cap else "something"
+            subj = None
+            if tag in "prtn":
+                if idx < len(who) and isinstance(who[idx], ReceivesMessages):
+                    subj = who[idx]
+                else:
+                    if tag == "p":
+                        return "Someone's" if cap else "someone's"
+                    if tag == "r":
+                        return "Itself" if cap else "itself"
+                    if tag in ("t", "n"):
+                        return "Someone" if cap else "someone"
+            else: # tag == "o"
+                if idx < len(obs):
+                    if isinstance(obs[idx], StdObj):
+                        subj = obs[idx]
+                    else:
+                        if qual == "s":
+                            return capitalize(obs[idx]) if cap else str(obs[idx])
+                        if qual == "t":
+                            return f'The {obs[idx]}' if cap else f'the {obs[idx]}'
+                        return f'A {obs[idx]}' if cap else f'a {obs[idx]}'
+                else:
+                    return "Something" if cap else "something"
 
             if tag == "p":
                 name = "your" if who == forwhom else who[idx].possessive
@@ -122,17 +136,9 @@ class ReceivesMessages(HasShell, Talks):
                 return capitalize(name) if cap else name
 
             if tag == "o":
-                if isinstance(obs[idx], StdObj):
-                    if qual == "t":
-                        name = obs[idx].the_short
-                    elif qual == "s":
-                        name = obs[idx].short
-                    else:
-                        name = obs[idx].a_short
-                else:
-                    name = str(obs[idx])
-                return capitalize(name) if cap else name
-            return t
+                return capitalize(obs[idx].a_short) if cap else obs[idx].a_short
+
+            raise TypeError(f'token="{t}" not understood')
 
         return re.sub(r"\$[MNVTTPPOOnnvttoPpRr][a-z0-9]*", sub_token, msg)
 
