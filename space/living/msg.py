@@ -50,7 +50,7 @@ class HasShell:
 
 class ReceivesMessages(HasShell, Talks):
 
-    def _name_for(self, forwhom, subj, mode):
+    def select_pronoun(self, forwhom, subj, mode): # XXX renmove this
         if mode == "o":  # objective
             if subj is forwhom:
                 return "you"
@@ -67,28 +67,21 @@ class ReceivesMessages(HasShell, Talks):
             return "you"
         return subj.subjective
 
-    def _agree(self, forwhom_is_subject, verb):
-        # We only handle verbs written in second-person present.
-        # If the subject is the addressee, keep the verb as-is (e.g., "you attack").
-        if forwhom_is_subject:
-            return verb
-        # Third-person present for others. Handle "be" specially and otherwise
-        # inflect with simple -s/-es rules from the 2nd-person form.
-        if verb == "are":
-            return "is"
-        if verb == "have":
-            return "has"
-        if verb.endswith(("s", "sh", "ch", "x", "z", "o")):
-            return verb + "es"
-        return verb + "s"
-
-    def _expand(self, forwhom, msg, who, obs):
+    def compose(self, forwhom, msg, who, *obs):
         def sub_token(m):
             t = m.group(0)
             if t.startswith("$v"):
                 verb = t[2:]
                 subj = who[0] if who else None
-                return self._agree(forwhom is subj, verb)
+                if forwhom_is_subject:
+                    return verb
+                if verb == "are":
+                    return "is"
+                if verb == "have":
+                    return "has"
+                if verb.endswith(("s", "sh", "ch", "x", "z", "o")):
+                    return verb + "es"
+                return verb + "s"
             tag = t[1]
             rest = t[2:]
             idx = None
@@ -112,7 +105,7 @@ class ReceivesMessages(HasShell, Talks):
                 else:
                     subj = who[idx]
                     mode = "p" if tag in ("p", "P") else "r"
-                    name = self._name_for(forwhom, subj, mode)
+                    name = self.select_pronoun(forwhom, subj, mode)
                 if tag in ("P", "R"):
                     return capitalize(name)
                 return name
@@ -128,7 +121,7 @@ class ReceivesMessages(HasShell, Talks):
                     return "someone"
                 subj = who[idx]
                 if qual in ("o", "r", "p"):
-                    name = self._name_for(forwhom, subj, qual)
+                    name = self.select_pronoun(forwhom, subj, qual)
                 elif qual == "a":
                     name = subj.a_short
                 else:
@@ -137,12 +130,12 @@ class ReceivesMessages(HasShell, Talks):
                     if tag in ("T", "t"):
                         # If the recipient is the target, use objective pronoun "you"
                         if subj is forwhom:
-                            name = self._name_for(forwhom, subj, "o")
+                            name = self.select_pronoun(forwhom, subj, "o")
                         else:
                             name = subj.a_short
                     else:
                         # For $N/$n default to subject perspective ("you" when recipient is subject)
-                        name = self._name_for(forwhom, subj, "s")
+                        name = self.select_pronoun(forwhom, subj, "s")
                 # Capitalize for upper-case tokens ($N/$T) when possible.
                 if tag in ("N", "T"):
                     # For $N, when referring to a person and not the recipient, prefer short name capitalized
@@ -170,9 +163,6 @@ class ReceivesMessages(HasShell, Talks):
             return t
 
         return re.sub(r"\$[MNVTTPPOOnnvttoPpRr][a-z0-9]*", sub_token, msg)
-
-    def compose(self, forwhom, msg, who, *obs):
-        return self._expand(forwhom, msg, who, obs)
 
     def action(self, who: Actors, msg, *obs):
         us = self.compose(who.actor, msg, who, *obs)
