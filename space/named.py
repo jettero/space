@@ -112,11 +112,11 @@ class Named(Serial, baseobj):
 
     @property
     def short(self):
-        return self.a_short
+        return self.s
 
     @property
     def long(self):
-        return self.a_long
+        return self.l
 
     @property
     def desc(self):
