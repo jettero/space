@@ -16,7 +16,7 @@ def Thingy():
         a = "T"
         s = "Tng"
         l = "Thingy"
-        d = "a thingy"
+        d = "this thing be totally sprung"
 
     return Thingy
 
@@ -25,7 +25,7 @@ def test_named(thingy):
     assert thingy.abbr == "T"
     assert thingy.short == "Tng"
     assert thingy.long == "Thingy"
-    assert thingy.desc == "Thingy :- a thingy"
+    assert thingy.desc == "this thing be totally sprung"
 
 
 def test_format_re():

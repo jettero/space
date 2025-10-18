@@ -51,6 +51,8 @@ class HasShell:
 class ReceivesMessages(HasShell, Talks):
 
     def compose(self, forwhom, msg, who, *obs):
+        has = set()
+
         def sub_token(m):
             t = m.group(0)
 
@@ -88,7 +90,7 @@ class ReceivesMessages(HasShell, Talks):
                         return "Itself" if cap else "itself"
                     if tag in ("t", "n"):
                         return "Someone" if cap else "someone"
-            else: # tag == "o"
+            else:  # tag == "o"
                 if idx < len(obs):
                     if isinstance(obs[idx], StdObj):
                         subj = obs[idx]
@@ -96,43 +98,46 @@ class ReceivesMessages(HasShell, Talks):
                         if qual == "s":
                             return capitalize(obs[idx]) if cap else str(obs[idx])
                         if qual == "t":
-                            return f'The {obs[idx]}' if cap else f'the {obs[idx]}'
-                        return f'A {obs[idx]}' if cap else f'a {obs[idx]}'
+                            return f"The {obs[idx]}" if cap else f"the {obs[idx]}"
+                        return f"A {obs[idx]}" if cap else f"a {obs[idx]}"
                 else:
                     return "Something" if cap else "something"
 
+            seen = subj in has
+            has.add(subj)
+
             if tag == "p":
-                name = "your" if who == forwhom else who[idx].possessive
+                name = "your" if who == forwhom else (who[idx].possessive if seen else who[idx].a_short)
                 return capitalize(name) if cap else name
 
             if tag == "r":
-                name = "yourself" if who[idx] == forwhom else who[idx].reflexive
+                name = "yourself" if who[idx] == forwhom else (who[idx].reflexive if seen else who[idx].a_short)
                 return capitalize(name) if cap else name
 
             if tag == "n":
                 if qual == "o":
-                    name = "you" if who[idx] == forwhom else who[idx].objective
+                    name = "you" if who[idx] == forwhom else (who[idx].objective if seen else who[idx].a_short)
                 elif qual == "r":
-                    name = "yourself" if who[idx] == forwhom else who[idx].reflexive
+                    name = "yourself" if who[idx] == forwhom else (who[idx].reflexive if seen else who[idx].a_short)
                 elif qual == "p":
-                    name = "your" if who[idx] == forwhom else who[idx].possessive
+                    name = "your" if who[idx] == forwhom else (who[idx].possessive if seen else who[idx].a_short)
                 elif qual == "a":
                     name = who[idx].a_short
                 else:
-                    name = "you" if who[idx] == forwhom else who[idx].subjective
+                    name = "you" if who[idx] == forwhom else (who[idx].subjective if seen else who[idx].a_short)
                 return capitalize(name) if cap else name
 
             if tag == "t":
                 if qual == "o":
-                    name = "you" if who[idx] == forwhom else who[idx].objective
+                    name = "you" if who[idx] == forwhom else (who[idx].objective if seen else who[idx].a_short)
                 elif qual == "r":
-                    name = "yourself" if who[idx] == forwhom else who[idx].reflexive
+                    name = "yourself" if who[idx] == forwhom else (who[idx].reflexive if seen else who[idx].a_short)
                 elif qual == "p":
-                    name = "your" if who[idx] == forwhom else who[idx].possessive
+                    name = "your" if who[idx] == forwhom else (who[idx].possessive if seen else who[idx].a_short)
                 elif qual == "a":
                     name = who[idx].a_short
                 else:
-                    name = "you" if who[idx] == forwhom else who[idx].a_short
+                    name = "you" if who[idx] == forwhom else (who[idx].subjective if seen else who[idx].a_short)
                 return capitalize(name) if cap else name
 
             if tag == "o":
