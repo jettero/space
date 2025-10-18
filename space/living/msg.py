@@ -50,30 +50,13 @@ class HasShell:
 
 class ReceivesMessages(HasShell, Talks):
 
-    def select_pronoun(self, forwhom, subj, mode): # XXX renmove this
-        if mode == "o":  # objective
-            if subj is forwhom:
-                return "you"
-            return subj.objective
-        if mode == "r":  # reflexive
-            if subj is forwhom:
-                return "yourself"
-            return subj.reflexive
-        if mode == "p":  # possessive
-            if subj is forwhom:
-                return "your"
-            return subj.possessive
-        if subj is forwhom:
-            return "you"
-        return subj.subjective
-
     def compose(self, forwhom, msg, who, *obs):
         def sub_token(m):
             t = m.group(0)
+
             if t.startswith("$v"):
                 verb = t[2:]
-                subj = who[0] if who else None
-                if forwhom_is_subject:
+                if who and who[0] == forwhom:
                     return verb
                 if verb == "are":
                     return "is"
@@ -82,69 +65,80 @@ class ReceivesMessages(HasShell, Talks):
                 if verb.endswith(("s", "sh", "ch", "x", "z", "o")):
                     return verb + "es"
                 return verb + "s"
-            tag = t[1]
+
+            cap = t[1].isupper()
+            tag = t[1].lower()
             rest = t[2:]
+            del t
+
             idx = None
             qual = ""
-            # optional index
             if rest and rest[0].isdigit():
                 idx = int(rest[0])
                 qual = rest[1:]
             else:
+                idx = 1 if tag == 't' else 0
                 qual = rest
-            # Top-level possessive/reflexive aliases:
-            # $p/$P == $n0p/$N0p (subject's possessive)
-            # $r/$R == $n0r/$N0r (subject's reflexive)
-            if tag in ("p", "P", "r", "R"):
-                if idx is None:
-                    idx = 0
-                if idx >= len(who) or not isinstance(who[idx], ReceivesMessages):
-                    # Fallbacks: possessive -> "someone's" is awkward; keep "someone"
-                    # reflexive -> "themself" is also awkward; use "themself" only when we have a subject
-                    name = "someone"
-                else:
-                    subj = who[idx]
-                    mode = "p" if tag in ("p", "P") else "r"
-                    name = self.select_pronoun(forwhom, subj, mode)
-                if tag in ("P", "R"):
-                    return capitalize(name)
-                return name
-            if tag in ("N", "n", "T", "t"):
-                if tag in ("T", "t"):
-                    if idx is None:
-                        idx = 1
-                else:
-                    if idx is None:
-                        idx = 0
-                # require recipients to be message-capable, not specific class
+
+            if idx >= len(who) or not isinstance(who[idx], ReceivesMessages):
+                if tag == "p":
+                    return "Someone's" if cap else "someone's"
+                if tag == "r":
+                    return "Itself" if cap else "itself"
+                if tag in ("t", "n"):
+                    return "Someone" if cap else "someone"
+                if tag in "o":
+                    return "Something" if cap else "something"
+
+            if tag == "p":
+                name = "your" if who == forwhom else who[idx].possessive
+                return capitalize(name) if cap else name
+
+            if tag == "r":
+                name = "yourself" if subj == forwhom else who[idx].reflexive
+                return capitalize(name) if cap else name
+
+            if tag == "n": # XXX: needs fixes to be dry like "p" and "r" above
                 if idx >= len(who) or not isinstance(who[idx], ReceivesMessages):
                     return "someone"
                 subj = who[idx]
                 if qual in ("o", "r", "p"):
-                    name = self.select_pronoun(forwhom, subj, qual)
+                    if qual == "o":
+                        name = "you" if subj == forwhom else subj.objective
+                    elif qual == "r":
+                        name = "yourself" if subj == forwhom else subj.reflexive
+                    else:
+                        name = "your" if subj == forwhom else subj.possessive
                 elif qual == "a":
                     name = subj.a_short
                 else:
-                    # Defaults: $n/$N -> subject; $t/$T -> a_short (use article),
-                    # matching tests that expect indefinite for non-unique mobs.
-                    if tag in ("T", "t"):
-                        # If the recipient is the target, use objective pronoun "you"
-                        if subj is forwhom:
-                            name = self.select_pronoun(forwhom, subj, "o")
-                        else:
-                            name = subj.a_short
-                    else:
-                        # For $N/$n default to subject perspective ("you" when recipient is subject)
-                        name = self.select_pronoun(forwhom, subj, "s")
-                # Capitalize for upper-case tokens ($N/$T) when possible.
-                if tag in ("N", "T"):
-                    # For $N, when referring to a person and not the recipient, prefer short name capitalized
-                    if tag == "N" and subj is not forwhom and qual not in ("o", "r", "p"):
+                    name = "you" if subj == forwhom else subj.subjective
+                if cap:
+                    if subj != forwhom and qual not in ("o", "r", "p"):
                         return capitalize(subj.short)
                     return capitalize(name)
-                # Lower-case for $n/$t; but keep exact if it already starts uppercase (proper name)
                 return name if (name and name[0].isupper()) else name.lower()
-            if tag in ("O", "o"):
+
+            if tag == "t": # XXX needs fixes to be dry like "p" and "r" above
+                if idx >= len(who) or not isinstance(who[idx], ReceivesMessages):
+                    return "someone"
+                subj = who[idx]
+                if qual in ("o", "r", "p"):
+                    if qual == "o":
+                        name = "you" if subj == forwhom else subj.objective
+                    elif qual == "r":
+                        name = "yourself" if subj == forwhom else subj.reflexive
+                    else:
+                        name = "your" if subj == forwhom else subj.possessive
+                elif qual == "a":
+                    name = subj.a_short
+                else:
+                    name = "you" if subj == forwhom else subj.a_short
+                if cap:
+                    return capitalize(name)
+                return name if (name and name[0].isupper()) else name.lower()
+
+            if tag in ("O", "o"): # XXX: "O" is impossible here, also needs fixes like the above
                 # Objects default to first observed ($o0), not second
                 if idx is None:
                     idx = 0
