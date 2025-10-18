@@ -15,9 +15,11 @@ class DN(PV):
         cls.check_type = getattr(cls.Meta, "check_type", True)
 
     def __init__(self, value=0, **kw):
+        # don't attempt to add units here, this is a parent class for
+        # properties with dimensions
+        #
+        # see space/size.py for examples like Mass, Length, etc
         if isinstance(value, str):
-            # if m:=re.match('(\d*d\d+(?:\s*[+-]\s*\d*)\s*(.+)', value):
-            #     value = f'{roll(m.group(1))} {m.group(2)}'
             try:
                 value = roll(value)
             except RollError:
