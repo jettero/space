@@ -92,6 +92,26 @@
 - For parse failures, assert `not pstate`, `pstate.winner is None`, and check
   any available `pstate.error` text when relevant.
 
+### Parametrization And Scope (Stronger Enforcement)
+- Keep parametrization dead simple when asked. If the maintainer provides a
+  specific form (e.g., `@pytest.mark.parametrize("vname", [name for name in VERBS if name not in ("ew", "eww", "ZZy")])`),
+  use exactly that shape unless explicitly told otherwise.
+- Do not “improve,” filter, or reshape the parameter set unless requested.
+  Avoid pattern-based exclusions or smart heuristics; keep to the names given.
+- Match the stated assertion intent precisely. If the goal is uniqueness (e.g.,
+  “ensure no ambiguity”), assert that and nothing more. Do not expand scope to
+  parsing success, execution, argument requirements, or router semantics unless
+  the task explicitly asks for it.
+
+### Simplicity Rules (Reiterated)
+- Do not introduce single‑use variables in tests (or code) when the value can
+  be inlined clearly.
+- Avoid defensive logic (try/except, getattr/hasattr) unless explicitly allowed
+  for the task. Assume fixtures and contracts are correct and fail fast on code
+  errors.
+- Prefer one or two clear assertions over multi-branching logic. Tests should
+  read as straightforward specifications of the asked behavior, nothing more.
+
 ### Tests (Reminders)
 - Do not attempt to import fixtures if they're already existing in t/conftest.py; just rely on the pytest fixture system
 - Do not attempt to build new objects (livings, something to pick up, etc), use the `objs` fixture that's already loaded

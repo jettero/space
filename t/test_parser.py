@@ -162,3 +162,17 @@ def test_all_verbs_fname_contains_name(objs):
     for psn in ps.states:  # iterate all verbs and kids
         if psn.fname:
             assert psn.verb.name in psn.fname
+
+
+@pytest.mark.parametrize(
+    "vname",
+    [
+        name
+        for name, v in VERBS.items()
+        if name not in ("ew", "eww", "ZZy")
+        # Limit to verbs/emotes that define a bare pattern (no args required)
+        and getattr(v, "patterns", None) and "" in v.patterns
+    ],
+)
+def test_all_verb_and_emote_names_parse_cleanly(objs, vname):
+    assert 'ambiguous' not in sp.Parser().parse(objs.me, vname).error
