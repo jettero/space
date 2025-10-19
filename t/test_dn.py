@@ -29,17 +29,19 @@ f = F(9)
 
 def test_str():
     assert str(c) == "6 dn"
-    assert repr(c) == "<6 dn>"
     assert str(d) == "7 D"
-    assert repr(d) == "<7 D>"
     assert str(e) == "8 E"
-    assert repr(e) == "<8 E>"
     assert str(f) == "9 F"
-    assert repr(f) == "<9 F>"
+
+def test_repr():
+    assert repr(c) == "DN<6 dn>"
+    assert repr(d) == "D<7 dd>"
+    assert repr(e) == "E<8 ee>"
+    assert repr(f) == "F<9 ff>"
 
 
 def test_desc():
-    assert DN(77).desc == "77 dn :- supposedly descriptive number"
+    assert DN(77).desc == "supposedly descriptive number"
 
 
 def test_binops():

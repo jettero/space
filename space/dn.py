@@ -32,11 +32,8 @@ class DN(PV):
         units = "dn = []"
         save = "vs\0"
 
-    def __repr__(self):
-        return f"<{self}>"
-
-    def __str__(self):
-        return f"{self.v} {self.a}"
-
+    @property
+    def desc(self):
+        return self.d
 
 DescriptiveNumber = DN

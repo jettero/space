@@ -14,6 +14,7 @@ class PVMeta:
     ureg = UnitRegistry()
 
     def __init_subclass__(cls):
+        super().__init_subclass__()
         # set for PV and its subclasses
         definition = cls.Meta.units  # pylint: disable=no-member
         if "=" in definition:
@@ -77,18 +78,18 @@ class PV(PVMeta):
         self.q = expression
 
     def __repr__(self):
-        return f"PV<{self}>"  # invoke __format__
+        return f"{self.__class__.__name__}<{self:long}>"  # invoke __format__
 
     def __str__(self):
-        return f"{self}"  # invoke __format__
+        return f"{self:short}"  # invoke __format__
 
-    def __format__(self, spec="~P"):
-        if spec in ("a", "abbr"):
+    def __format__(self, spec="short"):
+        # ~ means short, P means pretty
+        # https://pint.readthedocs.io/en/stable/user/formatting.html#pint-format-types
+        if spec in ("a", "abbr", "s", "short"):
             return self._q.__format__("~P")
-        if spec in ("s", "short"):
-            return self._q.__format__("~")
         if spec in ("l", "long"):
-            return self._q.__format__("")
+            return self._q.__format__("P")
         return self._q.__format__(spec)
 
     def clone(self):

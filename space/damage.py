@@ -15,27 +15,24 @@ class Generic(DN):
 
 
 class Kinetic(Generic):
-    s = a = "K"
     d = "damage from pysical objects"
 
     class Meta:
-        units = "kinetic = [kinetic]"
+        units = "kinetic = [kinetic] = K"
 
 
 class Thermal(Generic):
-    s = a = "T"
     d = "damage from heat (aka energy)"
 
     class Meta:
-        units = "thermal = [thermal]"
+        units = "thermal = [thermal] = T"
 
 
 class Mind(Generic):
-    s = a = "M"
     d = "damage to the spirit or morale"
 
     class Meta:
-        units = "mind = [mind]"
+        units = "mind = [mind] = M"
 
 
 class Damage:
