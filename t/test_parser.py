@@ -175,4 +175,4 @@ def test_all_verbs_fname_contains_name(objs):
     ],
 )
 def test_all_verb_and_emote_names_parse_cleanly(objs, vname):
-    assert 'ambiguous' not in sp.Parser().parse(objs.me, vname).error
+    assert "ambiguous" not in sp.Parser().parse(objs.me, vname).error
