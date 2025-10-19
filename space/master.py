@@ -11,8 +11,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-from space.living.msg import HasShell
-from space.shell import PromptShell
+from space.shell import PromptShell, HasShell
 from space.shell.mob import Shell as MobShell
 
 

@@ -3,7 +3,7 @@
 import pytest
 import inspect
 import itertools
-from space.living.msg import Messages, capitalize
+from space.msg import Messages, capitalize
 from space.living import gender as gender_mod
 
 

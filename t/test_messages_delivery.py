@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from space.living.msg import ReceivesMessages
+from space.msg import ReceivesMessages
 from space.shell.list import Shell as ListShell
 
 

@@ -7,7 +7,7 @@
   trying to do things pythonically instead of using LPC methods.
 - when in doubt about how something should work, go scan contrib/lpc for ideas.
 - if we're working on `space/names.py`; be sure to check `contrib/lpc/std/object/names.c`
-- working on `space/living/msg.py`; be sure to check `contrib/lpc/std/modules/m_messages.c` for ideas
+- working on `space/msg.py`; be sure to check `contrib/lpc/std/modules/m_messages.c` for ideas
 
 ## Project Structure & Module Organization
 - Package code: `space/` (see `setup.cfg` and `pyproject.toml`).
@@ -220,7 +220,7 @@ Messaging
   composition semantics (e.g., `$t` defaults to index 1; `$o` defaults to 0).
   Cross-check `contrib/lpc/grammar.c`, `contrib/lpc/m_grammar.c`, and
   `contrib/lpc/names.c` for pronoun and naming behavior before changing
-  `space/living/msg.py` or `space/named.py`.
+  `space/msg.py` or `space/named.py`.
 - Placement: prefer a small `MessagesMixin` integrated into `Living`/`Humanoid`
   (likely on `Humanoid`) rather than a new global system. Keep surface area
   minimal and reuse existing shells and message types in `space/shell/`.

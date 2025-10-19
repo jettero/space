@@ -4,7 +4,7 @@ import re
 from collections import namedtuple
 from space.find import lazy_find_verb_method
 import space.exceptions as E
-from ..stdobj import StdObj
+from .stdobj import StdObj
 
 Messages = namedtuple("Messages", ["us", "them", "other"])
 Actors = namedtuple("Actors", ["actor", "target"])
@@ -27,14 +27,14 @@ class HasShell:
     @property
     def shell(self):
         if self._shell is None:
-            from ..shell.log import Shell as LogShell
+            from .shell.log import Shell as LogShell
 
             self.shell = LogShell()
         return self._shell
 
     @shell.setter
     def shell(self, v):
-        from ..shell.base import BaseShell
+        from .shell.base import BaseShell
 
         if v is None:
             self._shell = v

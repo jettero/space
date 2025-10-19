@@ -15,7 +15,7 @@ from ..roll import Roll, AttrChoices
 from .gender import Gender
 from .stats import Sci, Dip, Mar, Eng, Mor, HitPoints, ClassRank, ExperiencePoints, Initiative
 from .slots import PackSlot, Slots
-from .msg import ReceivesMessages
+from ..msg import ReceivesMessages
 
 import space.exceptions as E
 
