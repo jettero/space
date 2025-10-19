@@ -79,71 +79,43 @@ class ReceivesMessages(HasShell, Talks):
                 idx = 1 if tag == "t" else 0
                 qual = rest
 
-            subj = None
-            if tag in "prtn":
-                if idx < len(who) and isinstance(who[idx], ReceivesMessages):
-                    subj = who[idx]
-                else:
-                    if tag == "p":
-                        return "Someone's" if cap else "someone's"
-                    if tag == "r":
-                        return "Itself" if cap else "itself"
-                    if tag in ("t", "n"):
-                        return "Someone" if cap else "someone"
-            else:  # tag == "o"
-                if idx < len(obs):
-                    if isinstance(obs[idx], StdObj):
-                        subj = obs[idx]
-                    else:
-                        if qual == "s":
-                            return capitalize(obs[idx]) if cap else str(obs[idx])
-                        if qual == "t":
-                            return f"The {obs[idx]}" if cap else f"the {obs[idx]}"
-                        return f"A {obs[idx]}" if cap else f"a {obs[idx]}"
-                else:
-                    return "Something" if cap else "something"
+            if len(qual) > 1:
+                raise TypeError(f"too many qualifiers for ${tag}: ({qual})")
+
+            if tag == "o":
+                subj = obs[idx]
+                mode = qual or "n"
+            else:
+                subj = who[idx]
+                mode = qual or tag
+
+            if not isinstance(subj, StdObj):
+                return str(subj)
 
             seen = subj in has
             has.add(subj)
 
-            if tag == "p":
-                name = "your" if who == forwhom else (who[idx].possessive if seen else who[idx].a_short)
+            if mode in "ns":
+                name = "you" if subj == forwhom else (subj.subjective if seen else subj.a_short)
                 return capitalize(name) if cap else name
 
-            if tag == "r":
-                name = "yourself" if who[idx] == forwhom else (who[idx].reflexive if seen else who[idx].a_short)
+            if mode in "to":
+                name = "you" if subj == forwhom else (subj.objective if seen else subj.a_short)
                 return capitalize(name) if cap else name
 
-            if tag == "n":
-                if qual == "o":
-                    name = "you" if who[idx] == forwhom else (who[idx].objective if seen else who[idx].a_short)
-                elif qual == "r":
-                    name = "yourself" if who[idx] == forwhom else (who[idx].reflexive if seen else who[idx].a_short)
-                elif qual == "p":
-                    name = "your" if who[idx] == forwhom else (who[idx].possessive if seen else who[idx].a_short)
-                elif qual == "a":
-                    name = who[idx].a_short
-                else:
-                    name = "you" if who[idx] == forwhom else (who[idx].subjective if seen else who[idx].a_short)
+            if mode == "p":
+                name = "your" if subj == forwhom else (subj.possessive if seen else subj.p_short)
                 return capitalize(name) if cap else name
 
-            if tag == "t":
-                if qual == "o":
-                    name = "you" if who[idx] == forwhom else (who[idx].objective if seen else who[idx].a_short)
-                elif qual == "r":
-                    name = "yourself" if who[idx] == forwhom else (who[idx].reflexive if seen else who[idx].a_short)
-                elif qual == "p":
-                    name = "your" if who[idx] == forwhom else (who[idx].possessive if seen else who[idx].a_short)
-                elif qual == "a":
-                    name = who[idx].a_short
-                else:
-                    name = "you" if who[idx] == forwhom else (who[idx].subjective if seen else who[idx].a_short)
+            if mode == "r":
+                # Returning a_short in the proper-noun case is probably right.
+                # English doesn't have a reflexive tag for proper nouns, but
+                # it's funnier to penalize the joker that thought $r was right
+                # where it wasn't.
+                name = "yourself" if subj == forwhom else (subj.reflexive if seen else subj.a_short + "-self")
                 return capitalize(name) if cap else name
 
-            if tag == "o":
-                return capitalize(obs[idx].a_short) if cap else obs[idx].a_short
-
-            raise TypeError(f'token="{t}" not understood')
+            raise TypeError(f"{t} not understood")
 
         return re.sub(r"\$[MNVTTPPOOnnvttoPpRr][a-z0-9]*", sub_token, msg)
 

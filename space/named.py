@@ -22,6 +22,10 @@ class Named(Serial, baseobj):
 
     pair_word = "pair"  # word used for pluralia tantum: used in "a pair of X"
 
+    poessive = "its"
+    reflexive = "itself"
+    subjective = objective = "it"
+
     class Meta:
         save = "asld"
 
@@ -69,6 +73,10 @@ class Named(Serial, baseobj):
             self.proper = True
         else:
             self.proper = False
+
+    @property
+    def p_short(self):
+        return self.a_short + "'s"
 
     @property
     def a_short(self):
