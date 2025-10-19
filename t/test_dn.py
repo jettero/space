@@ -33,11 +33,12 @@ def test_str():
     assert str(e) == "8 E"
     assert str(f) == "9 F"
 
+
 def test_repr():
     assert repr(c) == "DN<6 dn>"
-    assert repr(d) == "D<7 dd>"
-    assert repr(e) == "E<8 ee>"
-    assert repr(f) == "F<9 ff>"
+    assert repr(d) == "D<7 D>"
+    assert repr(e) == "E<8 E>"
+    assert repr(f) == "F<9 F>"
 
 
 def test_desc():

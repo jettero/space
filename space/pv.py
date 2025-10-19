@@ -1,5 +1,6 @@
 # coding: utf-8
 
+import re
 import copy
 import operator
 import logging
@@ -78,18 +79,17 @@ class PV(PVMeta):
         self.q = expression
 
     def __repr__(self):
-        return f"{self.__class__.__name__}<{self:long}>"  # invoke __format__
+        return f"{self.__class__.__name__}<{self:abbr}>"  # invoke __format__
 
     def __str__(self):
-        return f"{self:short}"  # invoke __format__
+        return f"{self:abbr}"  # invoke __format__
 
-    def __format__(self, spec="short"):
+    def __format__(self, spec="abbr"):
         # ~ means short, P means pretty
         # https://pint.readthedocs.io/en/stable/user/formatting.html#pint-format-types
-        if spec in ("a", "abbr", "s", "short"):
-            return self._q.__format__("~P")
-        if spec in ("l", "long"):
-            return self._q.__format__("P")
+        spec = re.sub(r"(abbr|a)", "~P", spec)
+        spec = re.sub(r"(short|s)", "~", spec)
+        spec = re.sub(r"(long|l)", "", spec)
         return self._q.__format__(spec)
 
     def clone(self):

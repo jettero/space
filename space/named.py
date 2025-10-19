@@ -145,6 +145,29 @@ class Named(Serial, baseobj):
         self.l = v
         self.tokens = self._tokenize()
 
+    def __format__(self, spec):
+        if spec in ("abbr", "a"):
+            return self.abbr
+        if spec in ("short", "s"):
+            return self.short
+        if spec in ("long", "l"):
+            return self.long
+        if spec in ("desc", "d"):
+            return self.desc
+        if m := FORMAT_RE.match(spec):
+            fmt, m_select = m.groups()
+            if not m_select:
+                m_select = "s"
+            if m_select.startswith("a"):
+                return f"{self.abbr:{fmt}}" if fmt else self.abbr
+            if m_select.startswith("s"):
+                return f"{self.short:{fmt}}" if fmt else self.short
+            if m_select.startswith("l"):
+                return f"{self.long:{fmt}}" if fmt else self.long
+            if m_select.startswith("d"):
+                return f"{self.desc:{fmt}}" if fmt else self.desc
+        return super().__format__(spec)
+
 
 class Tags(Serial):
     def __init__(self, *a, can=None, **kw):

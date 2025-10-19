@@ -90,7 +90,7 @@ class ReceivesMessages(HasShell, Talks):
                 mode = qual or tag
 
             if not isinstance(subj, StdObj):
-                return str(subj)
+                return capitalize(str(subj)) if cap else str(subj)
 
             seen = subj in has
             has.add(subj)

@@ -103,7 +103,7 @@ def test_reflexive_and_possessive_subject_only(objs):
     for s in (objs.me, objs.dig_dug, objs.stupid):
         msg = _compose(s, objs.stupid, "$N $vpat $r on $p head.")
         assert msg.us == "You pat yourself on your head."
-        expect_other = f"{capitalize(s.short)} pats {s.reflexive} on {s.possessive} head."
+        expect_other = f"{capitalize(s.a_short)} pats {s.reflexive} on {s.possessive} head."
         assert msg.other == expect_other
 
 
@@ -114,8 +114,8 @@ def test_reflexive_and_possessive_with_target(objs):
         msg = _compose(a, b, "$N $vsee $t pat $tr on $tp head.")
 
         assert msg.us == f"You see {b.a_short} pat {b.reflexive} on {b.possessive} head."
-        assert msg.them == f"{capitalize(a.short)} sees you pat yourself on your head."
-        assert msg.other == f"{capitalize(a.short)} sees {b.a_short} pat {b.reflexive} on {b.possessive} head."
+        assert msg.them == f"{capitalize(a.a_short)} sees you pat yourself on your head."
+        assert msg.other == f"{capitalize(a.a_short)} sees {b.a_short} pat {b.reflexive} on {b.possessive} head."
 
 
 def test_repeated_subject_tokens_basic(objs):

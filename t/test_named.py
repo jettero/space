@@ -52,7 +52,8 @@ def test_proper_name_sets_long_short_and_unique(Thingy):
     t.proper_name = "Jordan Schitzo Blueberry"
     assert t.long == "Jordan Schitzo Blueberry"
     assert t.short == "Jordan"
-    assert t.unique is True
+    assert t.proper is True
+    assert t.unique is False
 
 
 def test_proper_name_with_tilde_sets_full_for_both(Thingy):
@@ -60,12 +61,14 @@ def test_proper_name_with_tilde_sets_full_for_both(Thingy):
     t.proper_name = "Dig~Dug"
     assert t.long == "Dig Dug"
     assert t.short == "Dig Dug"
-    assert t.unique is True
+    assert t.proper is True
+    assert t.unique is False
 
 
 def test_proper_name_falsey_resets_generic_and_not_unique(Thingy):
     t = Thingy()
     t.proper_name = None
-    assert t.long == "something"
-    assert t.short == "something"
+    assert t.long == "Thingy"
+    assert t.short == "Tng"
+    assert t.proper is False
     assert t.unique is False
