@@ -84,7 +84,7 @@ class Damage:
         return self.clone().add(other)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({str(self)})"
+        return f"{self.__class__.__name__}({self.v})"
 
     def __str__(self):
         r = dict()

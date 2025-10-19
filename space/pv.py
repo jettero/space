@@ -82,9 +82,13 @@ class PV(PVMeta):
     def __str__(self):
         return f"{self}"  # invoke __format__
 
-    def __format__(self, spec):
-        if not spec:
-            spec = "~P"
+    def __format__(self, spec="~P"):
+        if spec in ("a", "abbr"):
+            return self._q.__format__("~P")
+        if spec in ("s", "short"):
+            return self._q.__format__("~")
+        if spec in ("l", "long"):
+            return self._q.__format__("")
         return self._q.__format__(spec)
 
     def clone(self):

@@ -35,5 +35,8 @@ class DN(PV):
     def __repr__(self):
         return f"<{self}>"
 
+    def __str__(self):
+        return f"{self.v} {self.a}"
+
 
 DescriptiveNumber = DN
