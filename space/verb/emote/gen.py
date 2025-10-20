@@ -5,139 +5,83 @@ Parser/router wiring is intentionally deferred. We keep the verbs ready for
 later integration where the router can ask the verb itself for can_/do_ logic.
 """
 
+import re
+import logging
 from space.verb.emote.soul import SOUL
 from space.verb.base import Verb
 from space.living.base import Living
 from space.stdobj import StdObj
 
+log = logging.getLogger(__name__)
+
+BLESSED_TOKENS = {
+    "LIV": ("liv", "{aname}:Living"),
+    "OBJ": ("obj", "{aname}:StdObj"),
+    "WRD": ("word", "{aname}"),
+    "STR": ("words", "*{aname}"),
+}
+
+SAFE_TOKEN = re.compile(r'[a-z][a-z0-9]+')
 
 class Emote(Verb):
     def __init__(self, name, patterns):
+        if not SAFE_TOKEN.match(name):
+            return
+            raise ValueError(f'"{name}" is not a good name for an emote')
         self.name = name
-        self.patterns = patterns
+        for sig, template in patterns.items():
+            self.generate_can_fn(sig, template)
+            self.generate_do_fn(sig, template)
         super().__init__()
-        self._generate_methods()
 
-    def _generate_methods(self):
-        name = self.name
-        for sig, template in self.patterns.items():
-            sig = (sig or "").strip()
-            if sig == "":
-                self._add_noarg(name, template)
-            elif sig == "LIV":
-                self._add_liv(name, template)
-            elif sig == "STR":
-                self._add_str(name, template)
-            elif sig == "WRD":
-                self._add_wrd(name, template)
-            elif sig == "OBJ":
-                self._add_obj(name, template)
-            elif sig == "LIV STR" or sig == "LIV  STR":
-                self._add_liv_str(name, template)
-            elif sig == "LIV LIV":
-                self._add_liv_liv(name, template)
-            elif sig == "LIV OBJ":
-                self._add_liv_obj(name, template)
-            # Ignore other rare forms for now; add as needed.
+    def generate_can_fn(self, sig, template, on_cls=Living):
+        tokens = [x for x in sig.split(" ") if x]
+        fn_name = ['can', self.name]
+        fn_vars = list()
+        specifics = dict()
+        counts = dict()
+        for token in tokens:
+            try:
+                aname, afmt = BLESSED_TOKENS[token]
+            except KeyError:
+                aname, afmt = BLESSED_TOKENS["WRD"]
+                if not SAFE_TOKEN.match(token):
+                    raise ValueError(f'"{token}" is not a good token for an emote syntax key')
+                specifics[aname] = token
+            fn_name.append(aname)
+            try:
+                aname = f"{aname}{counts[aname]}"
+                counts[aname] += 1
+            except KeyError:
+                counts[aname] = 1
 
-    # Each can_* returns kwargs matching do_* parameters, following PARSER.md
-    def _add_noarg(self, name, template):
-        def can_fn(actor):
-            return True, {}
+            fn_vars.append((aname, afmt.format(aname=aname)))
 
-        def do_fn(actor):
-            actor.simple_action(template)
+        fn_name = "_".join(fn_name)
+        if hasattr(Living, fn_name):
+            raise ValueError(f"Living.{fn_name} already exists")
+        fn_args = [ x for _,x in fn_vars ]
+        source_code = f'def {fn_name}({", ".join(["self", *fn_args])}):\n'
+        for (k,v) in specifics.items():
+            source_code += f'\tif {k} != "{v}":\n\t\treturn False, {{"error": f"unknown token: {{{k}}}"}}\n'
+        source_code += "\treturn True, {"
+        for (aname, ahint) in fn_vars:
+            if ahint.startswith('*'):
+                source_code += f'"{aname}": " ".join({aname}), '
+            else:
+                source_code += f'"{aname}": {aname}, '
+        source_code += "}\n"
+        setattr(on_cls, fn_name, exec(source_code))
 
-        # Attach to Living so router can find them without changes
-        can_fn.__name__ = f"can_{name}"
-        do_fn.__name__ = f"do_{name}"
-        setattr(Living, can_fn.__name__, can_fn)
-        setattr(Living, do_fn.__name__, do_fn)
+    def generate_do_fn(self, sig, template, on_cls=Living):
+        pass
 
-    def _add_liv(self, name, template):
-        def can_fn(actor, LIV: Living):
-            return True, {"LIV": LIV}
 
-        def do_fn(actor, LIV: Living):
-            actor.simple_action(template, LIV)
-
-        can_fn.__name__ = f"can_{name}_LIV"
-        do_fn.__name__ = f"do_{name}_LIV"
-        setattr(Living, can_fn.__name__, can_fn)
-        setattr(Living, do_fn.__name__, do_fn)
-
-    def _add_str(self, name, template):
-        def can_fn(actor, STR):
-            return True, {"STR": STR}
-
-        def do_fn(actor, STR):
-            actor.simple_action(template, STR)
-
-        can_fn.__name__ = f"can_{name}"
-        do_fn.__name__ = f"do_{name}"
-        setattr(Living, can_fn.__name__, can_fn)
-        setattr(Living, do_fn.__name__, do_fn)
-
-    def _add_wrd(self, name, template):
-        def can_fn(actor, WRD):
-            return True, {"WRD": WRD}
-
-        def do_fn(actor, WRD):
-            actor.simple_action(template, WRD)
-
-        can_fn.__name__ = f"can_{name}"
-        do_fn.__name__ = f"do_{name}"
-        setattr(Living, can_fn.__name__, can_fn)
-        setattr(Living, do_fn.__name__, do_fn)
-
-    def _add_obj(self, name, template):
-        def can_fn(actor, OBJ: StdObj):
-            return True, {"OBJ": OBJ}
-
-        def do_fn(actor, OBJ: StdObj):
-            actor.simple_action(template, OBJ)
-
-        can_fn.__name__ = f"can_{name}_OBJ"
-        do_fn.__name__ = f"do_{name}_OBJ"
-        setattr(Living, can_fn.__name__, can_fn)
-        setattr(Living, do_fn.__name__, do_fn)
-
-    def _add_liv_str(self, name, template):
-        def can_fn(actor, LIV: Living, STR):
-            return True, {"LIV": LIV, "STR": STR}
-
-        def do_fn(actor, LIV: Living, STR):
-            actor.simple_action(template, LIV, STR)
-
-        can_fn.__name__ = f"can_{name}_LIV"
-        do_fn.__name__ = f"do_{name}_LIV"
-        setattr(Living, can_fn.__name__, can_fn)
-        setattr(Living, do_fn.__name__, do_fn)
-
-    def _add_liv_liv(self, name, template):
-        def can_fn(actor, LIV: Living, LIV2: Living):
-            return True, {"LIV": LIV, "LIV2": LIV2}
-
-        def do_fn(actor, LIV: Living, LIV2: Living):
-            actor.simple_action(template, LIV, LIV2)
-
-        can_fn.__name__ = f"can_{name}_LIV_LIV"
-        do_fn.__name__ = f"do_{name}_LIV_LIV"
-        setattr(Living, can_fn.__name__, can_fn)
-        setattr(Living, do_fn.__name__, do_fn)
-
-    def _add_liv_obj(self, name, template):
-        def can_fn(actor, LIV: Living, OBJ: StdObj):
-            return True, {"LIV": LIV, "OBJ": OBJ}
-
-        def do_fn(actor, LIV: Living, OBJ: StdObj):
-            actor.simple_action(template, LIV, OBJ)
-
-        can_fn.__name__ = f"can_{name}_LIV_OBJ"
-        do_fn.__name__ = f"do_{name}_LIV_OBJ"
-        setattr(Living, can_fn.__name__, can_fn)
-        setattr(Living, do_fn.__name__, do_fn)
+EMOTES = None
 
 
 def load_emotes():
-    return list(Emote(name=name, patterns=patterns) for name, patterns in SOUL["emotes"].items())
+    global EMOTES
+    if not EMOTES:
+        EMOTES = list(Emote(name=name, patterns=patterns) for name, patterns in SOUL["emotes"].items())
+    return EMOTES
