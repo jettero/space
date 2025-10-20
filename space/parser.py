@@ -336,7 +336,6 @@ class Parser:
             log.debug("[Parser] %s.evaluate()", item)
             item.evaluate()
 
-        # Select winner in one pass without materializing the iterator.
         best = None
         best_score = None
         tied = False
@@ -354,12 +353,7 @@ class Parser:
         else:
             log.debug("[Parser] there were multiple winners, we choose to not select one randomly.")
             pstate.winner = None
-            # populate a helpful error listing the possible matches by
-            # attaching an error to the current high-score state args so
-            # PState.error will surface it without extra attributes
             choices = [f"{it.verb.name}:{it.fname}" for it in pstate.iter_can_do]
-            # Prefer leaving high_score_args alone when parse otherwise failed;
-            # only attach ambiguity when there were multiple valid can_do items.
             if choices:
                 hs = pstate.high_score_state
                 if hs is not None and not (hs.do_args and hs.do_args.get("error")):
