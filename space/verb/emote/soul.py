@@ -117,7 +117,7 @@ SOUL = {
         "handshake": {"LIV": "$N $vshake $p1 hand."},
         "rap": {
             "STR": '%^BOLD%^%^BLUE%^$N $vrap%^RESET%^, "$o."',
-            "": "$N $vrap like a dope whack niggy.",
+            "": "$N $vrap like a pro.",
         },
         "spank": {
             "LIV": "$N $vgive $t a good spanking!",
@@ -636,10 +636,6 @@ SOUL = {
         "facepalm": {"": "$N $vdrop $p head into $p hand and $vsigh."},
         "dielaff": {"": "$N $vfall on the floor and slowly $vchoke to death laughing...."},
         "clap": {"LIV": "$N $vclap for $t.", "STR": "$N $vclap $o.", "": "$N $vclap."},
-        "eyerape": {
-            "LIV": "$N $vrape $t in $p1 eyehole.",
-            "": "$N $vact like the Corinthian.",
-        },
         "boogie": {"": "$N $vget $p groove on."},
         "cockslap": {"LIV": "$N {{$vsmash $p cock on $p1 face,,$vslap $p1 [[silly little cock++dripping pussy]]}}."},
         "mock": {
@@ -786,13 +782,6 @@ SOUL = {
         },
         "rubhands": {"": "$N $vrub $p hands together mischeviously."},
         "attack": {"LIV": "With brutal force, $n $vattack $t."},
-        "rapeface": {
-            "STR STR": "$N $vnote that $o rapes the face off $o.",
-            "WRD STR": "$N $vnote that $o rapes the face off $o1.",
-            "LIV": "$N $vrape $p1 face off.",
-            "STR": "$N $vrape the face off $o.",
-            "": "$N $vbegin charging up a severe and violent 10-string.",
-        },
         "kiss": {
             "LIV": "$N $vkiss $t.",
             "LIV STR": "$N $vkiss $t $o.",
@@ -1147,11 +1136,6 @@ SOUL = {
         "attention": {
             "LIV": '$N $vstomp $p foot at $t and $vscream, "Pay attention to me!"',
             "": '$N $vwhimper, "I just want attention...".',
-        },
-        "rape": {
-            "LIV": "$N $vrape $t with a hot curling iron.",
-            "STR": "$N $vviolate $o.",
-            "": "$N $vwalk around threatening to rape anything that moves.",
         },
         "aww": {
             "LIV": '$N $vlook at $T sympathetically and $vsay, "Aww..."',
