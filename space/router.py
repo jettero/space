@@ -18,8 +18,7 @@ class MethodRouter:
         self.obj = obj if isinstance(obj, weakref.ProxyTypes) else weakref.proxy(obj)
         self.callback = callback
         self.dne_ok = dne_ok
-        self.dir = tuple(m for m in dir(obj) if m.startswith(top))
-        log.debug("[MethodRouter] top=%s dir=%s", top, self.dir)
+        self.dir = tuple(m for m in dir(obj) if m == top or m.startswith(f'{top}_'))
 
     def __iter__(self):
         yield from self.dir
