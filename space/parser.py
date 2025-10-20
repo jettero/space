@@ -287,21 +287,6 @@ class Parser:
         self.evaluate(pstate)
         return pstate
 
-    @property
-    def words(self):
-        # XXX: until we fix next words, just return the names of all the verbs we know about
-        from space.verb import VERBS
-
-        yield from VERBS.keys()
-
-    def next_words(self, me, text_input):
-        """try to guess what words will fit next"""
-        # XXX: we only consider the very first token and even that breaks if
-        # the word is directions 'sSW3s', needs work
-        pstate = self.parse(me, text_input)
-        for v in pstate.iter_verbs:
-            yield from v.nick
-
     def plan(self, pstate):
         for verb in pstate.iter_verbs:
             mn = f"can_{verb.name}"
@@ -338,21 +323,20 @@ class Parser:
 
         best = None
         best_score = None
-        tied = False
+        tied = set()
         for item in pstate.iter_can_do:
-            s = item.score
-            if best is None or s > best_score:
+            if best is None or item.score > best_score:
                 best = item
-                best_score = s
-                tied = False
-            elif s == best_score:
-                tied = True
+                best_score = item.score
+                tied.clear()
+            elif item.score == best_score:
+                tied.add(item)
+
         if best is not None and not tied:
             log.debug("[Parser] %s is the winner", best)
             pstate.winner = best
         else:
-            log.debug("[Parser] there were multiple winners, we choose to not select one randomly.")
-            pstate.winner = None
+            log.debug("[Parser] there were multiple winners (score: %s), we choose to not select one randomly.", best_score)
             choices = [f"{it.verb.name}:{it.fname}" for it in pstate.iter_can_do]
             if choices:
                 hs = pstate.high_score_state
@@ -363,3 +347,18 @@ class Parser:
                     else:
                         hs.do_args["error"] = msg
         log.debug("[Parser] pstate evaluation result:\n%s", pstate)
+
+    @property
+    def words(self):
+        # XXX: until we fix next words, just return the names of all the verbs we know about
+        from space.verb import VERBS
+
+        yield from VERBS.keys()
+
+    def next_words(self, me, text_input):
+        """try to guess what words will fit next"""
+        # XXX: we only consider the very first token and even that breaks if
+        # the word is directions 'sSW3s', needs work
+        pstate = self.parse(me, text_input)
+        for v in pstate.iter_verbs:
+            yield from v.nick
