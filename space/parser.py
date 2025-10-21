@@ -66,9 +66,9 @@ class PSNode:
         else:
             sr = f"PSN[{self.score}]<{self.verb}>"
         if self.kid is not None:
-            sr += f"\n {str(self.kid)}"
+            sr += f"->{str(self.kid)}"
         if self.next is not None:
-            sr += f"\n{str(self.next)}"
+            sr += f" )( {str(self.next)}"
         return sr
 
     def fill(self, objs):
@@ -262,10 +262,10 @@ class PState:
     def __call__(self):
         if self:
             mr = MethodArgsRouter(self.me, f"do_{self.winner.verb.name}")
-            set_this_body(self.me)
+            set_this_body(self.me) # we're active when we active the op-tree
             log.debug("[PState] invoking %s(**%s) with active living %s", mr, self.winner.do_args, self.me)
             mr(**self.winner.do_args)
-            set_this_body()
+            set_this_body() # now we go back to sleep again
         else:
             log.error("tried to invoke an untrue pstate: %s", self)
             e = self.error
@@ -277,6 +277,7 @@ class PState:
 class Parser:
     def parse(self, me, text_input):
         log.debug('[Parser] parsing "%s" for %s', text_input, me)
+        set_this_body(me) # we're active when we parse
         if is_direction_string(text_input):
             text_input = f"move {text_input}"
             log.debug('[Parser] parsing "%s" instead', text_input)
@@ -285,6 +286,7 @@ class Parser:
             return pstate
         self.plan(pstate)
         self.evaluate(pstate)
+        set_this_body() # we're inactive until we execute the op-tree
         return pstate
 
     def plan(self, pstate):
