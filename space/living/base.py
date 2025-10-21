@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 
 
 class CanMove:
-    def move(self, *moves):
+    def move(self, moves):
         if len(moves) == 1 and isinstance(moves[0], (tuple, list)):
             moves = moves[0]
         c = self.location  # pylint: disable=no-member
@@ -31,15 +31,12 @@ class CanMove:
             c = c.mpos(move)
             c.add_item(self)
 
-    def can_move_words(self, *moves, obj: StdObj = None):
-        is_moving = self if obj is None else obj
-        if is_moving is None:
-            is_moving = self
-        c = is_moving.location  # pylint: disable=no-member
+    def can_move_words(self, moves:tuple[str,...]):
+        c = self.location  # pylint: disable=no-member
         for move in moves:
             c = c.mpos(move)
             try:
-                if c.accept(is_moving):
+                if c.accept(self):
                     continue
             except AttributeError:
                 return False, {"error": "there's something in the way"}
@@ -47,31 +44,27 @@ class CanMove:
                 return False, {"error": e}
         return True, {"moves": moves}  # keys must match do_move_words args
 
-    def can_move_obj_words(self, obj: StdObj, *moves):
-        if not obj:
-            return False, {"error": "which object?"}
-        # the method router calls longest first, so we have a chance to
-        # populate is_moving before can_move_words fires
+    def can_move_obj_words(self, obj: StdObj, moves):
         # XXX: should we do more to consider which obj is more appropriate?
         # XXX: if the obj doesn't want to move, we should have some sort of ability contest here
         if isinstance(obj, (list, tuple)):
             obj = obj[0]
         return True, {"obj": obj}  # keys must match do_move_obj_words args
 
-    def do_move_words(self, *moves):
+    def do_move_words(self, moves):
         log.debug("do_move_words(%s)", moves)
         from ..map.dir_util import moves_to_description
 
         desc = moves_to_description(moves)
-        self.move(*moves)
+        self.move(moves)
         self.simple_action(f"$N $vmove {desc}.")
 
-    def do_move_obj_words(self, obj, *moves):
+    def do_move_obj_words(self, obj, moves):
         log.debug("do_move_obj_words(%s, %s)", obj, moves)
         from ..map.dir_util import moves_to_description
 
         desc = moves_to_description(moves)
-        obj.move(*moves)
+        obj.move(moves)
         self.simple_action(f"$N $vmove $o {desc}.", obj)
 
 
