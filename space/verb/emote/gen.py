@@ -98,12 +98,14 @@ class Emote(Verb):
             source_code.append(f'  template = {ent.template!r}')
 
         source_code.append(f'  return True, {{ {fn_vars}, "template":template }}')
-        source_code = "\n".join(source_code)
+        source_code = "\n".join(source_code) + '\n'
 
         if src_only:
             return source_code
 
-        setattr(on_cls, fn_name, exec(source_code))
+        ns = dict(Living=Living, StdObj=StdObj)
+        exec(source_code, ns)
+        setattr(on_cls, fn_name, ns[fn_name])
 
     def generate_do_fn(self, sig, template, on_cls=Living):
         pass
