@@ -31,7 +31,7 @@ class CanMove:
             c = c.mpos(move)
             c.add_item(self)
 
-    def can_move_words(self, moves:tuple[str,...]):
+    def can_move_words(self, moves: tuple[str, ...]):
         c = self.location  # pylint: disable=no-member
         for move in moves:
             c = c.mpos(move)

@@ -17,16 +17,16 @@ log = logging.getLogger(__name__)
 BLESSED_TOKENS = {
     "LIV": ("liv", "{aname}:Living"),
     "OBJ": ("obj", "{aname}:StdObj"),
-    "WRD": ("word", "{aname}"),
-    "STR": ("words", "*{aname}"),
+    "WRD": ("word", "{aname}:str"),
+    "STR": ("words", "{aname}:tuple[str,...]"),
 }
 
-SAFE_TOKEN = re.compile(r'[a-z][a-z0-9]+')
+SAFE_TOKEN = re.compile(r"^[a-zA-Z][A-Za-z0-9-]+$")
+
 
 class Emote(Verb):
     def __init__(self, name, patterns):
         if not SAFE_TOKEN.match(name):
-            return
             raise ValueError(f'"{name}" is not a good name for an emote')
         self.name = name
         for sig, template in patterns.items():
@@ -36,7 +36,7 @@ class Emote(Verb):
 
     def generate_can_fn(self, sig, template, on_cls=Living):
         tokens = [x for x in sig.split(" ") if x]
-        fn_name = ['can', self.name]
+        fn_name = ["can", self.name.replace("-", "_")]
         fn_vars = list()
         specifics = dict()
         counts = dict()
@@ -60,17 +60,18 @@ class Emote(Verb):
         fn_name = "_".join(fn_name)
         if hasattr(Living, fn_name):
             raise ValueError(f"Living.{fn_name} already exists")
-        fn_args = [ x for _,x in fn_vars ]
+        fn_args = [x for _, x in fn_vars]
         source_code = f'def {fn_name}({", ".join(["self", *fn_args])}):\n'
-        for (k,v) in specifics.items():
+        for k, v in specifics.items():
             source_code += f'\tif {k} != "{v}":\n\t\treturn False, {{"error": f"unknown token: {{{k}}}"}}\n'
         source_code += "\treturn True, {"
-        for (aname, ahint) in fn_vars:
-            if ahint.startswith('*'):
+        for aname, ahint in fn_vars:
+            if ahint.startswith("*"):
                 source_code += f'"{aname}": " ".join({aname}), '
             else:
                 source_code += f'"{aname}": {aname}, '
         source_code += "}\n"
+        log.debug("############### WTF\n\n%s\n\n############### WTF", source_code)
         setattr(on_cls, fn_name, exec(source_code))
 
     def generate_do_fn(self, sig, template, on_cls=Living):

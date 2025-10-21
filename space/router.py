@@ -90,7 +90,7 @@ class RouteHint(namedtuple("RouteHint", ["fname", "func", "hlist"])):
                 continue
             if not type0:
                 ret[aname] = v
-            elif type0 == tuple[str,...]:
+            elif type0 == tuple[str, ...]:
                 ret[aname] = v
             elif remainder:  # wtf!??!
                 raise NotImplementedError(f"TODO[unknown(remainder={remainder!r})]")

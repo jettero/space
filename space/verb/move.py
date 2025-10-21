@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 class Action(Verb):
     name = "move"
-    nick = ['mv']
+    nick = ["mv"]
 
     def preprocess_tokens(self, me, **tokens):
         tokens = super().preprocess_tokens(me, **tokens)
