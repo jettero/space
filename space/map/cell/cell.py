@@ -27,7 +27,7 @@ class Cell(MapObj, Container):
     def accept(self, item):
         if isinstance(item, Living):
             for other in self:
-                if isinstance(other, Living):
+                if isinstance(other, Living) and not other.active:
                     raise E.ContainerError(f"{other} is already there")
         return True
 
