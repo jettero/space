@@ -22,6 +22,8 @@ for h in logging.root.handlers:
     h.addFilter(STFU())
 del STFU; del h
 
+from space.verb import VERBS, find_verb
+
 from space.nico import nico
 from space.vv import VV
 from space.pv import PV

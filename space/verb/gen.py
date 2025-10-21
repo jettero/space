@@ -13,9 +13,9 @@ def load_verbs():
     if os.environ.get("SPACE_DISABLE_EMOTE_REGISTRY", False):
         return [c() for c in find_action_classes()]
 
-    from .emote import load_emotes
+    from .emote import EMOTES
 
-    return [c() for c in find_action_classes()] + load_emotes()
+    return [c() for c in find_action_classes()] + list(EMOTES.values())
 
 
 VERBS = {v.name: v for v in load_verbs()}

@@ -7,6 +7,9 @@ later integration where the router can ask the verb itself for can_/do_ logic.
 
 import re
 import logging
+import random
+from collections import namedtuple
+
 from space.verb.emote.soul import SOUL
 from space.verb.base import Verb
 from space.living.base import Living
@@ -22,23 +25,22 @@ BLESSED_TOKENS = {
 }
 
 SAFE_TOKEN = re.compile(r"^[a-zA-Z][A-Za-z0-9-]+$")
+EmoteInfo = namedtuple("EmoteInfo", 'sig template vars args wrd_vals'.split())
 
+def compute_db(name, patterns):
+    ret = dict()
 
-class Emote(Verb):
-    def __init__(self, name, patterns):
-        if not SAFE_TOKEN.match(name):
-            raise ValueError(f'"{name}" is not a good name for an emote')
-        self.name = name
-        for sig, template in patterns.items():
-            self.generate_can_fn(sig, template)
-            self.generate_do_fn(sig, template)
-        super().__init__()
-
-    def generate_can_fn(self, sig, template, on_cls=Living):
+    xlate_templates = {sig:template for sig,template in patterns.items()}
+    for sig, template in patterns.items():
+        if isinstance(template, list):
+            template = [ (xlate_templates[item[1:]] if item.startswith('=') else item) for item in template ]
+        elif template.startswith('='):
+            template = xlate_templates[template[1:]]
         tokens = [x for x in sig.split(" ") if x]
-        fn_name = ["can", self.name.replace("-", "_")]
-        fn_vars = list()
-        specifics = dict()
+        fn_name = [name.replace("-", "_")]
+        vars = list()
+        args = list()
+        wrd_vals = dict()
         counts = dict()
         for token in tokens:
             try:
@@ -47,42 +49,60 @@ class Emote(Verb):
                 aname, afmt = BLESSED_TOKENS["WRD"]
                 if not SAFE_TOKEN.match(token):
                     raise ValueError(f'"{token}" is not a good token for an emote syntax key')
-                specifics[aname] = token
-            fn_name.append(aname)
+                if aname not in wrd_vals:
+                    wrd_vals = {token: template}
+                else:
+                    wrd_vals[aname][token] = template
             try:
                 aname = f"{aname}{counts[aname]}"
                 counts[aname] += 1
             except KeyError:
                 counts[aname] = 1
-
-            fn_vars.append((aname, afmt.format(aname=aname)))
-
+            vars.append(aname)
+            args.append(afmt.format(aname=aname))
+            fn_name.append(aname)
+        #########################################
         fn_name = "_".join(fn_name)
-        if hasattr(Living, fn_name):
-            raise ValueError(f"Living.{fn_name} already exists")
-        fn_args = [x for _, x in fn_vars]
-        source_code = f'def {fn_name}({", ".join(["self", *fn_args])}):\n'
-        for k, v in specifics.items():
-            source_code += f'\tif {k} != "{v}":\n\t\treturn False, {{"error": f"unknown token: {{{k}}}"}}\n'
-        source_code += "\treturn True, {"
-        for aname, ahint in fn_vars:
-            if ahint.startswith("*"):
-                source_code += f'"{aname}": " ".join({aname}), '
-            else:
-                source_code += f'"{aname}": {aname}, '
-        source_code += "}\n"
-        log.debug("############### WTF\n\n%s\n\n############### WTF", source_code)
-        setattr(on_cls, fn_name, exec(source_code))
+        if fn_name not in ret:
+            ret[fn_name] = EmoteInfo(sig=sig, template=template, vars=vars, args=args, wrd_vals=wrd_vals)
+        else:
+            ret[fn_name].vars.extend(args)
+        ret[fn_name].wrd_vals.update(wrd_vals)
+    return ret
+
+class Emote(Verb):
+    def __init__(self, name, patterns):
+        if not SAFE_TOKEN.match(name):
+            raise ValueError(f'"{name}" is not a good name for an emote')
+        self.name = name
+        self.rule_db = compute_db(name, patterns)
+        #for fn_name, rule_db_ent in self.rule_db.items():
+            #self.generate_can_fn(fn_name, rule_db_ent)
+        super().__init__()
+
+    def generate_can_fn(self, fn_name, ent, on_cls=Living):
+        fn_args = ", ".join(ent.args)
+        fn_vars = ", ".join( f'"{x}":x' for x in ent.vars )
+
+        source_code = [ f"def can_{fn_name}(self, {fn_args}):" ]
+
+        if isinstance(ent.template, (tuple,list)):
+            source_code.append(f'  template = random.choice({ent.template!r})')
+        else:
+            source_code.append(f'  template = {ent.template!r}')
+
+        for wrd,vals in ent.wrd_vals.items():
+            tv = tuple(vals)
+            source_code.append(f'  if {wrd} in {tv!r}:')
+
+        source_code.append(f"  return True, {{ {fn_vars}, 'template':template }}")
+
+        return "\n".join(source_code)
+
+        # setattr(on_cls, fn_name, exec(source_code))
 
     def generate_do_fn(self, sig, template, on_cls=Living):
         pass
 
 
-EMOTES = None
-
-
-def load_emotes():
-    global EMOTES
-    if not EMOTES:
-        EMOTES = list(Emote(name=name, patterns=patterns) for name, patterns in SOUL["emotes"].items())
-    return EMOTES
+EMOTES = {e.name: e for e in [Emote(name=name, patterns=patterns) for name, patterns in SOUL["emotes"].items()]}

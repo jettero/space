@@ -1,1 +1,1 @@
-from .gen import load_emotes
+from .gen import EMOTES, Emote
