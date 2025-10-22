@@ -24,6 +24,12 @@ def hilight(x, *color):
     HILIGHT.append((x, color))
 hi = hilite = hilight
 
+class COLORER(logging.Formatter):
+    def format(self, record):
+        pfft = super().format(record)
+        for pat, color in HILIGHT:
+            pfft = re.sub(pat, lambda m: f"{color}{m.group(0)}{ANSI_RESET}", pfft)
+        return pfft
 
 class STFU(logging.Filter):
     def filter(self, record):
@@ -35,6 +41,7 @@ class STFU(logging.Filter):
 logging.basicConfig(level=logging.DEBUG)
 for h in logging.root.handlers:
     h.addFilter(STFU())
+    h.setFormatter(COLORER())
 del STFU; del h
 
 from space.verb import VERBS, find_verb

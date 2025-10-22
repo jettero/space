@@ -13,9 +13,9 @@ class Action(Verb):
     nick = ["mv"]
 
     def preprocess_tokens(self, me, **tokens):
-        log.debug("super(%s).preprocess_tokens(%s)", tokens)
+        log.debug("super(%s).preprocess_tokens(%s)", self, tokens)
         tokens = super().preprocess_tokens(me, **tokens)
-        log.debug("%s.preprocess_tokens(%s)", tokens)
+        log.debug("%s.preprocess_tokens(%s)", self, tokens)
         if "moves" in tokens:
             moves = " ".join(tokens.pop("moves"))
             if is_direction_string(moves):
