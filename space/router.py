@@ -63,10 +63,8 @@ class FFAK(namedtuple("FFAK", ["func", "filled", "args", "kwargs"])):
 def list_match(name, objs):
     if isinstance(objs, (types.GeneratorType, list, tuple)):
         s = name.split(".", 1)
-        assert len(s) in (
-            1,
-            2,
-        )
+        if len(s) not in (1, 2):
+            raise ValueError(f"len(name.split(., 1)) not in (1,2)")
         objs = [i for i in objs if i.parse_match(*s)]
         if objs:
             return objs
@@ -86,15 +84,17 @@ class RouteHint(namedtuple("RouteHint", ["fname", "func", "hlist"])):
         for aname, tlist in self.hlist:
             type0, *remainder = tlist
             v = self.tokens.get(aname)
-            log.debug("  aname=%s type0=%s remainder=%s v=%s", aname, tlist, remainder, v)
+            log.debug("  aname=%s type0=%s remainder=%s v=%s", aname, type0, remainder, v)
             if v is None:
                 continue
             if not type0:
                 ret[aname] = v
+            elif type0 is str:
+                ret[aname] = v[0]
             elif type0 == tuple[str, ...]:
                 ret[aname] = v
-            elif remainder:  # wtf!??!
-                raise NotImplementedError(f"TODO[unknown(remainder={remainder!r})]")
+            elif remainder:
+                raise NotImplementedError(f"TODO[unknown(type0={type0!r} remainder={remainder!r})]")
             else:
                 applicable_objs = [o for o in objs if isinstance(o, type0)]
                 if isinstance(v, (list, tuple)):
@@ -103,7 +103,6 @@ class RouteHint(namedtuple("RouteHint", ["fname", "func", "hlist"])):
                         o += list_match(x, applicable_objs)
                 else:
                     o = list_match(v, applicable_objs)
-                # sorting by distance is handled in MethodArgsRouter
                 ret[aname] = o
         return ret
 

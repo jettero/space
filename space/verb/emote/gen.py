@@ -93,7 +93,7 @@ class Emote(Verb):
                 tv = tuple(vals)
                 source_code.append(f"  if {wrd} not in {tv!r}:")
                 source_code.append(f"    return {{'error': f'\"{{{wrd}}}\" not understood'}}")
-            source_code.append(f'  template = ent.word_vals["{wrd}"][{wrd}]')
+            source_code.append(f'  template = ent.wrd_vals["{wrd}"][{wrd}]')
         elif isinstance(ent.template, (tuple, list)):
             source_code.append(f"  template = random.choice({ent.template!r})")
         else:
@@ -105,7 +105,7 @@ class Emote(Verb):
         if src_only:
             return source_code
 
-        ns = dict(Living=Living, StdObj=StdObj)
+        ns = dict(ent=ent, Living=Living, StdObj=StdObj)
         exec(source_code, ns)
         setattr(on_cls, fn_name, ns[fn_name])
 
