@@ -25,5 +25,18 @@ HARD CONSTRAINTS
   - `me = objs.me` is never going to be ok, stop doing it
   - `objs = me.map.locaion.visicalc(...)` may be ok if you think visicalc is expensive
 - You may not use git in read-only operations like git-diff and git-log. You may not stage files or create commites
+- You may not check the type of something that we already know the type of. I
+  have no idea why you chose to do it, but in the following code:
+    ```
+    logging.basicConfig(level=logging.DEBUG)
+    for h in logging.root.handlers:
+        h.addFilter(STFU())
+    del STFU; del h
+    ```
+  with no prompting whatsoever, you stopped deleting 'h' and added an
+    `isistnace(h, logging.StreamHandler)` when we already know for 100% sure the
+  items in logging.root.handlers are absolutely stream handlers.
+- DO NOT CHECK THE TYPE OF SOMETHING IF WE ALREADY KNOW WHAT IT IS
+- DO NOT CHECK FOR THE EXISTANCE OF METHODS IF WE ALREADY KNOW THEY'RE THERE BY TYPE
 
 These constraints apply to all changes within this repository unless a task explicitly grants exceptions.
