@@ -77,8 +77,8 @@ class Emote(Verb):
             raise ValueError(f'"{name}" is not a good name for an emote')
         self.name = name
         self.rule_db = compute_db(name, patterns)
-        # for fn_name, rule_db_ent in self.rule_db.items():
-        # self.generate_can_fn(fn_name, rule_db_ent)
+        for fn_name, rule_db_ent in self.rule_db.items():
+            self.generate_can_fn(fn_name, rule_db_ent)
         super().__init__()
 
     def generate_can_fn(self, fn_name, ent, on_cls=Living, src_only=False):

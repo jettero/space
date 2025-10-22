@@ -66,7 +66,7 @@ class PSNode:
         else:
             sr = f"PSN[{self.score}]<{self.verb}>"
         if self.kid is not None:
-            sr += f"->{str(self.kid)}"
+            sr += f"\n↓{str(self.kid)}"
         if self.next is not None:
             sr += f" )( {str(self.next)}"
         return sr

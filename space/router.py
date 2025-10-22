@@ -86,6 +86,7 @@ class RouteHint(namedtuple("RouteHint", ["fname", "func", "hlist"])):
         for aname, tlist in self.hlist:
             type0, *remainder = tlist
             v = self.tokens.get(aname)
+            log.debug("  aname=%s type0=%s remainder=%s v=%s", aname, tlist, remainder, v)
             if v is None:
                 continue
             if not type0:
