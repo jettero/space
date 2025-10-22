@@ -99,7 +99,7 @@ class Emote(Verb):
         else:
             source_code.append(f"  template = {ent.template!r}")
 
-        source_code.append(f'  return True, {{ {fn_vars}, "template":template }}')
+        source_code.append(f'  return True, {{ "template":template, {fn_vars} }}')
         source_code = "\n".join(source_code) + "\n"
 
         if src_only:
