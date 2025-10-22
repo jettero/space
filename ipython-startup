@@ -14,9 +14,24 @@ def mk_lots(cls, c=1000, *a, **kw):
     lots = [ cls(*a, **kw) for _ in range(c) ]
     print("stored %d items in 'lots'", len(lots))
 
+ANSI_RESET = "\x1b[m"
+HILIGHT = []
+
+def hilight(x, *color):
+    if not color:
+        color = (1,32)
+    color = f'\x1b[{";".join(str(x) for x in color)}m'
+    HILIGHT.append((x, color))
+hi = hilite = hilight
+
+
 class STFU(logging.Filter):
     def filter(self, record):
-        return '/space/' in record.pathname
+        if '/space/' not in record.pathname:
+            return False
+        for pat, color in HILIGHT:
+            record.msg = re.sub(pat, lambda m: f"{color}{m.group(0)}{ANSI_RESET}", record.msg)
+        return True
 logging.basicConfig(level=logging.DEBUG)
 for h in logging.root.handlers:
     h.addFilter(STFU())
@@ -41,4 +56,7 @@ P = Parser()
 def do(cmd):
     return o.me.do(cmd)
 
+;hilite preprocess_tokens
+
 ;do open door; sSW6s3w; get bauble; 3e4n
+;do move nsew nsew
