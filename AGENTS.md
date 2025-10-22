@@ -1,63 +1,29 @@
-# Project Guide (Concise)
+HARD CONSTRAINTS
 
-## Origins
-- Behavior follows old Bakhara mudlib in `contrib/lpc` (MudOS v22 Lima).
-- Port ideas, not LPC APIs. Stay Pythonic.
-- For names, see `contrib/lpc/std/object/names.c`; for messages, see
-  `contrib/lpc/std/modules/m_messages.c`.
+- No comments in code unless explicitly allowed
+  - don't remove comments I put there unless they're nolonger true because of
+    the code changes
+  - definitely don't add any that say what the next line of code does when the
+    next line of code very obviously already does that
+  - you don't understand when to use comments, so just don't use them
+- Do not use getattr/hasattr unless explicitly allowed
+- stop doublechecking every fucking little thing when you already carefully
+  checked the type. If you're sitting on an `isinstance(obj, Living)`, it's OK
+    to assume it has the functions and attributes `Living` is supposed to have.
+- Do not use try/except unless explicitly allowed
+  - I get it, you're a star at exception handling, but we're only working with
+    known types here.
+  - Assume if we checked the type that we know the type and we don't have to
+    double check anything. If we're in a logging filter
+    ```
+    class STFU(logging.Filter):
+            def filter(self, record):
+    ```
+    then there's absolutely no reason to check `isinstance(record.msg, str)` we
+    already fucking know it's a string. it's a logging message?!?
+- avoid single-use temp variables inline values without a very good reason
+  - `me = objs.me` is never going to be ok, stop doing it
+  - `objs = me.map.locaion.visicalc(...)` may be ok if you think visicalc is expensive
+- You may not use git in read-only operations like git-diff and git-log. You may not stage files or create commites
 
-## Layout
-- Code: `space/` • Tests: `t/` • Config: `Makefile`, `pytest.ini`, `.pre-commit-config.yaml`, `pylintrc`.
-- Artifacts: `build/`, `dist/`, `space.egg-info/`.
-- Reqs: `requirements.txt` (run), `test-requirements.txt` (dev/test).
-
-## Dev Workflow
-- Run tests: `make` (uses `pytest t`). Parallelize with your CPU count.
-- Lint/format: `pre-commit run --all-files` (black, pylint). Black uses `--line-length 127`.
-- Build release: `python -m build` or `make build`.
-- Install test deps: `pip install -Ur test-requirements.txt` or `make reqs`.
-
-## Style
-- No `getattr`/`hasattr` or comments unless explicitly allowed.
-- Avoid single-use temps; use values inline unless clarity requires a local.
-- Prefer small, focused functions. Classic annotations style (no `-> T`, no `A | B`).
-- Names: modules `snake_case.py`; classes `CamelCase`; vars/functions `snake_case`; constants `UPPER_SNAKE`.
-- Markdown: wrap ~80 cols; keep prose tight.
-
-## Maps/Generation
-- Use `Floor` for rooms, `Corridor` for halls; both subclass `Cell` and render alike.
-- Walkability: check `isinstance(x, Cell)`.
-- `Map.cellify_partitions()` opens short partitions as corridors.
-- Color: use shared grey (`boring_color`) for floors/corridors by default.
-
-## Testing
-- Keep deterministic; no network; isolate I/O.
-- Fixtures: use those in `t/conftest.py`. Map is `a_map`; objects via `objs`.
-- Assertions: prefer direct, minimal checks. For parse failures: assert falsy `pstate`, `winner is None`, and check `pstate.error` when relevant.
-- Parametrize exactly as specified; don’t reshape sets. Match the stated intent only.
-- Naming: positive `test_open_door`; negative ends with `_fail`/`_fails`.
-
-## Parser/Router
-- Treat `space/parser.py` and `space/router.py` as high‑risk; don’t change without a task.
-- Follow `PARSER.md` for `can_*`/`do_*` contract; keys from `can_*` must match `do_*` params.
-- Don’t bend `space/args.py` for a single verb; align parameter names instead.
-
-## Messaging
-- Read `MESSAGES.md` before emitting output.
-- Compose separately from delivery. Return `TextMessage`; deliver via `Living.tell()` and map/cell fan‑out.
-- Start with tokens: `$N/$n`, `$T/$t`, `$O/$o`, `$p/$o/$r`, `$vverb`. Expand with tests.
-- Follow current `Living` gender/pronouns; access attributes directly.
-
-## Maintainer Preferences
-- Prefer the smallest, test‑local fix. Add a failing test first, then make the minimal code change.
-- If adjacent tests are green and only expected text differs, suspect the expectation.
-- Verify pronouns, names, token defaults, and fixtures before assuming systemic issues.
-- Use `assert ps` for `PState` truthiness; avoid tuple messages.
-
-## Git Usage
-- Read‑only for context: `git diff`, `git log`.
-- Never run `git commit`, `git add`, or `git reset` here. Don’t use `git mv`.
-
-## Versioning
-- Version comes from `setuptools_scm` into `space/version.py`. Don’t edit it; tag releases to bump.
-- For local dev, don’t install the package; run tests with `make test`.
+These constraints apply to all changes within this repository unless a task explicitly grants exceptions.
