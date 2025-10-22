@@ -28,6 +28,65 @@ SAFE_TOKEN = re.compile(r"^[a-zA-Z][A-Za-z0-9-]+$")
 EmoteInfo = namedtuple("EmoteInfo", "sig template vars args wrd_vals".split())
 
 
+class Emote(Verb):
+    def __init__(self, name, patterns):
+        if not SAFE_TOKEN.match(name):
+            raise ValueError(f'"{name}" is not a good name for an emote')
+        self.name = name
+        self.rule_db = compute_db(name, patterns)
+        for fn_name, rule_db_ent in self.rule_db.items():
+            self.generate_can_fn(fn_name, rule_db_ent)
+            self.generate_do_fn(fn_name, rule_db_ent)
+        super().__init__()
+
+    def generate_can_fn(self, fn_name, ent, on_cls=Living, src_only=False):
+        fn_name = f"can_{fn_name}"
+        fn_args = ", ".join(ent.args)
+        fn_vars = ", ".join(f'"{x}":{x}' for x in ent.vars)
+
+        source_code = [f"def {fn_name}(self, {fn_args}):"]
+
+        if ent.wrd_vals:
+            for wrd, vals in ent.wrd_vals.items():
+                tv = tuple(vals)
+                source_code.append(f"  if {wrd} not in {tv!r}:")
+                source_code.append(f"    return {{'error': f'\"{{{wrd}}}\" not understood'}}")
+            source_code.append(f'  template = ent.wrd_vals["{wrd}"][{wrd}]')
+        elif isinstance(ent.template, (tuple, list)):
+            source_code.append(f"  template = random.choice({ent.template!r})")
+        else:
+            source_code.append(f"  template = {ent.template!r}")
+
+        source_code.append(f'  return True, {{ "template":template, {fn_vars} }}')
+        source_code = "\n".join(source_code)
+
+        if src_only:
+            return source_code
+
+        ns = dict(ent=ent, Living=Living, StdObj=StdObj)
+        exec(source_code, ns)
+        setattr(on_cls, fn_name, ns[fn_name])
+
+    def generate_do_fn(self, fn_name, ent, on_cls=Living, src_only=False):
+        fn_name = f"do_{fn_name}"
+        fn_args = ", ".join((*ent.args, "template"))
+        fn_vars = ", ".join(x for x in ent.vars if x not in ent.wrd_vals)
+
+        source_code = [f"def {fn_name}(self, {fn_args}):"]
+        source_code.append(f"  if '$t' in template:")
+        source_code.append(f"    self.targeted_action(template, {fn_vars})")
+        source_code.append(f"  else:")
+        source_code.append(f"    self.simple_action(template, {fn_vars})")
+        source_code = "\n".join(source_code)
+
+        if src_only:
+            return source_code
+
+        ns = dict(ent=ent, Living=Living, StdObj=StdObj)
+        exec(source_code, ns)
+        setattr(on_cls, fn_name, ns[fn_name])
+
+
 def compute_db(name, patterns):
     ret = dict()
 
@@ -69,48 +128,6 @@ def compute_db(name, patterns):
         for aname, wv in wrd_vals.items():
             ret[fn_name].wrd_vals[aname].update(wv)
     return ret
-
-
-class Emote(Verb):
-    def __init__(self, name, patterns):
-        if not SAFE_TOKEN.match(name):
-            raise ValueError(f'"{name}" is not a good name for an emote')
-        self.name = name
-        self.rule_db = compute_db(name, patterns)
-        for fn_name, rule_db_ent in self.rule_db.items():
-            self.generate_can_fn(fn_name, rule_db_ent)
-        super().__init__()
-
-    def generate_can_fn(self, fn_name, ent, on_cls=Living, src_only=False):
-        fn_name = f"can_{fn_name}"
-        fn_args = ", ".join(ent.args)
-        fn_vars = ", ".join(f'"{x}":{x}' for x in ent.vars)
-
-        source_code = [f"def {fn_name}(self, {fn_args}):"]
-
-        if ent.wrd_vals:
-            for wrd, vals in ent.wrd_vals.items():
-                tv = tuple(vals)
-                source_code.append(f"  if {wrd} not in {tv!r}:")
-                source_code.append(f"    return {{'error': f'\"{{{wrd}}}\" not understood'}}")
-            source_code.append(f'  template = ent.wrd_vals["{wrd}"][{wrd}]')
-        elif isinstance(ent.template, (tuple, list)):
-            source_code.append(f"  template = random.choice({ent.template!r})")
-        else:
-            source_code.append(f"  template = {ent.template!r}")
-
-        source_code.append(f'  return True, {{ "template":template, {fn_vars} }}')
-        source_code = "\n".join(source_code) + "\n"
-
-        if src_only:
-            return source_code
-
-        ns = dict(ent=ent, Living=Living, StdObj=StdObj)
-        exec(source_code, ns)
-        setattr(on_cls, fn_name, ns[fn_name])
-
-    def generate_do_fn(self, sig, template, on_cls=Living):
-        pass
 
 
 EMOTES = {e.name: e for e in [Emote(name=name, patterns=patterns) for name, patterns in SOUL["emotes"].items()]}
