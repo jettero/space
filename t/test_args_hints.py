@@ -8,7 +8,7 @@ from space.door import Door
 
 
 def test_hints(objs):
-    assert ih(objs.me.can_move_words) == [("moves", [tuple, str])]
-    assert ih(objs.me.can_move_obj_words) == [("obj", [StdObj]), ("moves", [tuple, str])]
+    assert ih(objs.me.can_move_words) == [("moves", [tuple[str, ...]])]
+    assert ih(objs.me.can_move_obj_words) == [("obj", [StdObj]), ("moves", [tuple[str, ...]])]
     assert ih(objs.me.can_attack_living) == [("living", [Living])]
     assert ih(objs.me.can_open_obj) == [("obj", [Door])]

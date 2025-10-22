@@ -44,7 +44,7 @@ class CanMove:
                 return False, {"error": e}
         return True, {"moves": moves}  # keys must match do_move_words args
 
-    def can_move_obj_words(self, obj: StdObj, moves):
+    def can_move_obj_words(self, obj: StdObj, moves: tuple[str, ...]):
         # XXX: should we do more to consider which obj is more appropriate?
         # XXX: if the obj doesn't want to move, we should have some sort of ability contest here
         if isinstance(obj, (list, tuple)):

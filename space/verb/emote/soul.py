@@ -781,7 +781,7 @@ SOUL = {
             "": "$N $vgive a stylish tip of $p hat.",
         },
         "rubhands": {"": "$N $vrub $p hands together mischeviously."},
-        "attack": {"LIV": "With brutal force, $n $vattack $t."},
+        # "attack": {"LIV": "With brutal force, $n $vattack $t."},
         "kiss": {
             "LIV": "$N $vkiss $t.",
             "LIV STR": "$N $vkiss $t $o.",

@@ -24,6 +24,11 @@ BLESSED_TOKENS = {
     "STR": ("words", "{aname}:tuple[str,...]"),
 }
 
+# NOTE: the only input words from soul.py that could potentially wind up as
+# source code (outside of strings) is the name of the emote itself. We check to
+# make sure the potential function names don't contain code injection or
+# whatever via this SAFE_TOKEN regex; and a name.replace("-","_") below.
+
 SAFE_TOKEN = re.compile(r"^[a-zA-Z][A-Za-z0-9-]+$")
 EmoteInfo = namedtuple("EmoteInfo", "sig template vars args wrd_vals".split())
 
