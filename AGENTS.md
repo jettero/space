@@ -43,19 +43,23 @@ HARD CONSTRAINTS
 - avoid changing the code style
 - avoid large edits -- that probably means you're missing the point of the ask
 - avoid double checking and tripple checking things you already know from context
+- avoid re-scoping your task; I had to cancel the last run where you were told
+  to only edit `space/args.py` and you modified over 20 files you were not
+  instructed to edit. These changes just end up getting reversed.
 
 ## Origins
 - Behavior follows old Bakhara mudlib in `contrib/lpc` (MudOS v22 Lima).
 - Port ideas, not LPC APIs. Stay Pythonic.
-- For names, see `contrib/lpc/std/object/names.c`; for messages, see
-  `contrib/lpc/std/modules/m_messages.c`.
+- For names, see `contrib/lpc/std/object/names.c`; for messages, see `contrib/lpc/std/modules/m_messages.c`.
+- never modify files in `contrib/`, `.git/`
 
 ## Always
-- always run black -l 127 after edits
 - when creating tests, always work with what you have. don't re-invent the wheel
-- when running pytest, simiply run pytest directly don't bother with Makefiles
-- if you fail a test, you needn't rely solely on the output of pytest, also
-  check last-pytest-run.log for the debug logs associated with the run
+- when running pytest, always run pytest directly don't bother with Makefiles
+- if you fail a test, be sure to always check `last-pytest-run.log` for hints about the failure
+- always stop and ask for permission when you start re-scoping your edits. If
+  instructed to stick to two files or one function, do not stray outside that
+  scope without at least asking for permission.
 
 ## Layout
 - Code: `space/` • Tests: `t/` • Config: `Makefile`, `pytest.ini`, `.pre-commit-config.yaml`, `pylintrc`.
