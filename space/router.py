@@ -150,7 +150,7 @@ class MethodArgsRouter(MethodRouter):
         rr = [True, kw]
         did_something = False
         for ffak in self.ordered_fill(*a, **kw):
-            log.debug("MNR invoking %s.%s", self.obj, ffak)
+            log.debug("MAR invoking %s.%s", self.obj, ffak)
             r = ffak()
             did_something = True
             if isinstance(r, tuple) and len(r) == 2 and r[0]:
