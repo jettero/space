@@ -47,9 +47,10 @@ class CanMove:
     def can_move_obj_words(self, obj: StdObj, moves: tuple[str, ...]):
         # XXX: should we do more to consider which obj is more appropriate?
         # XXX: if the obj doesn't want to move, we should have some sort of ability contest here
+        # XXX: the object should be within reach before, during, and after the move too
         if isinstance(obj, (list, tuple)):
             obj = obj[0]
-        return True, {"obj": obj}  # keys must match do_move_obj_words args
+        return True, {"obj": obj, "moves": moves}  # keys must match do_move_obj_words args
 
     def do_move_words(self, moves):
         log.debug("do_move_words(%s)", moves)
