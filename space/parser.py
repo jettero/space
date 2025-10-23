@@ -303,7 +303,7 @@ class Parser:
                     if ihint.aname not in tokens:
                         tokens[ihint.aname] = list()
                     if pos < end:
-                        if ihint.tlist[0] == tuple:
+                        if ihint.tlist[0] in (tuple, tuple[str, ...]):
                             tokens[ihint.aname] += pstate.tokens[pos:]
                             pos = end
                         elif pos < end:
