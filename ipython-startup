@@ -52,7 +52,7 @@ from space.pv import PV
 from space.dn import DN
 from space.roll import Roll, roll, Check
 from space.parser import Parser
-from space.router import MethodRouter
+from space.router import MethodRouter, MethodArgsRouter
 
 import sys
 sys.path.insert(0, 't')
