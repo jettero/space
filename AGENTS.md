@@ -52,8 +52,10 @@ HARD CONSTRAINTS
 
 ## Always
 - always run black -l 127 after edits
-- when running pytest, simiply run pytest directly don't bother with Makefiles
 - when creating tests, always work with what you have. don't re-invent the wheel
+- when running pytest, simiply run pytest directly don't bother with Makefiles
+- if you fail a test, you needn't rely solely on the output of pytest, also
+  check last-pytest-run.log for the debug logs associated with the run
 
 ## Layout
 - Code: `space/` • Tests: `t/` • Config: `Makefile`, `pytest.ini`, `.pre-commit-config.yaml`, `pylintrc`.
