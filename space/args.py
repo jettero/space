@@ -149,13 +149,31 @@ def introspect_args(fn, *iargs, **ikwargs):
             if k in ikwargs:
                 faa = filter_annotated_arg(k, ikwargs.pop(k), annotation)
                 if faa is not None:
+                    log.debug(
+                        "   … generate_args(%d):k i=%s k=%s annotation=%s faa=%s [gobble]",
+                        len(ikwargs),
+                        i,
+                        k,
+                        annotation,
+                        faa,
+                    )
                     yield faa  # prefer a named arg from ikwargs over the next position arg
                     continue
+                log.debug("   … generate_args(%d):k i=%s k=%s annotation=%s", len(ikwargs), i, k, annotation)
             if i < len(iargs):
                 faa = filter_annotated_arg(k, iargs[i], annotation)
                 if faa is not None:
+                    log.debug(
+                        "   … generate_args(%d):a i=%s k=%s annotation=%s faa=%s [chomp]",
+                        len(ikwargs),
+                        i,
+                        k,
+                        annotation,
+                        faa,
+                    )
                     yield faa  # use the next positional arg if we have it
                     continue
+                log.debug("   … generate_args(%d):a i=%s k=%s annotation=%s", len(ikwargs), i, k, annotation)
             # quit trying to consume positionals, leave them as kwargs
             # remember, calling fn(x,y,z) as fn(**{'x':1,'y':2,'z':3}) works
             # just fine
@@ -171,7 +189,7 @@ def introspect_args(fn, *iargs, **ikwargs):
     log.debug(" … stage-1 ra=%s iargs=%s ikwargs=%s", ra, iargs, ikwargs)
 
     filled = len(ra) >= len(fas.args)
-    log.debug(" … positional args filled: len(ra)=%d >= len(fas.args)=%d = %s", len(ra), len(fas.args), filled)
+    log.debug(" … positional args filled: len(ra)=%d >= len(fas.args)=%d = filled=%s", len(ra), len(fas.args), filled)
 
     # Stage-2: try to finish completing any varargs
     # If we have a kwarg of that name, we try to consume it (converting as
