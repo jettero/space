@@ -1,10 +1,9 @@
 HARD CONSTRAINTS
 
-- No comments in code unless explicitly allowed
+- Do not add comments to the code unless explicitly told to do so
   - don't remove comments I put there unless they're nolonger true because of
     the code changes
-  - definitely don't add any that say what the next line of code does when the
-    next line of code very obviously already does that
+  - use expressive code that tells the story without the need for comments
   - you don't understand when to use comments, so just don't use them
 - Do not use getattr/hasattr unless explicitly allowed
 - stop doublechecking every fucking little thing when you already carefully
@@ -39,4 +38,24 @@ HARD CONSTRAINTS
 - DO NOT CHECK THE TYPE OF SOMETHING IF WE ALREADY KNOW WHAT IT IS
 - DO NOT CHECK FOR THE EXISTANCE OF METHODS IF WE ALREADY KNOW THEY'RE THERE BY TYPE
 
-These constraints apply to all changes within this repository unless a task explicitly grants exceptions.
+## Avoid
+- avoid changes to fundemental building blocks like parser.py args.py and router.py
+- avoid changing the code style
+- avoid large edits -- that probably means you're missing the point of the ask
+- avoid double checking and tripple checking things you already know from context
+
+## Origins
+- Behavior follows old Bakhara mudlib in `contrib/lpc` (MudOS v22 Lima).
+- Port ideas, not LPC APIs. Stay Pythonic.
+- For names, see `contrib/lpc/std/object/names.c`; for messages, see
+  `contrib/lpc/std/modules/m_messages.c`.
+
+## Always
+- always run black -l 127 after edits
+- when running pytest, simiply run pytest directly don't bother with Makefiles
+- when creating tests, always work with what you have. don't re-invent the wheel
+
+## Layout
+- Code: `space/` • Tests: `t/` • Config: `Makefile`, `pytest.ini`, `.pre-commit-config.yaml`, `pylintrc`.
+- Artifacts: `build/`, `dist/`, `space.egg-info/`.
+- Reqs: `requirements.txt` (run), `test-requirements.txt` (dev/test).
