@@ -63,7 +63,8 @@ P = Parser()
 def do(cmd):
     return o.me.do(cmd)
 
-;hilite preprocess_tokens
+;hilite preprocess_tokens 1 32
+;hilite WTF               1 33 44
 
 ;do open door; sSW6s3w; get bauble; 3e4n
 ;do move nsew nsew
