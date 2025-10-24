@@ -68,8 +68,8 @@ class Emote(Verb):
         if src_only:
             return source_code
 
-        ns = dict(ent=ent, Living=Living, StdObj=StdObj)
-        exec(source_code, ns)
+        ns = dict(ent=ent, Living=Living, StdObj=StdObj, random=random)
+        exec(compile(source_code, f"space/verb/emote/gen:{self.name}:{fn_name}", "exec"), ns)
         setattr(on_cls, fn_name, ns[fn_name])
 
     def generate_do_fn(self, fn_name, ent, on_cls=Living, src_only=False):
@@ -87,8 +87,8 @@ class Emote(Verb):
         if src_only:
             return source_code
 
-        ns = dict(ent=ent, Living=Living, StdObj=StdObj)
-        exec(source_code, ns)
+        ns = dict(Living=Living, StdObj=StdObj)
+        exec(compile(source_code, f"space/verb/emote/gen:{self.name}:{fn_name}", "exec"), ns)
         setattr(on_cls, fn_name, ns[fn_name])
 
 
