@@ -9,7 +9,7 @@ from space.router import MethodArgsRouter
 
 @pytest.mark.parametrize("ename", list(EMOTES))
 def test_emote_can_count_matches_patterns(objs, ename):
-    fname = ename.replace("-", "_")
+    fname = ename.replace("-", "X")
     emote = EMOTES[ename]
     expected_count = len(emote.rule_db)
 

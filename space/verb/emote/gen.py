@@ -102,7 +102,7 @@ def compute_db(name, patterns):
         elif template.startswith("="):
             template = xlate_templates[template[1:]]
         tokens = [x for x in sig.split(" ") if x]
-        fn_name = [name.replace("-", "_")]
+        fn_name = [name.replace("-", "X")]
         vars = list()
         args = list()
         wrd_vals = dict()
