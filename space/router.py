@@ -13,10 +13,11 @@ log = logging.getLogger(__name__)
 # XXX: This module is a mess. I couldn't make up my mind about how any of this
 # should work and the result is a total mess of mostly-thought-out but
 # un-written conventions.
-# 
+#
 # XXX: I'd like to get rid of multi-mode, I don't really use it much outside of callbacks
 # XXX: I'd like to remove callbacks. They seem to reduplicate some below stuff and aren't really used for anything
 #      (see space/obj.py's parse_can to see what I mean. compare to __call__ ... same shit, different error messages)
+
 
 class MethodRouter:
     def __init__(self, obj, top, multi=False, callback=None, dne_ok=True):
@@ -40,10 +41,10 @@ class MethodRouter:
         base = self.obj.__repr__()  # repr(obj) won't work (weakref.proxy)
         if len(self.dir) == 1:
             return f"{base}.{self.dir[0]}"
-        return f'{base}.({"|".join(self.dir)})'
+        return f'{base}.({"|".join(i if isinstance(i, str) else repr(i) for i in self.dir)})'
 
     def __repr__(self):
-        return f"MethodRouter{{{self.stringified}}}"
+        return f"{self.__class__.__name__}{{{self.stringified}}}"
 
     __str__ = __repr__
 
@@ -86,7 +87,7 @@ class RouteHint(namedtuple("RouteHint", ["fname", "func", "hlist"])):
         return f"RH({self.fname})«{hl}»"
 
     def fill(self, objs):
-        log.debug(" filling %s using objs=%s tok=%s", self, objs, self.tokens)
+        log.debug("%s.fill(%s) tokens=%s", self, objs, self.tokens)
         ret = dict()
         for aname, tlist in self.hlist:
             type0, *remainder = tlist
@@ -147,11 +148,6 @@ class MethodArgsRouter(MethodRouter):
     def ordered_fill(self, *a, **kw):
         for ffak in sorted(self.fill(*a, **kw), key=lambda x: x.order):
             yield ffak
-
-    def __repr__(self):
-        return f"MethodArgsRouter{{{self.stringified}}}"
-
-    __str__ = __repr__
 
     def __call__(self, *a, **kw):
         rr = [True, kw]
