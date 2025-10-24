@@ -35,8 +35,6 @@ class STFU(logging.Filter):
     def filter(self, record):
         if '/space/' not in record.pathname:
             return False
-        for pat, color in HILIGHT:
-            record.msg = re.sub(pat, lambda m: f"{color}{m.group(0)}{ANSI_RESET}", record.msg)
         return True
 logging.basicConfig(level=logging.DEBUG)
 for h in logging.root.handlers:
