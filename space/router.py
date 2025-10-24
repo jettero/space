@@ -10,6 +10,13 @@ import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
+# XXX: This module is a mess. I couldn't make up my mind about how any of this
+# should work and the result is a total mess of mostly-thought-out but
+# un-written conventions.
+# 
+# XXX: I'd like to get rid of multi-mode, I don't really use it much outside of callbacks
+# XXX: I'd like to remove callbacks. They seem to reduplicate some below stuff and aren't really used for anything
+#      (see space/obj.py's parse_can to see what I mean. compare to __call__ ... same shit, different error messages)
 
 class MethodRouter:
     def __init__(self, obj, top, multi=False, callback=None, dne_ok=True):
