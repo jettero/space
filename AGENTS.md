@@ -65,3 +65,18 @@ HARD CONSTRAINTS
 - Code: `space/` • Tests: `t/` • Config: `Makefile`, `pytest.ini`, `.pre-commit-config.yaml`, `pylintrc`.
 - Artifacts: `build/`, `dist/`, `space.egg-info/`.
 - Reqs: `requirements.txt` (run), `test-requirements.txt` (dev/test).
+
+## Single-use Variables (Agent Only)
+- You (the agent) must not introduce single-use temporary variables.
+- You must inline values that are used exactly once.
+- You must not create an intermediate solely to pass to one call.
+- You must not add throwaway names like `tmp`, `code`, or `filename` used once.
+- You must compose expressions instead of staging them in one-off temps.
+- You must prefer direct calls with computed arguments over pre-binding.
+- You must not create locals solely for a single return/exec.
+- You must pass computed values directly into their consumer.
+- You must avoid ephemeral placeholders such as `res`, `out`, `buf` when single-use.
+- You must collapse trivial variables into the consuming expression.
+- You must keep scope clean by not adding one-shot names.
+- You must not remove single-use variables written by humans.
+- You must only remove single-use temps that you introduced.
