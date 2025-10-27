@@ -152,7 +152,7 @@ class MethodArgsRouter(MethodRouter):
             yield ffak
 
     def __call__(self, *a, **kw):
-        rr = [False,{}]
+        rr = [False, {}]
         did_something = False
         for ffak in self.ordered_fill(*a, **kw):
             log.debug("MAR invoking %s.%s(%s, %s)", self.obj, ffak, repr(a), repr(kw))
