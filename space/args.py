@@ -15,6 +15,7 @@ class FAK(namedtuple("FAK", ["filled", "args", "kwargs"])):
 
 
 def filter_annotated_arg(name, item, annotation):  # pylint: disable=unused-argument
+    log.debug("filter_annotated_arg(%s, %s, %s)", name, repr(item), repr(annotation))
     if annotation is None:
         return item
     if inspect.isclass(annotation):
