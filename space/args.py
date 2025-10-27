@@ -19,29 +19,39 @@ def filter_annotated_arg(name, item, annotation):  # pylint: disable=unused-argu
     if annotation is None:
         return item
     if inspect.isclass(annotation):
+        log.debug("  %s is a class", repr(annotation))
         if isinstance(item, annotation):
+            log.debug("  %s is an instance of %s", repr(item), repr(annotation))
             return item
         if isinstance(item, (tuple, list)):
+            log.debug("  iterating item")
             for x in item:
                 if isinstance(x, annotation):
+                    log.debug("    %s is an instance of %s", repr(x), repr(annotation))
                     return x
+                log.debug("    %s is not an instance of %s", repr(x), repr(annotation))
         return
     if callable(annotation):
+        log.debug("  %s is a callable, calling: %s(%s)", repr(annotation), repr(annotation), repr(item))
         r = annotation(item)
         if r is True:
+            log.debug("    evaluated true")
             return item
         if r not in (False, None):
+            log.debug("    transformed during call to %s", repr(r))
             return r
+        log.debug("    evaluated false")
         return
     if hasattr(annotation, "match") and hasattr(annotation, "pattern"):
-        m = annotation.match(str(item))
-        if m:
-            gd = m.groupdict()
-            if gd:
+        log.debug("  %s seems to be a regular expression", repr(annotation))
+        if m := annotation.match(str(item)):
+            if gd := m.groupdict():
+                log.debug("    evaluated to gd=%s", repr(gd))
                 return gd
-            g = m.groups()
-            if g:
+            if g := m.groups():
+                log.debug("    evaluated to g=%s", repr(g))
                 return g
+            log.debug("    evaluated to item=%s", repr(item))
             return item
 
 
