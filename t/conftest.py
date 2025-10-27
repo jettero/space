@@ -93,8 +93,23 @@ def pytest_runtest_makereport(item, call):
     if rep.when == "call" and rep.failed:
         loc = rep.location[0]
         line = rep.location[1] + 1
-        msg = str(rep.longrepr) if hasattr(rep, "longrepr") else ""
-        log.error("FAIL %s:%d %s", loc, line, msg.splitlines()[0] if msg else "")
+        head = str(rep.longrepr) if hasattr(rep, "longrepr") else ""
+        first = head.splitlines()[0] if head else ""
+        log.error("FAIL %s:%d %s", loc, line, first)
+        if hasattr(rep, "longrepr") and hasattr(rep.longrepr, "reprcrash"):
+            r = rep.longrepr
+            paths = []
+            if hasattr(r, "reprtraceback") and hasattr(r.reprtraceback, "reprentries"):
+                for e in r.reprtraceback.reprentries:
+                    if hasattr(e, "reprfileloc") and hasattr(e.reprfileloc, "path"):
+                        p = e.reprfileloc.path
+                        lno = getattr(e.reprfileloc, "lineno", None)
+                        if p and lno is not None:
+                            paths.append(f"{p}:{lno}")
+                        elif p:
+                            paths.append(str(p))
+            if paths:
+                log.error("STACK %s", "; ".join(paths))
     if rep.when == "setup" and rep.failed:
         loc = rep.location[0]
         line = rep.location[1] + 1
