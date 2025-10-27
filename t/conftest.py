@@ -3,6 +3,9 @@
 
 import pytest
 from space.shell.list import Shell as ListShell
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class TRoom:
@@ -66,3 +69,13 @@ def dd(me_dd_ss):
 @pytest.fixture
 def ss(me_dd_ss):
     return me_dd_ss[2]
+
+
+def pytest_sessionfinish(session, exitstatus):
+    log.info("pytest_sessionfinish(..., %d)", exitstatus)
+    for h in logging.getLogger().handlers:
+        h.flush()
+    for lg in logging.Logger.manager.loggerDict.values():
+        if isinstance(lg, logging.Logger):
+            for h in lg.handlers:
+                h.flush()
