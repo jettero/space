@@ -23,4 +23,4 @@ reqs mods: test-requirements.txt requirements.txt
 	dot -Tpng $< -o $@
 
 show-parser-graph: parser.png
-	DISPLAY=:0.0 xdg-open parser.png
+	DISPLAY=:0.0 xdg-open parser.png &>/dev/null

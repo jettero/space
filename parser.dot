@@ -25,8 +25,7 @@ digraph G {
 
   // Evaluation phase
   eval [shape=box, label="Parser.evaluate(pstate): for n in pstate.iter_filled"];
-  psnFill [shape=box, label="PSNode.fill(objs): filled.update(RouteHint.fill(objs))"];
-  evalCall [shape=box, label="PSNode.evaluate(): RouteHint.evaluate(**filled)"];
+  psnEval [shape=box, label="PSNode.evaluate(): RouteHint.evaluate(**filled)"];
   score [shape=box, label="PSNode.score: can_do→2+|do_args|/100; filled→1; else 0"];
   best [shape=diamond, label="Parser.evaluate: single best scorer?"];
   setwin [shape=box, label="Parser.evaluate: pstate.winner = best"];
@@ -55,9 +54,10 @@ digraph G {
   tlist1 -> preprocess;
   tlistEll -> preprocess;
   tlistAtom -> preprocess;
-  preprocess -> attach;
+  preprocess -> ppNeeded;
+  ppNeeded -> attach [label="yes (pp tokens)"];
+  ppNeeded -> attach [label="no (raw tokens)"];
   attach -> eval;
-  eval -> psnFill -> evalCall -> score -> best;
   eval -> psnEval -> score -> best;
   best -> setwin [label="yes"];
   best -> ambig [label="no"];
