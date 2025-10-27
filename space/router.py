@@ -152,21 +152,31 @@ class MethodArgsRouter(MethodRouter):
             yield ffak
 
     def __call__(self, *a, **kw):
-        rr = [True, kw]
+        rr = [False,{}]
         did_something = False
         for ffak in self.ordered_fill(*a, **kw):
-            log.debug("MAR invoking %s.%s", self.obj, ffak)
+            log.debug("MAR invoking %s.%s(%s, %s)", self.obj, ffak, repr(a), repr(kw))
             r = ffak()
+            log.debug("  r=%s", repr(r))
             did_something = True
-            if isinstance(r, tuple) and len(r) == 2 and r[0]:
-                kw.update(r[1])
-            cbr = self.callback(fname, r) if callable(self.callback) else True
-            if not self.multi:
-                return r if r is None else tuple(r)
-            if cbr is False:
-                break
-            rr[0] = rr[0] and r[0]
-        if not did_something and not self.dne_ok:
+            if not isinstance(r, tuple) or len(r) != 2 or not isinstance(r[0], bool) or not isinstance(r[1], dict):
+                log.debug("  return not of form (bool, dict), continue")
+                continue
+            log.debug("  update rr[1] with rr[1]")
+            rr[1].update(r[1])
+            if r[0]:
+                log.debug("  set rr[0]=True")
+                rr[0] = True
+            else:
+                log.debug("  r[0] is False, continue")
+                continue
+            if callable(self.callback):
+                cbr = self.callback(fname, r)
+                log.debug("  invoked callback(%s, %s) -> %s", fname, repr(r), repr(cbr))
+                if cbr is False:
+                    log.debug("  break-loop due to False callback return")
+                    break
+        if not did_something:
             raise NotImplementedError(f'unable to locate {"_".join(self.top)} methods for ({kw})')
         return tuple(rr)
 
