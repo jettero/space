@@ -5,6 +5,7 @@ from .base import Verb
 
 class Action(Verb):
     name = "inventory"
+    nick = ['i', 'inv']
 
     def do_inventory(self):
         from ..shell.message import BoxMessage

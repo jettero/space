@@ -85,26 +85,29 @@ class baseobj:  # pylint: disable=invalid-name
             r.add(a)
         return r - set([None, ""])
 
+    # def parse_can(self, method, **kw):
+    #     pc_ret = [True, {k: v for k, v in kw.items() if v is not None}]
+
+    #     def cb(fname, ret):
+    #         log.debug("parse_can.cb< fname=%s pc_ret=%s >", fname, tuple(pc_ret))
+    #         if not isinstance(ret, tuple) or len(ret) != 2:
+    #             raise ValueError(f"invalid return parse_can.cb< ({self}).{fname}() >: {ret}")
+    #         pc_ret[0] = pc_ret[0] and ret[0]
+    #         if isinstance(ret[1], dict):
+    #             pc_ret[1].update({k: v for k, v in ret[1].items() if v is not None})
+    #         if not pc_ret[0]:
+    #             log.debug("denying parse_can.cb< (%s).%s() >", self, fname)
+    #             return False
+    #         log.debug("  … pc_ret=%s", tuple(pc_ret))
+
+    #     MethodNameRouter(self, f"can_{method}", multi=True, callback=cb)(**kw)
+    #     return tuple(pc_ret)
+
     def parse_can(self, method, **kw):
-        pc_ret = [True, {k: v for k, v in kw.items() if v is not None}]
-
-        def cb(fname, ret):
-            log.debug("parse_can< fname=%s pc_ret=%s >", fname, tuple(pc_ret))
-            if not isinstance(ret, tuple) or len(ret) != 2:
-                raise ValueError(f"invalid return parse_can< ({self}).{fname}() >: {ret}")
-            pc_ret[0] = pc_ret[0] and ret[0]
-            if isinstance(ret[1], dict):
-                pc_ret[1].update({k: v for k, v in ret[1].items() if v is not None})
-            if not pc_ret[0]:
-                log.debug("denying parse_can< (%s).%s() >", self, fname)
-                return False
-            log.debug("  … pc_ret=%s", tuple(pc_ret))
-
-        MethodNameRouter(self, f"can_{method}", multi=True, callback=cb)(**kw)
-        return tuple(pc_ret)
+        return MethodNameRouter(self, f"can_{method}")(**kw)
 
     def parse_do(self, method, **kw):
-        MethodNameRouter(self, f"do_{method}", multi=False, dne_ok=False)(**kw)
+        MethodNameRouter(self, f"do_{method}")(**kw)
 
     def parse_match(self, txt, id_=None):
         log.debug("%s .parse_match(txt=%s, id=%s)", self, txt, id_)

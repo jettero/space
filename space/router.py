@@ -124,6 +124,12 @@ class RouteHint(namedtuple("RouteHint", ["fname", "func", "hlist"])):
 
 
 class MethodArgsRouter(MethodRouter):
+    def __init__(self, *a, **kw):
+        if kw.get('multi'):
+            log.error("trying to eliminate MethodArgsRouter(multi=True)")
+            raise ValueError("MethodArgsRouter does not support multi-mode")
+        super().__init__(*a, **kw)
+
     def hints(self):
         ret = list()
         for fname in self.dir:
@@ -152,33 +158,29 @@ class MethodArgsRouter(MethodRouter):
             yield ffak
 
     def __call__(self, *a, **kw):
-        rr = [False, {}]
-        did_something = False
+        log.debug("MAR __call__ obj=%s top=%s", self.obj, self.top)
+        ok = did_something = False
+        ctx = dict()
         for ffak in self.ordered_fill(*a, **kw):
-            log.debug("MAR invoking %s.%s(%s, %s)", self.obj, ffak, repr(a), repr(kw))
-            r = ffak()
-            log.debug("  r=%s", repr(r))
-            did_something = True
-            if not isinstance(r, tuple) or len(r) != 2 or not isinstance(r[0], bool) or not isinstance(r[1], dict):
-                log.debug("  return not of form (bool, dict), continue")
-                continue
-            log.debug("  update rr[1] with rr[1]")
-            rr[1].update(r[1])
-            if r[0]:
-                log.debug("  set rr[0]=True")
-                rr[0] = True
-            else:
-                log.debug("  r[0] is False, continue")
-                continue
+            ffak_return = ffak()
+            log.debug("MAR   %s.%s(%s) -> %s", self.obj, ffak, repr(kw), repr(ffak_return))
+            if ffak_return is None:
+                # in do_ mode, this is ok
+                if callable(self.callback):
+                    # we don't even bother to check the callback returns here
+                    self.callback(fname, ffak_return)
+                return
+            ok, ctx = ffak_return
             if callable(self.callback):
-                cbr = self.callback(fname, r)
-                log.debug("  invoked callback(%s, %s) -> %s", fname, repr(r), repr(cbr))
-                if cbr is False:
-                    log.debug("  break-loop due to False callback return")
-                    break
-        if not did_something:
+                if self.callback(fname, ffak_return) is False:
+                    return (False, ctx)
+                _,ctx = ffak_return # in case this changed in the callback
+            if ok:
+                return (ok, ctx)
+            did_something = True
+        if not self.dne_ok and not did_something:
             raise NotImplementedError(f'unable to locate {"_".join(self.top)} methods for ({kw})')
-        return tuple(rr)
+        return (ok, ctx)
 
 
 class MethodNameRouter(MethodRouter):

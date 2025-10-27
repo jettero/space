@@ -37,18 +37,18 @@ def test_mmr_pa(a_map, objs, mmr):
     assert n(obj_also) == ["can_move_obj_words"]
 
 
-def test_can_move(a_map, objs, mmr):
-    ok, ctx = mmr(moves=("s",))
+def test_can_move(objs, mmr):
+    ok, ctx = mmr(moves=("n",))
     assert ok is False
-    assert ctx.get("moves") == ("s",)
-    assert mmr(moves=("n",)) == (False, {"moves": ("n",)})
-    assert mmr(obj=objs.ubi, moves=("n",)) == (True, {"obj": objs.ubi, "moves": ("n",)})
+    assert 'error' in ctx
 
-    # open the south door cell between rooms so moving south is allowed
-    a_map[8, 2].do_open()
-    ok, ctx = mmr(moves=("s",))
-    assert ok is True
-    assert ctx.get("moves") == ("s",)
+    ok,ctx =  mmr(obj=objs.ubi, moves=("n",))
+    assert ok is False
+    assert 'error' in ctx
+
+    objs.me.do("open door; sSWss")
+    assert mmr(moves=("s",)) == (True, {"moves": ("s",)})
+    assert mmr(obj=objs.ubi, moves=("n",)) == (True, {"obj": objs.ubi, "moves": ("n",)})
 
 
 @pytest.fixture
@@ -60,7 +60,7 @@ def test_mor_dir(mor):
     assert set(mor.dir) == set(["can_open_obj"])
 
 
-def test_mor_kw(a_map, objs, mor):
+def test_mor_kw( objs, mor):
     obj_only = mor.fill(obj=objs.door)
 
     assert n(obj_only) == ["can_open_obj"]
