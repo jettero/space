@@ -93,7 +93,7 @@ class RouteHint(namedtuple("RouteHint", ["fname", "func", "hlist"])):
             type0, *remainder = tlist
             v = self.tokens.get(aname)
             log.debug("  aname=%s type0=%s remainder=%s v=%s", aname, type0, remainder, v)
-            # XXX: I can sortof understand if v is None -- but I shouldn't need it
+            # XXX: I can sortof understand if v is None -- but I shouldn't need to check it
             # XXX: I cannot understand why I need to check if 'v' has values in it
             if v is None or (isinstance(v, (tuple, list)) and len(v) == 0):
                 continue
