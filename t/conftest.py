@@ -109,7 +109,7 @@ def pytest_runtest_makereport(item, call):
                         elif p:
                             paths.append(str(p))
             if paths:
-                log.error("STACK %s", "; ".join(paths))
+                log.error("STACK:\n%s", "\n".join(paths))
     if rep.when == "setup" and rep.failed:
         loc = rep.location[0]
         line = rep.location[1] + 1
