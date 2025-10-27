@@ -103,6 +103,8 @@ class RouteHint(namedtuple("RouteHint", ["fname", "func", "hlist"])):
                 ret[aname] = v[0]
             elif type0 == tuple[str, ...]:
                 ret[aname] = v
+            elif type0 is tuple:
+                ret[aname] = v
             elif remainder:
                 raise NotImplementedError(f"TODO[unknown(type0={type0!r} remainder={remainder!r})]")
             else:
@@ -125,7 +127,7 @@ class RouteHint(namedtuple("RouteHint", ["fname", "func", "hlist"])):
 
 class MethodArgsRouter(MethodRouter):
     def __init__(self, *a, **kw):
-        if kw.get('multi'):
+        if kw.get("multi"):
             log.error("trying to eliminate MethodArgsRouter(multi=True)")
             raise ValueError("MethodArgsRouter does not support multi-mode")
         super().__init__(*a, **kw)
@@ -174,7 +176,7 @@ class MethodArgsRouter(MethodRouter):
             if callable(self.callback):
                 if self.callback(fname, ffak_return) is False:
                     return (False, ctx)
-                _,ctx = ffak_return # in case this changed in the callback
+                _, ctx = ffak_return  # in case this changed in the callback
             if ok:
                 return (ok, ctx)
             did_something = True
