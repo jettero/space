@@ -18,3 +18,9 @@ reqs mods: test-requirements.txt requirements.txt
 	pip install -U pip wheel
 	pip install -Ur test-requirements.txt
 	@ date > reqs; date > mods
+
+%.png: %.dot
+	dot -Tpng $< -o $@
+
+show-parser-graph: parser.png
+	DISPLAY=:0.0 xdg-open parser.png

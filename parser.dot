@@ -1,0 +1,72 @@
+digraph G {
+  rankdir=TB;
+
+  // Center on Parser.parse()
+  start [shape=circle, label="Parser.parse(me, text)"];
+  dirq [shape=diamond, label="is_direction_string(text)?"];
+  toMoves [shape=box, label="text = f('move {text}')"];
+  mkPState [shape=box, label="pstate = PState(me, text)"];
+  haveStates [shape=diamond, label="pstate.states?"];
+
+  // Planning phase
+  plan [shape=box, label="Parser.plan(pstate): for verb in pstate.iter_verbs"];
+  mrcan [shape=box, label="MethodArgsRouter(me, f'can_{verb.name}')"];
+  rhints [shape=box, label="MethodArgsRouter.hints() → [RouteHint(fname, func, hlist)]"];
+  rh_foreach [shape=box, label="for rh in rhints"];
+  rh_hlist [shape=box, label="rh.hlist: [(aname, tlist), …]"];
+  fillTok [shape=box, label="Parser.plan: init tokens[aname]=[]; pos=0"];
+  tlistHead [shape=diamond, label="type(tlist[0])?"];
+  tlist1 [shape=box, label="tokens[aname]+=pstate.tokens[pos:]; pos=end"];
+  tlistEll [shape=box, label="tokens[aname]+=pstate.tokens[pos:]; pos=end"];
+  tlistAtom [shape=box, label="tokens[aname].append(pstate.tokens[pos]); pos+=1"];
+  ppNeeded [shape=diamond, label="Verb.preprocess_tokens alters?"];
+  preprocess [shape=box, label="pp = Verb.preprocess_tokens(me, **tokens)"];
+  attach [shape=box, label="rh.tokens = pp; PState.add_rhint(verb, rh)"];
+
+  // Evaluation phase
+  eval [shape=box, label="Parser.evaluate(pstate): for n in pstate.iter_filled"];
+  psnFill [shape=box, label="PSNode.fill(objs): filled.update(RouteHint.fill(objs))"];
+  evalCall [shape=box, label="PSNode.evaluate(): RouteHint.evaluate(**filled)"];
+  score [shape=box, label="PSNode.score: can_do→2+|do_args|/100; filled→1; else 0"];
+  best [shape=diamond, label="Parser.evaluate: single best scorer?"];
+  setwin [shape=box, label="Parser.evaluate: pstate.winner = best"];
+  ambig [shape=box, label="Parser.evaluate: set hs.do_args['error']"];
+  retp [shape=box, label="return pstate"];
+
+  // Execution (outside parse)
+  truthy [shape=diamond, label="PState.__bool__()?"];
+  mrdo [shape=box, label="MethodArgsRouter(me, f'do_{verb.name}')"];
+  invoke [shape=box, label="MethodArgsRouter.__call__(**pstate.winner.do_args)"];
+  ok [shape=circle, label="done"];
+  fail [shape=circle, label="fail"];
+
+  start -> dirq;
+  dirq -> toMoves [label="yes"];
+  dirq -> mkPState [label="no"];
+  toMoves -> mkPState;
+  mkPState -> haveStates;
+  haveStates -> retp [label="no"];
+  haveStates -> plan [label="yes"];
+
+  plan -> mrcan -> rhints -> rh_foreach -> rh_hlist -> fillTok -> tlistHead;
+  tlistHead -> tlist1 [label="tuple"];
+  tlistHead -> tlistEll [label="tuple[str,…]"];
+  tlistHead -> tlistAtom [label="else"];
+  tlist1 -> preprocess;
+  tlistEll -> preprocess;
+  tlistAtom -> preprocess;
+  preprocess -> attach;
+  attach -> eval;
+  eval -> psnFill -> evalCall -> score -> best;
+  eval -> psnEval -> score -> best;
+  best -> setwin [label="yes"];
+  best -> ambig [label="no"];
+  setwin -> retp;
+  ambig -> retp;
+
+  // after parse returns
+  retp -> truthy;
+  truthy -> mrdo [label="yes"];
+  truthy -> fail [label="no"];
+  mrdo -> invoke -> ok;
+}

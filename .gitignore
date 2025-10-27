@@ -6,6 +6,7 @@
 /file*
 
 __pycache__
+*.png
 *.egg-info
 *.pyc
 *.orig
