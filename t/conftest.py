@@ -122,10 +122,8 @@ def pytest_runtest_makereport(item, call):
         log.error("ERROR during teardown %s:%d %s", loc, line, msg.splitlines()[0] if msg else "")
     return rep
 
-def pytest_assertrepr_compare(op, left, right):
+
+def pytest_assertrepr_compare(config, op, left, right):
     import pprint
-    return [
-        f"{op}",
-        f"LHS: {pprint.pformat(left)}",
-        f"RHS: {pprint.pformat(right)}"
-    ]
+
+    return ["", f"OP:  ¿{op}?", f"LHS: {pprint.pformat(left)}", f"RHS: {pprint.pformat(right)}"]
