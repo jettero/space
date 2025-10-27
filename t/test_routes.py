@@ -34,7 +34,7 @@ def test_mmr_pa(a_map, objs, mmr):
     obj_also = mmr.fill(objs.ubi, ("n",))
 
     assert n(dir_only) == ["can_move_words"]
-    assert n(obj_also) == ["can_move_obj_words", "can_move_words"]
+    assert n(obj_also) == ["can_move_obj_words"]
 
 
 def test_can_move(a_map, objs, mmr):

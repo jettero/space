@@ -31,10 +31,10 @@ def filter_annotated_arg(name, item, annotation):  # pylint: disable=unused-argu
                     return x
                 log.debug("    %s is not an instance of %s", repr(x), repr(annotation))
         return
-    if annotation == tuple[str,...]:
+    if annotation == tuple[str, ...]:
         log.debug("  %s wants to eat strings", repr(annotation))
-        if isinstance(item, (tuple,list)):
-            return tuple(x for x in item if isinstance(x,str))
+        if isinstance(item, (tuple, list)):
+            return tuple(x for x in item if isinstance(x, str))
         if isinstance(item, str):
             return (item,)
         return
