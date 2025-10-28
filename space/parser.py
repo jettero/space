@@ -182,10 +182,10 @@ class PState:
     @property
     def error(self):
         try:
-            e = self.high_score_args.get("error")
-            return f'unable to "{self.orig}": {e}'
-        except (AttributeError, TypeError):
-            pass
+            if e := self.high_score_args.get("error"):
+                return f'unable to "{self.orig}": {e}'
+        except AttributeError:
+            pass  # high_score_args is None probably
         return f'unable to understand "{self.orig}"'
 
     @property
@@ -343,7 +343,7 @@ class Parser:
             pstate.winner = best
         else:
             log.debug("[Parser] there were multiple winners (score: %s), we choose to not select one randomly.", best_score)
-            choices = [f"{it.verb.name}:{it.fname}" for it in pstate.iter_can_do]
+            choices = tuple(sorted(set(f"{it.verb.name}" for it in pstate.iter_can_do)))
             if choices:
                 hs = pstate.high_score_state
                 if hs is not None and not (hs.do_args and hs.do_args.get("error")):

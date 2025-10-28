@@ -36,5 +36,8 @@ def register_outside_verb(x):
         raise TypeError(f"{x!r} is not an Verb instance")
     if x.name in VERBS and VERBS[x.name] is not x:
         raise VerbError(f"\"{x.name}\" is already a registered verb and it doesn't seem to be {x!r}")
-    VERBS[x.name]: x
+    VERBS[x.name] = x
+    for n in x.nick:
+        if n not in VERBS:
+            VERBS[n] = x
     

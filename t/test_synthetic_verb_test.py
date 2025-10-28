@@ -21,14 +21,11 @@ def can_itsatest(actor):
 def do_itsatest(actor):
     MARKERS.append(("do",))
 
-@pytest.fixture
-def setup(me):
-    me.can_itsatest = can_itsatest
-    me.do_itsatest = do_itsatest
+Living.can_itsatest = can_itsatest
+Living.do_itsatest = do_itsatest
+
+def test_synthetic_verb_me_do(me):
     MARKERS.clear()
-
-
-def test_synthetic_verb_me_do(me,setup):
     assert me.do("itsatest") is True
-    assert MARKERS == [('can',),('do',)]
-
+    assert me.do("itsa") is True
+    assert MARKERS == [('can',),('do',),('can',),('do',)]
