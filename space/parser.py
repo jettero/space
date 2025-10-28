@@ -308,7 +308,6 @@ class Parser:
                             tokens[ihint.aname] += pstate.tokens[pos:]
                             pos = end
                         elif ihint.tlist[0] == tuple[str, ...]:
-                            log.debug(f"WTF(ihint.aname={ihint.aname} ihint.tlist={ihint.tlist} pos={pos}/{pstate.tokens!r})")
                             tokens[ihint.aname] += pstate.tokens[pos:]
                             pos = end
                         elif pos < end:
