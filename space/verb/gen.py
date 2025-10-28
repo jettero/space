@@ -31,13 +31,13 @@ def find_verb(x):
         return {v for n, v in VERBS.items() if v.match(x)}
     return set()
 
+
 def register_outside_verb(x):
     if not isinstance(x, Verb):
         raise TypeError(f"{x!r} is not an Verb instance")
     if x.name in VERBS and VERBS[x.name] is not x:
-        raise VerbError(f"\"{x.name}\" is already a registered verb and it doesn't seem to be {x!r}")
+        raise VerbError(f'"{x.name}" is already a registered verb and it doesn\'t seem to be {x!r}')
     VERBS[x.name] = x
     for n in x.nick:
         if n not in VERBS:
             VERBS[n] = x
-    
