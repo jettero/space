@@ -207,12 +207,12 @@ def test_synthetic_verb_single_word_fails_without_word_handler(me):
     assert me.do("itsatest banana") is False
 
 
-def test_synthetic_verb_words_obj_singleton_words(me, objs):
+def test_synthetic_verb_obj_words(me, objs):
     MARKERS.clear()
-    assert me.do("itsatest banana ubi") is True
-    assert ("can_itsatest_word_obj", "word", "banana", "obj", objs.ubi) in MARKERS
+    assert me.do("itsatest ubi north") is True
+    assert ("can_itsatest_obj_words", "obj", objs.ubi, "words", ("north",)) in MARKERS
     assert [m for m in MARKERS if m and m[0].startswith("do_")] == [
-        ("do_itsatest_word_obj", "word", "banana", "obj", objs.ubi)
+        ("do_itsatest_obj_words", "obj", objs.ubi, "words", ("north",))
     ]
 
 
@@ -246,11 +246,13 @@ def test_synthetic_verb_word_living(me, objs):
     ]
 
 
-def test_synthetic_verb_words_obj_reverse(me, objs):
+def test_synthetic_verb_words_obj(me, objs):
     MARKERS.clear()
     assert me.do("itsatest foo bar ubi") is True
-    assert ("can_itsatest_words", "words", ("foo", "bar", "ubi")) in MARKERS
-    assert [m for m in MARKERS if m and m[0].startswith("do_")] == [("do_itsatest_words", "words", ("foo", "bar", "ubi"))]
+    assert ("can_itsatest_words_obj", "words", ("foo", "bar"), "obj", objs.ubi) in MARKERS
+    assert [m for m in MARKERS if m and m[0].startswith("do_")] == [
+        ("do_itsatest_words_obj", "words", ("foo", "bar"), "obj", objs.ubi)
+    ]
 
 
 def test_synthetic_verb_words_obj_words(me, objs):
