@@ -234,7 +234,6 @@ def test_synthetic_verb_words_obj_reverse(me, objs):
     assert [m for m in MARKERS if m and m[0] == "do"] == [("do", "words", ("foo", "bar", "ubi"))]
 
 
-@pytest.mark.xfail(reason="parser will need backtracking")
 def test_synthetic_verb_words_obj_words(me, objs):
     MARKERS.clear()
     assert me.do("itsatest foo bar ubi baz qux") is True
