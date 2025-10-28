@@ -6,6 +6,7 @@ import shlex
 from .router import MethodArgsRouter
 from .map.dir_util import is_direction_string
 from .find import set_this_body, find_verb
+from .util import deep_eq
 import space.exceptions as E
 
 log = logging.getLogger(__name__)
@@ -316,9 +317,9 @@ class Parser:
                 if pos < end:
                     log.debug("[Parser] rejecting rhint=%s due to extra unmatched tokens=%s", rhint, pstate.tokens[pos:])
                     continue
-                pp_tok = verb.preprocess_tokens(pstate.me, **tokens)
-                log.debug("[Parser] preprocess tokens for rhint=%s; tokens=%s --> pp_tok=%s", rhint, tokens, pp_tok)
-                rhint.tokens = pp_tok
+                rhint.tokens = pp_tok = verb.preprocess_tokens(pstate.me, **tokens)
+                if log.isEnabledFor(logging.DEBUG) and not deep_eq(tokens, pp_tok):
+                    log.debug("[Parser] preprocess tokens for %s; tokens=%s --> pp_tok=%s", rhint.fname, tokens, pp_tok)
                 pstate.add_rhint(verb, rhint)
 
     def evaluate(self, pstate):
