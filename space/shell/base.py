@@ -77,7 +77,8 @@ class BaseShell:
 
     def pre_parse_kludges(self, line):
         # this used to try to find tokens like 'l' and make them into 'look'
-        # that's all internal to the parser now though
+        # that's all internal to the parser now though.  maybe we could later
+        # use it for aliases or something
         return line
 
     def do(self, input_text):
