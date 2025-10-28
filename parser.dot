@@ -9,7 +9,23 @@ digraph G {
   haveStates [shape=diamond, label="pstate.states?"];
 
   // Planning phase
-  plan [shape=box, label="Parser.plan(pstate): for verb in pstate.iter_verbs"];
+  subgraph cluster_plan {
+    label="plan(pstate)";
+    style=dashed;
+    plan [shape=box, label="for verb in pstate.iter_verbs"];
+    mrcan [shape=box, label="MethodArgsRouter(me, f'can_{verb.name}')"];
+    rhints [shape=box, label="hints() → [RouteHint]"];
+    rh_foreach [shape=box, label="for rh in hints"];
+    rh_hlist [shape=box, label="rh.hlist: [(aname, tlist)]"];
+    fillTok [shape=box, label="init tokens[aname]=[]; pos=0"];
+    tlistHead [shape=diamond, label="tlist[0]"];
+    tlist1 [shape=box, label="→ rest of tokens"];
+    tlistEll [shape=box, label="→ rest of tokens"];
+    tlistAtom [shape=box, label="→ one token"];
+    ppNeeded [shape=diamond, label="preprocess_tokens?"];
+    preprocess [shape=box, label="pp = preprocess_tokens(me, **tokens)"];
+    attach [shape=box, label="rh.tokens=pp; add_rhint(verb, rh)"];
+  }
   mrcan [shape=box, label="MethodArgsRouter(me, f'can_{verb.name}')"];
   rhints [shape=box, label="MethodArgsRouter.hints() → [RouteHint(fname, func, hlist)]"];
   rh_foreach [shape=box, label="for rh in rhints"];
@@ -23,16 +39,29 @@ digraph G {
   preprocess [shape=box, label="pp = Verb.preprocess_tokens(me, **tokens)"];
   attach [shape=box, label="rh.tokens = pp; PState.add_rhint(verb, rh)"];
 
-  // Evaluation phase
-  eval [shape=box, label="Parser.evaluate(pstate): for n in pstate.iter_filled"];
-  psnEval [shape=box, label="PSNode.evaluate(): RouteHint.evaluate(**filled)"];
-  mmrFill [shape=box, label="MethodArgsRouter.fill(args) → [FFAK]"];
-  ia [shape=box, label="introspect_args(func, *a, **kw)"];
-  faa [shape=box, label="filter_annotated_arg(name, item, annot)"];
-  score [shape=box, label="PSNode.score: can_do→2+|do_args|/100; filled→1; else 0"];
-  best [shape=diamond, label="Parser.evaluate: single best scorer?"];
-  setwin [shape=box, label="Parser.evaluate: pstate.winner = best"];
-  ambig [shape=box, label="Parser.evaluate: set hs.do_args['error']"];
+  // Fill + Evaluation phase
+  subgraph cluster_fill_eval {
+    label="fill() + evaluate()";
+    style=dashed;
+    pstateFill [shape=box, label="PState.fill(): states.fill(objs)"];
+    psnFill [shape=box, label="PSNode.fill(objs)"];
+    psnHasRH [shape=diamond, label="rhint?"];
+    psnDoRH [shape=box, label="filled.update(rh.fill(objs))"];
+    psnNextQ [shape=diamond, label=".next? next verb/alias"];
+    psnDoNext [shape=box, label="next.fill(objs)"];
+    psnKidQ [shape=diamond, label=".kid? next form/syntax"];
+    psnDoKid [shape=box, label="kid.fill(objs)"];
+    psnInvalidate [shape=box, label="_score = None"];
+    eval [shape=box, label="evaluate(pstate): for n in iter_filled"];
+    psnEval [shape=box, label="PSNode.evaluate() → RouteHint.evaluate(**filled)"];
+    mmrFill [shape=box, label="MethodArgsRouter.fill(args) → [FFAK]"];
+    ia [shape=box, label="introspect_args(func, *a, **kw)"];
+    faa [shape=box, label="filter_annotated_arg(name, item, annot)"];
+    score [shape=box, label="score: can_do→2+|do_args|/100; filled→1; else 0"];
+    best [shape=diamond, label="single best scorer?"];
+    setwin [shape=box, label="pstate.winner = best"];
+    ambig [shape=box, label="set hs.do_args['error']"];
+  }
   retp [shape=box, label="return pstate"];
 
   // Execution (outside parse)
@@ -60,7 +89,19 @@ digraph G {
   preprocess -> ppNeeded;
   ppNeeded -> attach [label="yes (pp tokens)"];
   ppNeeded -> attach [label="no (raw tokens)"];
-  attach -> eval;
+  attach -> pstateFill;
+  pstateFill -> psnFill;
+  psnFill -> psnHasRH;
+  psnHasRH -> psnDoRH [label="yes"];
+  psnHasRH -> psnNextQ [label="no"];
+  psnDoRH -> psnNextQ;
+  psnNextQ -> psnDoNext [label="yes"];
+  psnNextQ -> psnKidQ [label="no"];
+  psnDoNext -> psnKidQ;
+  psnKidQ -> psnDoKid [label="yes"];
+  psnKidQ -> psnInvalidate [label="no"];
+  psnDoKid -> psnInvalidate;
+  psnInvalidate -> eval;
   eval -> psnEval -> mmrFill -> ia -> faa -> score -> best;
   best -> setwin [label="yes"];
   best -> ambig [label="no"];
