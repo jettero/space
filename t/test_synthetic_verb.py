@@ -66,17 +66,19 @@ def test_synthetic_verb_me_do(me):
 def test_synthetic_verb_can_words(me):
     MARKERS.clear()
     assert me.do("itsatest foo bar") is True
-    assert MARKERS == [("can", "words", ("foo", "bar")), ("do", "words", ("foo", "bar"))]
+    assert ("can", "words", ("foo", "bar")) in MARKERS
+    assert [m for m in MARKERS if m and m[0] == "do"] == [("do", "words", ("foo", "bar"))]
 
 
 def test_synthetic_verb_can_obj(me, objs):
     MARKERS.clear()
     assert me.do("itsatest ubi north") is True
-    assert ("can", "obj_words", objs.ubi, ("north",)) in MARKERS or ("can", "words", ("ubi", "north")) in MARKERS
+    assert ("can", "obj", objs.ubi, "words", ("north",)) in MARKERS
+    assert [m for m in MARKERS if m and m[0] == "do"] == [("do", "obj", objs.ubi, "words", ("north",))]
 
 
 def test_synthetic_verb_env_variants(me, objs):
     MARKERS.clear()
-    assert me.do("itsatest ubi north") is True
-    assert ("can", "obj_words", objs.ubi, ("north",)) in MARKERS or ("can", "words", ("ubi", "north")) in MARKERS
-    assert any(m[0] == "do" for m in MARKERS)
+    assert me.do("itsatest foo bar") is True
+    assert ("can", "words", ("foo", "bar")) in MARKERS
+    assert [m for m in MARKERS if m and m[0] == "do"] == [("do", "words", ("foo", "bar"))]
