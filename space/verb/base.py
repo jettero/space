@@ -20,6 +20,8 @@ class Verb:
             self.name = self.__module__.split(".")[-1]
         if not self.nick:
             self.nick = [self.name]
+        if isinstance(self.nick, str):
+            self.nick = [self.nick]
         if self.name not in self.nick:
             self.nick.insert(0, self.name)
 
