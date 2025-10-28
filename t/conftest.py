@@ -126,4 +126,4 @@ def pytest_runtest_makereport(item, call):
 def pytest_assertrepr_compare(config, op, left, right):
     import pprint
 
-    return ["", f"OP:  ¿{op}?", f"LHS: {pprint.pformat(left)}", f"RHS: {pprint.pformat(right)}"]
+    return ["", f"OP:  ¿{op}?", f"LHS: {pprint.pformat(left, width=4000)}", f"RHS: {pprint.pformat(right, width=4000)}"]
