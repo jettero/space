@@ -281,7 +281,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
         return self.slots.inventory
 
     def do(self, input_text):
-        self.shell.do(input_text)
+        return self.shell.do(input_text)
 
     def can_inventory(self):
         return True, {}

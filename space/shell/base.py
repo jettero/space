@@ -82,6 +82,7 @@ class BaseShell:
         return line
 
     def do(self, input_text):
+        ok = False
         input_text = self.pre_parse_kludges(input_text)
         txts = re.split(r"\s*;\s*", input_text)
         p0 = self.owner.location.pos
@@ -91,6 +92,7 @@ class BaseShell:
                     pstate = self.parser.parse(self.owner, txt)
                     if pstate:
                         pstate()
+                        ok = True
                     else:
                         self.receive_text(f"error: {pstate.error}")
                 except IntentionalQuit:
@@ -100,3 +102,4 @@ class BaseShell:
                     self.receive_text(f"error: {e}")
         if self.owner.location.pos != p0:
             self.owner.do("look")
+        return ok
