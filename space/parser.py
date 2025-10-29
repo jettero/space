@@ -300,16 +300,26 @@ class Parser:
                 tokens = dict()
                 pos = 0
                 end = len(pstate.tokens)
-                for ihint in rhint.hlist:
+                for i, ihint in enumerate(rhint.hlist):
+                    tlist0, *tlistr = ihint.tlist
+                    log.debug('[Parser] ihint=%s tokens="%s"', ihint, " ".join(pstate.tokens[pos:]))
                     if ihint.aname not in tokens:
                         tokens[ihint.aname] = list()
                     if pos < end:
-                        if ihint.tlist[0] is tuple:
-                            tokens[ihint.aname] += pstate.tokens[pos:]
-                            pos = end
-                        elif ihint.tlist[0] == tuple[str, ...]:
-                            tokens[ihint.aname] += pstate.tokens[pos:]
-                            pos = end
+                        if tlist0 in (tuple, tuple[str, ...]):
+                            x = len(rhint.hlist) - (i + 1)
+                            l = len(pstate.tokens) - x
+                            tokens[ihint.aname] += pstate.tokens[pos:l]
+                            log.debug(
+                                "XXXXXXXXXXXXX hlist=%s tokens[%s]=%s[%d:%d] => %s",
+                                repr(rhint.hlist),
+                                ihint.aname,
+                                repr(pstate.tokens),
+                                pos,
+                                l,
+                                tokens[ihint.aname],
+                            )
+                            pos += len(tokens[ihint.aname])
                         elif pos < end:
                             tokens[ihint.aname].append(pstate.tokens[pos])
                             pos += 1

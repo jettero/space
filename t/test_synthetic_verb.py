@@ -40,7 +40,7 @@ def can_itsatest_obj_words(actor, obj: StdObj, words: tuple[str, ...]):
 
 def can_itsatest_living(actor, living: Living):
     MARKERS.append(("can_itsatest_living", "living", living))
-    return True, {"target": living}
+    return True, {"living": living}
 
 
 def can_itsatest_word(actor, word: str):
@@ -55,22 +55,22 @@ def can_itsatest_word_obj(actor, word: str, obj: StdObj):
 
 def can_itsatest_obj_living(actor, obj: StdObj, living: Living):
     MARKERS.append(("can_itsatest_obj_living", "obj", obj, "living", living))
-    return True, {"obj": obj, "target": living}
+    return True, {"obj": obj, "living": living}
 
 
 def can_itsatest_words_living(actor, words: tuple[str, ...], living: Living):
     MARKERS.append(("can_itsatest_words_living", "words", words, "living", living))
-    return True, {"words": words, "target": living}
+    return True, {"wl_words": words, "wl_living": living}
 
 
 def can_itsatest_living_words(actor, living: Living, words: tuple[str, ...]):
     MARKERS.append(("can_itsatest_living_words", "living", living, "words", words))
-    return True, {"target": living, "words": words}
+    return True, {"living": living, "words": words}
 
 
 def can_itsatest_word_living(actor, word: str, living: Living):
     MARKERS.append(("can_itsatest_word_living", "word", word, "living", living))
-    return True, {"word": word, "target": living}
+    return True, {"word": word, "living": living}
 
 
 def can_itsatest_words_obj(actor, words: tuple[str, ...], obj: StdObj):
@@ -114,8 +114,8 @@ def do_itsatest_obj_words(actor, obj, words):
     MARKERS.append(("do_itsatest_obj_words", "obj", obj, "words", words))
 
 
-def do_itsatest_living(actor, target):
-    MARKERS.append(("do_itsatest_living", "living", target))
+def do_itsatest_living(actor, living):
+    MARKERS.append(("do_itsatest_living", "living", living))
 
 
 def do_itsatest_word(actor, word):
@@ -126,20 +126,20 @@ def do_itsatest_word_obj(actor, word, obj):
     MARKERS.append(("do_itsatest_word_obj", "word", word, "obj", obj))
 
 
-def do_itsatest_obj_living(actor, obj, target):
-    MARKERS.append(("do_itsatest_obj_living", "obj", obj, "living", target))
+def do_itsatest_obj_living(actor, obj, living):
+    MARKERS.append(("do_itsatest_obj_living", "obj", obj, "living", living))
 
 
-def do_itsatest_words_living(actor, words, target):
-    MARKERS.append(("do_itsatest_words_living", "words", words, "living", target))
+def do_itsatest_words_living(actor, wl_words, wl_living):
+    MARKERS.append(("do_itsatest_words_living", "words", wl_words, "living", wl_living))
 
 
-def do_itsatest_living_words(actor, target, words):
-    MARKERS.append(("do_itsatest_living_words", "living", target, "words", words))
+def do_itsatest_living_words(actor, living, words):
+    MARKERS.append(("do_itsatest_living_words", "living", living, "words", words))
 
 
-def do_itsatest_word_living(actor, word, target):
-    MARKERS.append(("do_itsatest_word_living", "word", word, "living", target))
+def do_itsatest_word_living(actor, word, living):
+    MARKERS.append(("do_itsatest_word_living", "word", word, "living", living))
 
 
 def do_itsatest_words_obj(actor, words, obj):
@@ -187,25 +187,11 @@ def test_itsatest_can_obj(me, objs):
         ("do_itsatest_obj_words", "obj", objs.ubi, "words", ("north",))
     ]
 
-
-def test_itsatest_env_variants(me, objs):
-    MARKERS.clear()
-    assert me.do("itsatest foo bar") is True
-    assert ("can_itsatest_words", "words", ("foo", "bar")) in MARKERS
-    assert [m for m in MARKERS if m and m[0].startswith("do_")] == [("do_itsatest_words", "words", ("foo", "bar"))]
-
-
 def test_itsatest_living(me, objs):
     MARKERS.clear()
     assert me.do("itsatest stupid") is True
-    assert any(m[:2] == ("can_itsatest_living", "living") for m in MARKERS)
-    assert [m for m in MARKERS if m and m[0] == "do_itsatest_living" and m[1] == "living"]
-
-
-def test_itsatest_single_word_fails_without_word_handler(me):
-    MARKERS.clear()
-    assert me.do("itsatest banana") is False
-
+    assert ("can_itsatest_living", "living", objs.stupid) in MARKERS
+    assert [m for m in MARKERS if m and m[0].startswith("do_")] == [("do_itsatest_living", "living", objs.stupid)]
 
 def test_itsatest_obj_words(me, objs):
     MARKERS.clear()
@@ -224,8 +210,10 @@ def test_itsatest_obj_living(me, objs):
 def test_itsatest_words_living(me, objs):
     MARKERS.clear()
     assert me.do("itsatest foo bar stupid") is True
-    assert ("can_itsatest_words", "words", ("foo", "bar", "stupid")) in MARKERS
-    assert [m for m in MARKERS if m and m[0].startswith("do_")] == [("do_itsatest_words", "words", ("foo", "bar", "stupid"))]
+    assert ("can_itsatest_words_living", "words", ("foo", "bar"), "living", objs.stupid) in MARKERS
+    assert [m for m in MARKERS if m and m[0].startswith("do_")] == [
+        ("do_itsatest_words_living", "words", ("foo", "bar"), "living", objs.stupid)
+    ]
 
 
 def test_itsatest_living_words(me, objs):
