@@ -82,7 +82,7 @@ class ExecutionPlan(namedtuple("XP", ["actor", "fn", "kw"])):
         set_this_body(self.actor)
         # normally fn won't return anything, but we should store and return if
         # we can
-        ret = fn(self.actor, **self.kw)
+        ret = fn(**self.kw)
         set_this_body()
         return ret
 
