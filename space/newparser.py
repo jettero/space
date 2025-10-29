@@ -51,14 +51,14 @@ class FnMap(namedtuple("FnMap", ["fn", "ihint"])):
 
 class IntroHint(namedtuple("IntroHint", ["aname", "type"])):
     def __repr__(self):
-        if self.type is str:
+        if self.type in (str, None):
             return f"{self.aname}"
         t = self.type.__name__ if inspect.isclass(self.type) else self.type
         return f"{self.aname}:{t}"
 
 
 @lru_cache
-def introspect_hints(fn):
+def introspect_hints(fn, do_mode=False):
     fas = inspect.getfullargspec(fn)
     todo = list(fas.args)
     if inspect.ismethod(fn):
@@ -66,6 +66,8 @@ def introspect_hints(fn):
     if fas.varargs:
         todo.append(fas.varargs)
     todo += fas.kwonlyargs
+    if do_mode:
+        return tuple(IntroHint(item, None) for item in todo)
     ret = list()
     for item in todo:
         if item == fas.varargs:
@@ -81,9 +83,11 @@ def find_routes(actor, verbs):
     for verb in verbs:
         can_name = f"can_{verb.name}"
         for fn in [x for x in dir(actor) if x == can_name or x.startswith(f"{can_name}_")]:
-            fn = getattr(actor, fn)
-            can = FnMap(fn, introspect_hints(fn))
-            yield Route(verb, can, None, None)
+            if do := getattr(actor, f"do_{fn[4:]}", False):
+                can = getattr(actor, fn, False)
+                can = FnMap(can, introspect_hints(can))
+                do = FnMap(do, introspect_hints(do, do_mode=True))
+                yield Route(verb, can, do, None)
 
 
 def implied_type(name):
