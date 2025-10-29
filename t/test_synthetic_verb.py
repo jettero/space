@@ -131,6 +131,9 @@ def do_itsatest_obj_living(actor, obj, living):
 
 
 def do_itsatest_words_living(actor, wl_words, wl_living):
+    # XXX: we do need to use wl_words/wl_living here or the do resolver could
+    # think we mean living_words by mistake... we should probably preserve
+    # order in the do resolver
     MARKERS.append(("do_itsatest_words_living", "words", wl_words, "living", wl_living))
 
 
@@ -187,11 +190,13 @@ def test_itsatest_can_obj(me, objs):
         ("do_itsatest_obj_words", "obj", objs.ubi, "words", ("north",))
     ]
 
+
 def test_itsatest_living(me, objs):
     MARKERS.clear()
     assert me.do("itsatest stupid") is True
     assert ("can_itsatest_living", "living", objs.stupid) in MARKERS
     assert [m for m in MARKERS if m and m[0].startswith("do_")] == [("do_itsatest_living", "living", objs.stupid)]
+
 
 def test_itsatest_obj_words(me, objs):
     MARKERS.clear()

@@ -49,15 +49,15 @@ class PSNode:
     @property
     def short(self):
         if self.fname:
-            return f"PSN[{self.score:.4f}]<{self.verb}:{self.fname}>"
-        return f"PSN[{self.score:.4f}]<{self.verb}>"
+            return f"PSN[{self.score:.5f}]<{self.verb}:{self.fname}>"
+        return f"PSN[{self.score:.5f}]<{self.verb}>"
 
     def __repr__(self):
         return self.short
 
     def __str__(self):
         if self.fname:
-            sr = f"PSN[{self.score}]<{self.verb}:{self.fname}>"
+            sr = f"PSN[{self.score:.5f}]<{self.verb}:{self.fname}>"
             for hli in self.rhint.hlist:
                 sr += f"\n  {hli}: {self.rhint.tokens.get(hli.aname)}"
                 if hli.aname in self.filled:
@@ -65,7 +65,7 @@ class PSNode:
                 else:
                     sr += " → ??"
         else:
-            sr = f"PSN[{self.score}]<{self.verb}>"
+            sr = f"PSN[{self.score:.5f}]<{self.verb}>"
         if self.kid is not None:
             sr += f"\n↓{str(self.kid)}"
         if self.next is not None:
@@ -95,16 +95,29 @@ class PSNode:
 
     @property
     def score(self):
+        from .stdobj import StdObj
+
         if self._score is None:
+            bonus = 0.0
+            if self.rhint:
+                for aname, (type0, *_) in self.rhint.hlist:
+                    if aname in self.filled:
+                        bonus += 0.01
+                        if type0 is StdObj:
+                            bonus += 0.00001
+                        elif issubclass(type0, StdObj):
+                            bonus += 0.00002
+            if bonus > 0.999:
+                bonus = 0.999
             if self.can_do is True:
-                self._score = CAN_DO_SCORE + (len(self.do_args) / 100)
+                self._score = CAN_DO_SCORE + bonus
                 return self._score
             if self.rhint:
                 for hli in self.rhint.hlist:
                     if hli.aname not in self.filled:
                         self._score = 0
                         return self.score
-                self._score = FILLED_SCORE
+                self._score = FILLED_SCORE + bonus
                 return self._score
             self._score = 0
             # I really want this below sub-scoring, but it's not worth it it
@@ -311,7 +324,7 @@ class Parser:
                             l = len(pstate.tokens) - x
                             tokens[ihint.aname] += pstate.tokens[pos:l]
                             log.debug(
-                                "XXXXXXXXXXXXX hlist=%s tokens[%s]=%s[%d:%d] => %s",
+                                "variadic life preserver hlist=%s tokens[%s]=%s[%d:%d] => %s",
                                 repr(rhint.hlist),
                                 ihint.aname,
                                 repr(pstate.tokens),
