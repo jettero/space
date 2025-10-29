@@ -23,8 +23,7 @@ Core Concepts
 
 """
 
-import shlex
-import inspect
+import shlex, inspect, logging
 from functools import lru_cache
 from collections import namedtuple
 
@@ -32,12 +31,16 @@ from .find import find_verb
 from .living import Living
 from .stdobj import StdObj
 
+log = logging.getLogger(__name__)
+
 
 def parse(actor, input_text):
     vtok, *tokens = shlex.shlex(input_text.strip())
     verbs = find_verb(vtok)
     routes = find_routes(actor, verbs)
-    log.debug("parse(%s, %s) verbs=%s routes=%s", repr(actor), repr(input_text), repr(verbs), repr(routes))
+    log.debug("parse(%s, %s) verbs=%s", repr(actor), repr(input_text), repr(verbs))
+    for route in routes:
+        log.debug("    %s", repr(route))
 
 
 Route = namedtuple("Route", ["verb", "can", "do", "score"])
@@ -87,7 +90,8 @@ def find_routes(actor, verbs):
                 can = getattr(actor, fn, False)
                 can = FnMap(can, introspect_hints(can))
                 do = FnMap(do, introspect_hints(do, do_mode=True))
-                yield Route(verb, can, do, None)
+                score = sum(type_rank(t) for a, t in can.ihint)
+                yield Route(verb, can, do, score)
 
 
 def implied_type(name):
