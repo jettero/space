@@ -1,0 +1,109 @@
+"""
+New Parser Plan (Two-Stage, Simple, Intent-First)
+
+Goals
+- Keep parsing planning flexible and intellegent
+- the text token "ubi" may resolve to a StdObj, or it may not, but it could
+  provide us a hint.  in the case of `(words:tuple[str,...], obj:StdObj,
+  words:tuple[str,...])`, we could split up at least 3 tokens by realizing one
+  can resolve to a `StdObj`.
+- We want to do all this argument resolution like once though, no repeat
+  resolvers figuring out 'ubi' could be a StdObj
+- We should be able to do everything we need in one parse() function without
+  much abstraction; which turns quickly into a maintenence nightmare (see
+  parser.dot for a rather cautionary tale of fanciful abstraction)
+
+Core Concepts
+- if we find a can_ that works, we consider filling the *matching* do function
+- if we carefully order our method routing, we can safely select the first
+  match rather than scoring from among dozens or hundreds of plans looking for
+  a winner
+- we score the possible match by saying: str < tuple[str,..] < StdObj < Living < Humanoid < Human
+- What does this mean for a Weapon vs a Human? ... well... no plan is perfect
+
+"""
+
+import shlex
+import inspect
+from functools import lru_cache
+from collections import namedtuple
+
+from .find import find_verb
+from .living import Living
+from .stdobj import StdObj
+
+
+def parse(actor, input_text):
+    vtok, *tokens = shlex.shlex(input_text.strip())
+    verbs = find_verb(vtok)
+    routes = find_routes(actor, verbs)
+    log.debug("parse(%s, %s) verbs=%s routes=%s", repr(actor), repr(input_text), repr(verbs), repr(routes))
+
+
+Route = namedtuple("Route", ["verb", "can", "do", "score"])
+
+
+class FnMap(namedtuple("FnMap", ["fn", "ihint"])):
+    def __repr__(self):
+        ihl = ", ".join(str(x) for x in self.ihint)
+        return f"FM<{self.fn.__name__}({ihl})>"
+
+
+class IntroHint(namedtuple("IntroHint", ["aname", "type"])):
+    def __repr__(self):
+        if self.type is str:
+            return f"{self.aname}"
+        t = self.type.__name__ if inspect.isclass(self.type) else self.type
+        return f"{self.aname}:{t}"
+
+
+@lru_cache
+def introspect_hints(fn):
+    fas = inspect.getfullargspec(fn)
+    todo = list(fas.args)
+    if inspect.ismethod(fn):
+        todo = todo[1:]
+    if fas.varargs:
+        todo.append(fas.varargs)
+    todo += fas.kwonlyargs
+    ret = list()
+    for item in todo:
+        if item == fas.varargs:
+            ret.append(IntroHint(item, tuple))
+        if an := fas.annotations.get(item, False):
+            ret.append(IntroHint(item, an))
+        else:
+            ret.append(IntroHint(item, implied_type(item)))
+    return tuple(ret)
+
+
+def find_routes(actor, verbs):
+    for verb in verbs:
+        can_name = f"can_{verb.name}"
+        for fn in [x for x in dir(actor) if x == can_name or x.startswith(f"{can_name}_")]:
+            fn = getattr(actor, fn)
+            can = FnMap(fn, introspect_hints(fn))
+            yield Route(verb, can, None, None)
+
+
+def implied_type(name):
+    nl = name.lower()
+    if nl.startswith("words") or nl.startswith("moves"):
+        return tuple[str, ...]
+    if nl.startswith("word") or nl.startswith("wrd"):
+        return str
+    if nl.startswith("liv") or nl.startswith("targ"):
+        return Living
+    if nl.startswith("obs") or nl.startswith("objs"):
+        return tuple[StdObj, ...]
+    if nl.startswith("ob"):
+        return StdObj
+    return str
+
+
+def type_rank(tp):
+    # Any arg counts as 1 in the final scoring, we just want our StdObj items
+    # to be worth slightly more
+    if issubclass(tp, StdObj):
+        return 1 + (tp.sodval / 1000)
+    return 1
