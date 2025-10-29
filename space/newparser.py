@@ -34,25 +34,69 @@ from .stdobj import StdObj
 log = logging.getLogger(__name__)
 
 
-def parse(actor, input_text):
+def parse(actor, input_text, parse_only=False):
+    input_text = input_text.strip()
+    if not input_text:
+        return
+
     vtok, *tokens = shlex.shlex(input_text.strip())
     verbs = find_verb(vtok)
     routes = find_routes(actor, verbs)
-    log.debug("parse(%s, %s) verbs=%s", repr(actor), repr(input_text), repr(verbs))
-    for route in routes:
-        log.debug("    %s", repr(route))
+    log.debug("-=: parse(%s, %s) verbs=%s", repr(actor), repr(input_text), repr(verbs))
+    vmap = actor.location.map.visicalc_submap(me)
+    objs = [o for o in self.vmap.objects] + me.inventory
+
+    for route in sorted(routes, key=lambda x: x.score, reverse=True):
+        log.debug("    route: %s", repr(route))
+        # Here's were we do the needful. Using our available tokens, we try to
+        # resolve them into the indicated types. The strategy and conversions
+        # may be different from Route to Route though, so we need to leave that
+        # list of tokens intact.
+        #
+        # 0. set_this_body(actor) before parsing and trying can-functions, we
+        #    do have to remeber to clear this with set_this_body() though
+        # 1. any 'str' we can just dump a token in there. done.
+        # 2. tuple[str,...] should greedy fill with tokens, but we can borrow
+        #    tokens from it later if we need.
+        # 3. Any classes (StdObj, Living, etc) we can resolve using objs can be
+        #    resolved with list_match(name, objs)
+        # 4. the applicable can function will return (bool,dict)
+        #    ok,ctx = route.can(**resolved_kwargs)
+        # 5a. if ok is False, and this is the only route, we fall through to
+        #     below and raise any exception in ctx['error']. ctx['error'] if
+        #     given can be an Exception(), or simple text. otherwise, continue
+        # 5b. if ok is True and parse_only is True and we have enough kwargs
+        #     for the route.do function: return an ExecutionPlan, and be sure
+        #     to clear set_this_body()
+        # 5b. if ok is True and the resulting dict has enough kwargs for the
+        #     route.do function, then we can execute it directly (be sure
+        #     set_this_body(actor) is set and that we didn't clear it already).
+        #     though, we do need to clear it again after executing the do fn.
+
+    # end-for
+    # 1. if we get here with no execution plan, we'll have to raise an E.ParseError(), probably.
 
 
-Route = namedtuple("Route", ["verb", "can", "do", "score"])
+class ExecutionPlan(namedtuple("XP", ["actor", "fn", "kw"])):
+    def __call__(self):
+        set_this_body(self.actor)
+        # normally fn won't return anything, but we should store and return if
+        # we can
+        ret = fn(self.actor, **self.kw)
+        set_this_body()
+        return ret
 
 
-class FnMap(namedtuple("FnMap", ["fn", "ihint"])):
+Route = namedtuple("R", ["verb", "can", "do", "score"])
+
+
+class FnMap(namedtuple("FM", ["fn", "ihint"])):
     def __repr__(self):
         ihl = ", ".join(str(x) for x in self.ihint)
         return f"FM<{self.fn.__name__}({ihl})>"
 
 
-class IntroHint(namedtuple("IntroHint", ["aname", "type"])):
+class IntroHint(namedtuple("IH", ["aname", "type"])):
     def __repr__(self):
         if self.type in (str, None):
             return f"{self.aname}"
@@ -80,6 +124,17 @@ def introspect_hints(fn, do_mode=False):
         else:
             ret.append(IntroHint(item, implied_type(item)))
     return tuple(ret)
+
+
+def list_match(name, objs):
+    if isinstance(objs, (types.GeneratorType, list, tuple)):
+        s = name.split(".", 1)
+        if len(s) not in (1, 2):
+            raise ValueError(f"len(name.split(., 1)) not in (1,2)")
+        objs = [i for i in objs if i.parse_match(*s)]
+        if objs:
+            return objs
+    return tuple()
 
 
 def find_routes(actor, verbs):
