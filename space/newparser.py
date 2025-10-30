@@ -60,11 +60,17 @@ def parse(actor, input_text, parse_only=False):
         ok, ctx = route.can.fn(*args, **kw)
         if ok:
             try:
-                merged = {a: kw[a] for a, _ in route.do.ihint}
+                merged = {a: ctx[a] for a, _ in route.do.ihint}
                 filled = True
             except KeyError:
                 filled = False
             if not filled:
+                log.error(
+                    "parse succeeded but missing do_ args for verb %s; have=%s need=%s",
+                    route.verb.name,
+                    sorted(set(kw.keys()) | set(ctx.keys())),
+                    [a for a, _ in route.do.ihint],
+                )
                 raise E.ParseError(f'internal error with "{route.verb.name}" verb')
             if parse_only:
                 return ExecutionPlan(actor, route.do.fn, merged)

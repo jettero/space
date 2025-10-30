@@ -50,7 +50,7 @@ def e_map(eroom):
 @pytest.fixture
 def me_dd_ss(objs):
     objs.me.do("open door; sSWss")
-    assert objs.me.location.pos == (7,5), "Problem constructing fixture. open, move, or parser is busted"
+    assert objs.me.location.pos == (7, 5), "Problem constructing fixture. open, move, or parser is busted"
     objs.me.shell = ListShell()
     objs.dig_dug.shell = ListShell()
     objs.stupid.shell = ListShell()

@@ -12,11 +12,9 @@ from space.newparser import parse, ExecutionPlan
         ("say hi", "do_say_words", {"words": "hi"}),  # can_say_words joins the tuple
         ("l", "do_look", {}),
         ("look at room", "do_look", {}),
-        # get/drop routing requires exact can/do suffix pairing; skip here
         ("inventory", "do_inventory", {}),
         ("i", "do_inventory", {}),
-        ("move south", "do_move_words", {"moves": ("south",)}),
-        # attack route discovery not exposed in newparser yet; skip here
+        ("move s", "do_move_words", {"moves": ("s",)}),
     ],
 )
 def test_look_execution_plan(me, line, fn, kw):
