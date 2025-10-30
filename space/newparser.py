@@ -67,8 +67,10 @@ def parse(actor, input_text, parse_only=False):
             continue
 
         log.debug("running %s.can.fn(%s, %s)", repr(route), repr(args), repr(kw))
+        set_this_body(actor)
         ok, ctx = route.can.fn(*args, **kw)
-        log.debug("        result: ok=%s ctx=%s", repr(ok), repr(ctx))
+        set_this_body()
+        log.debug("can.fn result: ok=%s ctx=%s", repr(ok), repr(ctx))
         if ok:
             try:
                 merged = {a: ctx[a] for a, _ in route.do.ihint}
@@ -76,12 +78,7 @@ def parse(actor, input_text, parse_only=False):
             except KeyError:
                 filled = False
             if not filled:
-                log.error(
-                    "parse succeeded but missing do_ args for verb %s; have=%s need=%s",
-                    route.verb.name,
-                    sorted(set(kw.keys()) | set(ctx.keys())),
-                    [a for a, _ in route.do.ihint],
-                )
+                log.error("%s is broken (filled=%s).", repr(route), repr(merged))
                 raise E.ParseError(f'internal error with "{route.verb.name}" verb')
             if parse_only:
                 return ExecutionPlan(actor, route.do.fn, merged)
