@@ -3,6 +3,7 @@
 import weakref
 from ...named import Tags
 from ..dir_util import translate_dir, DDIRS, reverse_dir, orthoganal_dirs
+import space.exceptions as E
 
 
 class MapObj:
@@ -55,15 +56,15 @@ class MapObj:
         """the map object in the direction `dir_name`"""
         try:
             return self.map[self.dpos(dir_name)]
-        except ValueError:
-            pass
+        except E.UselessDirection:
+            return self
 
     def r_mpos(self, dir_name):
         """reversed direction (n → s) of mpos()"""
         try:
             return self.map[self.r_dpos(dir_name)]
-        except ValueError:
-            pass
+        except E.UselessDirection:
+            return self
 
     def istype(self, of_type=None):
         """is this cell of type `of_type` (or simply True if of_type is None)"""

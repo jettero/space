@@ -64,3 +64,12 @@ class TargetError(ParseError):
 
 class InvalidDamageType(SExceptionMixin, ValueError):
     pass
+
+class MapError(Exception):
+    pass
+
+class BadDirection(SExceptionMixin, MapError, ValueError):
+    pass
+
+class UselessDirection(SExceptionMixin, MapError, ValueError):
+    pass

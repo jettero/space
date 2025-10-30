@@ -38,7 +38,9 @@ class CanMove:
             try:
                 if c.accept(self):
                     continue
-            except AttributeError:
+            except E.BadDirection as e:
+                return False, {"error": e}
+            except AttributeError as e:
                 return False, {"error": "there's something in the way"}
             except E.ContainerError as e:
                 return False, {"error": e}

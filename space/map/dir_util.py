@@ -3,6 +3,7 @@
 import re
 import logging
 import lark
+import space.exceptions as E
 
 log = logging.getLogger(__name__)
 
@@ -60,9 +61,9 @@ def translate_dir(dir_name, pos):
             i, v = DTR[i]
             cpos[i] += v
         except KeyError as e:
-            raise ValueError(f"'{dir_name}' is a bad direction") from e
+            raise E.BadDirection(f"'{dir_name}' is a bad direction") from e
     if cpos == pos:
-        raise ValueError(f"'{dir_name}' seems useless")
+        raise E.UselessDirection(f"'{dir_name}' seems useless")
     return tuple(cpos)
 
 
