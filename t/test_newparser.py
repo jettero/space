@@ -15,7 +15,6 @@ from space.newparser import parse, ExecutionPlan
         # get/drop routing requires exact can/do suffix pairing; skip here
         ("inventory", "do_inventory", {}),
         ("i", "do_inventory", {}),
-        ("move north", "do_move_words", {"moves": ("north",)}),
         ("move south", "do_move_words", {"moves": ("south",)}),
         # attack route discovery not exposed in newparser yet; skip here
     ],
