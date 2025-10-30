@@ -23,5 +23,4 @@ from space.newparser import parse, ExecutionPlan
 def test_look_execution_plan(me, line, fn, kw):
     xp = parse(me, line, parse_only=True)
     assert xp is not None
-    assert xp.fn.__name__ == fn
-    assert xp.kw == kw
+    assert (xp.fn.__name__, xp.kw) == (fn, kw)
