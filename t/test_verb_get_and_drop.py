@@ -3,7 +3,7 @@
 
 import pytest
 
-from space.parser import Parser
+from space.parser import parse
 
 
 @pytest.fixture
@@ -12,19 +12,17 @@ def me(objs):
 
 
 def test_get_and_drop_bauble(me, a_map):
-    p = Parser()
-
     # Open door and walk to the bauble using compound commands and directions
     # Compound commands must go through the shell
     me.do("open door; sSW6s3w")
 
     # We should now be at or very near the bauble at (4,9)
-    assert isinstance(me.location.pos, tuple)
+    assert me.location.pos, (4, 9)
 
     # pick up the useless bauble (typo in spec: 'bauble')
-    ps = p.parse(me, "get bauble")
+    ps = parse(me, "get bauble")
     assert ps
-    assert ps.winner.verb.name == "get"
+    assert ps.fn.__name__.startswith(f"can_{get}")
     ps()
 
     # ensure it is now carried in hands
