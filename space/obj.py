@@ -3,8 +3,6 @@
 import logging
 import weakref
 
-from .router import MethodNameRouter
-
 log = logging.getLogger(__name__)
 
 
