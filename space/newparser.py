@@ -68,7 +68,7 @@ def parse(actor, input_text, parse_only=False):
 
         log.debug("running %s.can.fn(%s, %s)", repr(route), repr(args), repr(kw))
         set_this_body(actor)
-        ok, ctx = route.can.fn(*args, **kw)
+        ok, ctx = route.can.fn(*args, **(route.verb.preprocess_tokens(**kw)))
         set_this_body()
         log.debug("can.fn result: ok=%s ctx=%s", repr(ok), repr(ctx))
         if ok:
