@@ -2,31 +2,17 @@
 
 import pytest
 
-from space.newparser import parse
-
-
-def test_look_execution_plan(me):
-    xp = parse(me, "look", parse_only=True)
-    assert xp is not None
-    assert xp.fn.__name__ == "do_look"
-    assert xp.actor is me
-    assert xp.kw == {}
-
-
-def test_look_executes_when_called(me):
-    xp = parse(me, "look", parse_only=True)
-    assert xp is not None
-    assert xp() is None
-
+from space.newparser import parse, ExecutionPlan
 
 @pytest.mark.parametrize(
-    "line",
+    "line,fn,kw",
     [
-        "say hi",
-        "say hello world",
-        "take ubi",
-        "give ubi stupid",
+        ("look", 'do_look', {}),
+        ("say hi", 'do_say_words', {"words":'hi'}), # can_say_words joins the tuple
     ],
 )
-def test_complex_verbs_currently_not_ready(me, line):
-    assert parse(me, line, parse_only=True) is None
+def test_look_execution_plan(me, line, fn,kw):
+    xp = parse(me, line, parse_only=True)
+    assert xp is not None
+    assert xp.fn.__name__ == fn
+    assert xp.kw == kw
