@@ -23,11 +23,11 @@ Core Concepts
 
 """
 
-import shlex, inspect, logging
+import shlex, inspect, logging, types
 from functools import lru_cache
 from collections import namedtuple
 
-from .find import find_verb
+from .find import find_verb, set_this_body
 from .living import Living
 from .stdobj import StdObj
 
@@ -39,27 +39,77 @@ def parse(actor, input_text, parse_only=False):
     if not input_text:
         return
 
-    vtok, *tokens = shlex.shlex(input_text.strip())
+    parts = shlex.split(input_text)
+    if not parts:
+        return
+    vtok, *tokens = parts
     verbs = find_verb(vtok)
     routes = find_routes(actor, verbs)
     log.debug("-=: parse(%s, %s) verbs=%s", repr(actor), repr(input_text), repr(verbs))
-    vmap = actor.location.map.visicalc_submap(me)
-    objs = [o for o in self.vmap.objects] + me.inventory
+    vmap = actor.location.map.visicalc_submap(actor)
+    objs = [o for o in vmap.objects] + actor.inventory
 
     for route in sorted(routes, key=lambda x: x.score, reverse=True):
         log.debug("    route: %s", repr(route))
-        # Here's were we do the needful. Using our available tokens, we try to
-        # resolve them into the indicated types. The strategy and conversions
-        # may be different from Route to Route though, so we need to leave that
-        # list of tokens intact.
-        #
-        # 0. set_this_body(actor) before parsing and trying can-functions, we
-        #    do have to remeber to clear this with set_this_body() though
-        # 1. any 'str' we can just dump a token in there. done.
-        # 2. tuple[str,...] should greedy fill with tokens, but we can borrow
-        #    tokens from it later if we need.
-        # 3. Any classes (StdObj, Living, etc) we can resolve using objs can be
-        #    resolved with list_match(name, objs)
+        remaining = list(tokens)
+        kw = {}
+        for aname, atype in route.can.ihint:
+            # Here's were we do the needful. Using our available tokens, we try to
+            # resolve them into the indicated types. The strategy and conversions
+            # may be different from Route to Route though, so we need to leave that
+            # list of tokens intact.
+            #
+            # 1. any 'str' we can just dump a token in there. done.
+            if atype in (str, None):
+                if remaining:
+                    kw[aname] = remaining.pop(0)
+                continue
+            # 2. tuple[str,...] should greedy fill with tokens, but we can borrow
+            #    tokens from it later if we need.
+            if atype is tuple or atype == tuple[str, ...]:
+                kw[aname] = tuple(remaining)
+                remaining = []
+                continue
+            # 3. Any classes (StdObj, Living, etc) we can resolve using objs can be
+            #    resolved with list_match(name, objs)
+            if inspect.isclass(atype) and issubclass(atype, StdObj):
+                if remaining:
+                    nm = remaining[0]
+                    m = list_match(nm, objs)
+                    if m:
+                        kw[aname] = m[0]
+                        remaining.pop(0)
+                continue
+            if inspect.isclass(atype) and issubclass(atype, Living):
+                if remaining:
+                    nm = remaining[0]
+                    m = [o for o in list_match(nm, objs) if isinstance(o, Living)]
+                    if m:
+                        kw[aname] = m[0]
+                        remaining.pop(0)
+                continue
+
+        ok_ctx = route.can.fn(**kw)
+        if isinstance(ok_ctx, tuple) and len(ok_ctx) == 2:
+            ok, ctx = ok_ctx
+        else:
+            ok, ctx = bool(ok_ctx), {}
+        if ok:
+            if parse_only:
+                need = {a for a, _ in route.do.ihint}
+                if need.issubset(kw.keys() | ctx.keys()):
+                    merged = dict(kw)
+                    for k in need:
+                        if k not in merged and k in ctx:
+                            merged[k] = ctx[k]
+                    return ExecutionPlan(actor, route.do.fn, merged)
+            else:
+                # 0. set_this_body(actor) before parsing and trying can-functions, we
+                #    do have to remeber to clear this with set_this_body() though
+                set_this_body(actor)
+                ret = route.do.fn(**kw)
+                set_this_body()
+                return ret
         # 4. the applicable can function will return (bool,dict)
         #    ok,ctx = route.can(**resolved_kwargs)
         # 5a. if ok is False, and this is the only route, we fall through to
@@ -80,11 +130,13 @@ def parse(actor, input_text, parse_only=False):
 class ExecutionPlan(namedtuple("XP", ["actor", "fn", "kw"])):
     def __call__(self):
         set_this_body(self.actor)
-        # normally fn won't return anything, but we should store and return if
-        # we can
-        ret = fn(**self.kw)
+        # normally fn won't return anything, but we should store and return if we can
+        ret = self.fn(**self.kw)
         set_this_body()
         return ret
+
+    def __repr__(self):
+        return f"XP<{self.actor}.{self.fn.__name__}({self.kw!r})>"
 
 
 Route = namedtuple("R", ["verb", "can", "do", "score"])
