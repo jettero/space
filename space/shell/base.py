@@ -8,7 +8,7 @@ import weakref
 # owner.shell is not weakref
 
 from ..verb.quit import IntentionalQuit
-from ..parser import Parser
+from ..parser import parse
 from .message import TextMessage, MapMessage, Message
 
 log = logging.getLogger(__name__)
@@ -21,7 +21,6 @@ class BaseShell:
     def __init__(self, owner=None, init=None):
         if owner is not None:
             owner.shell = self
-        self.parser = Parser()
         self.startup(init=init)
 
     def startup(self, init=None):
@@ -89,12 +88,12 @@ class BaseShell:
         for txt in txts:
             if txt:
                 try:
-                    pstate = self.parser.parse(self.owner, txt)
-                    if pstate:
-                        pstate()
+                    xp = parse(self.owner, txt, parse_only=True)
+                    if xp:
+                        xp()
                         ok = True
                     else:
-                        self.receive_text(f"error: {pstate.error}")
+                        self.receive_text(f"error: {xp.error}")
                 except IntentionalQuit:
                     raise
                 except Exception as e:  # pylint: disable=broad-except
