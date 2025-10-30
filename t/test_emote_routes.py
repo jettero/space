@@ -4,7 +4,6 @@
 import pytest
 
 from space.verb.emote.gen import EMOTES, SAFE_TOKEN
-from space.router import MethodArgsRouter
 
 
 @pytest.mark.parametrize("ename", list(EMOTES))
@@ -13,6 +12,7 @@ def test_emote_can_count_matches_patterns(objs, ename):
     emote = EMOTES[ename]
     expected_count = len(emote.rule_db)
 
-    mr = MethodArgsRouter(objs.me, f"can_{fname}")
-    found = tuple(mr)
+    can_fn = f"can_{fname}"
+
+    found = tuple(n for n in dir(objs.me) if (n == can_fn or n.startswith(f"{can_fn}_")))
     assert len(found) == expected_count, f"can_* count mismatch for {ename}: found {len(found)} != expected {expected_count}"
