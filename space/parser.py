@@ -117,7 +117,7 @@ class ExecutionPlan(namedtuple("XP", ["actor", "fn", "kw"])):
         return self.kw.get("error", "unknown")
 
     def __bool__(self):
-        return self.fn is _parse_error
+        return not (self.fn is _parse_error)
 
 
 Route = namedtuple("R", ["verb", "can", "do", "score"])
