@@ -80,12 +80,12 @@ class Humanoid(Living):
         self.simple_action("$N $vdrop $o.", obj)
 
     def can_open_obj(self, obj: Door):
-        ok, err = obj.can_open()
+        ok, ctx = obj.can_open()
         if ok:
             if self.unit_distance_to(obj) <= self.reach:
-                return ok, err
+                return ok, {"obj": obj}
             return False, {"error": f"{obj} is too far away"}
-        return ok, err
+        return ok, ctx
 
     def do_open_obj(self, obj: Door):
         log.debug("do_open_obj(%s)", obj)

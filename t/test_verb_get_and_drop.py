@@ -15,6 +15,7 @@ def test_get_and_drop_bauble(me, a_map):
     # Open door and walk to the bauble using compound commands and directions
     # Compound commands must go through the shell
     me.do("open door; sSW6s3w")
+    me.do("look")
 
     # We should now be at or very near the bauble at (4,9)
     assert me.location.pos, (4, 9)

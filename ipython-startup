@@ -49,8 +49,6 @@ from space.vv import VV
 from space.pv import PV
 from space.dn import DN
 from space.roll import Roll, roll, Check
-from space.parser import Parser
-from space.router import MethodRouter, MethodNameRouter, MethodArgsRouter
 from space.stdobj import StdObj
 from space.living import Living
 from space.living.humanoid import Human, Humanoid
@@ -58,8 +56,6 @@ from space.living.humanoid import Human, Humanoid
 import sys
 sys.path.insert(0, 't')
 from troom import a_map, o
-
-P = Parser()
 
 def do(cmd):
     return o.me.do(cmd)

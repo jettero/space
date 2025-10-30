@@ -73,12 +73,12 @@ def parse(actor, input_text, parse_only=False):
         log.debug("can.fn result: ok=%s ctx=%s", repr(ok), repr(ctx))
         if ok:
             try:
-                merged = {a: ctx[a] for a, _ in route.do.ihint}
+                merged = {ih.name: ctx[ih.name] for ih in route.do.ihint}
                 filled = True
-            except KeyError:
+            except KeyError as e:
+                log.error("%s is broken, can.fn didn't provide %s arg for do.fn.", repr(route), e)
                 filled = False
             if not filled:
-                log.error("%s is broken (filled=%s).", repr(route), repr(merged))
                 raise E.ParseError(f'internal error with "{route.verb.name}" verb')
             if parse_only:
                 return ExecutionPlan(actor, route.do.fn, merged)
@@ -103,6 +103,7 @@ def _parse_error(error="unknown", **kw):
 
 class ExecutionPlan(namedtuple("XP", ["actor", "fn", "kw"])):
     def __call__(self):
+        log.debug("running %s", repr(self))
         set_this_body(self.actor)
         # normally fn won't return anything, but we should store and return if we can
         ret = self.fn(**self.kw)
