@@ -20,9 +20,9 @@ def test_get_and_drop_bauble(me, a_map):
     assert me.location.pos, (4, 9)
 
     # pick up the useless bauble (typo in spec: 'bauble')
-    ps = parse(me, "get bauble")
+    ps = parse(me, "get bauble", parse_only=True)
     assert ps
-    assert ps.fn.__name__.startswith(f"can_{get}")
+    assert ps.fn.__name__ == "do_get_obj"
     ps()
 
     # ensure it is now carried in hands
