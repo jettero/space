@@ -93,7 +93,7 @@ def parse(actor, input_text, parse_only=False):
     msg = errors[0] if len(errors) == 1 else f"unable to understand {input_text!r}"
     if parse_only:
         # We absolutely must present ExecutionPlan.error so the shell can use it.
-        return ExecutionPlan(actor, error, {"error": msg})
+        return ExecutionPlan(actor, _parse_error, {"error": msg})
     raise E.ParseError(msg)
 
 
