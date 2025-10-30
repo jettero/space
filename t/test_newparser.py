@@ -29,6 +29,5 @@ def test_look_executes_when_called(me):
     ],
 )
 def test_complex_verbs_currently_not_ready(me, line):
-    # New parser is not fully wired for args yet; ensure it returns no plan.
     assert parse(me, line, parse_only=True) is None
 
