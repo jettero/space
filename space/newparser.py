@@ -53,7 +53,9 @@ def parse(actor, input_text, parse_only=False):
         log.debug("    route: %s", repr(route))
         remaining = list(tokens)
         kw = {}
+        args = []
         for aname, atype in route.can.ihint:
+            log.debug("    aname=%s atype=%s", aname, repr(atype))
             # Here's were we do the needful. Using our available tokens, we try to
             # resolve them into the indicated types. The strategy and conversions
             # may be different from Route to Route though, so we need to leave that
@@ -66,6 +68,10 @@ def parse(actor, input_text, parse_only=False):
                 continue
             # 2. tuple[str,...] should greedy fill with tokens, but we can borrow
             #    tokens from it later if we need.
+            if atype is ...:
+                args.extend(remaining)
+                remaining = []
+                continue
             if atype is tuple or atype == tuple[str, ...]:
                 kw[aname] = tuple(remaining)
                 remaining = []
@@ -88,8 +94,7 @@ def parse(actor, input_text, parse_only=False):
                         kw[aname] = m[0]
                         remaining.pop(0)
                 continue
-
-        ok_ctx = route.can.fn(**kw)
+        ok_ctx = route.can.fn(*args, **kw)
         if isinstance(ok_ctx, tuple) and len(ok_ctx) == 2:
             ok, ctx = ok_ctx
         else:
@@ -107,7 +112,7 @@ def parse(actor, input_text, parse_only=False):
                 # 0. set_this_body(actor) before parsing and trying can-functions, we
                 #    do have to remeber to clear this with set_this_body() though
                 set_this_body(actor)
-                ret = route.do.fn(**kw)
+                ret = route.do.fn(*args, **kw)
                 set_this_body()
                 return ret
         # 4. the applicable can function will return (bool,dict)
@@ -170,7 +175,8 @@ def introspect_hints(fn, do_mode=False):
     ret = list()
     for item in todo:
         if item == fas.varargs:
-            ret.append(IntroHint(item, tuple))
+            ret.append(IntroHint(item, ...))
+            continue
         if an := fas.annotations.get(item, False):
             ret.append(IntroHint(item, an))
         else:
@@ -219,6 +225,8 @@ def implied_type(name):
 def type_rank(tp):
     # Any arg counts as 1 in the final scoring, we just want our StdObj items
     # to be worth slightly more
-    if issubclass(tp, StdObj):
+    if tp is ...:
+        return 1
+    if inspect.isclass(tp) and issubclass(tp, StdObj):
         return 1 + (tp.sodval / 1000)
     return 1
