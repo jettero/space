@@ -85,7 +85,8 @@ class BaseShell:
     def do(self, input_text):
         ok = False
         input_text = self.pre_parse_kludges(input_text)
-        txts = [f"move {x}" if is_direction_string else x for x in re.split(r"\s*;\s*", input_text)]
+        txts = [f"move {x}" if is_direction_string(x) else x for x in re.split(r"\s*;\s*", input_text)]
+        log.debug("SHELL SUBST >>> %s >>> %s", input_text, repr(txts))
         p0 = self.owner.location.pos
         for txt in txts:
             if txt:
