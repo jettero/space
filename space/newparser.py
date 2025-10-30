@@ -1,33 +1,9 @@
-"""
-New Parser Plan (Two-Stage, Simple, Intent-First)
-
-Goals
-- Keep parsing planning flexible and intellegent
-- the text token "ubi" may resolve to a StdObj, or it may not, but it could
-  provide us a hint.  in the case of `(words:tuple[str,...], obj:StdObj,
-  words:tuple[str,...])`, we could split up at least 3 tokens by realizing one
-  can resolve to a `StdObj`.
-- We want to do all this argument resolution like once though, no repeat
-  resolvers figuring out 'ubi' could be a StdObj
-- We should be able to do everything we need in one parse() function without
-  much abstraction; which turns quickly into a maintenence nightmare (see
-  parser.dot for a rather cautionary tale of fanciful abstraction)
-
-Core Concepts
-- if we find a can_ that works, we consider filling the *matching* do function
-- if we carefully order our method routing, we can safely select the first
-  match rather than scoring from among dozens or hundreds of plans looking for
-  a winner
-- we score the possible match by saying: str < tuple[str,..] < StdObj < Living < Humanoid < Human
-- What does this mean for a Weapon vs a Human? ... well... no plan is perfect
-
-"""
-
 import shlex, inspect, logging, types
 from functools import lru_cache
 from collections import namedtuple
 
 from .find import find_verb, set_this_body
+import space.exceptions as E
 from .living import Living
 from .stdobj import StdObj
 
@@ -49,25 +25,18 @@ def parse(actor, input_text, parse_only=False):
     vmap = actor.location.map.visicalc_submap(actor)
     objs = [o for o in vmap.objects] + actor.inventory
 
-    for route in sorted(routes, key=lambda x: x.score, reverse=True):
+    errors = list()
+    for route in sorted(routes, key=lambda x: (x.score, len(x.can.ihint)), reverse=True):
         log.debug("    route: %s", repr(route))
         remaining = list(tokens)
         kw = {}
         args = []
         for aname, atype in route.can.ihint:
             log.debug("    aname=%s atype=%s", aname, repr(atype))
-            # Here's were we do the needful. Using our available tokens, we try to
-            # resolve them into the indicated types. The strategy and conversions
-            # may be different from Route to Route though, so we need to leave that
-            # list of tokens intact.
-            #
-            # 1. any 'str' we can just dump a token in there. done.
             if atype in (str, None):
                 if remaining:
                     kw[aname] = remaining.pop(0)
                 continue
-            # 2. tuple[str,...] should greedy fill with tokens, but we can borrow
-            #    tokens from it later if we need.
             if atype is ...:
                 args.extend(remaining)
                 remaining = []
@@ -76,8 +45,6 @@ def parse(actor, input_text, parse_only=False):
                 kw[aname] = tuple(remaining)
                 remaining = []
                 continue
-            # 3. Any classes (StdObj, Living, etc) we can resolve using objs can be
-            #    resolved with list_match(name, objs)
             if inspect.isclass(atype) and issubclass(atype, StdObj):
                 if remaining:
                     nm = remaining[0]
@@ -86,50 +53,37 @@ def parse(actor, input_text, parse_only=False):
                         kw[aname] = m[0]
                         remaining.pop(0)
                 continue
-            if inspect.isclass(atype) and issubclass(atype, Living):
-                if remaining:
-                    nm = remaining[0]
-                    m = [o for o in list_match(nm, objs) if isinstance(o, Living)]
-                    if m:
-                        kw[aname] = m[0]
-                        remaining.pop(0)
-                continue
-        ok_ctx = route.can.fn(*args, **kw)
-        if isinstance(ok_ctx, tuple) and len(ok_ctx) == 2:
-            ok, ctx = ok_ctx
-        else:
-            ok, ctx = bool(ok_ctx), {}
-        if ok:
-            if parse_only:
-                need = {a for a, _ in route.do.ihint}
-                if need.issubset(kw.keys() | ctx.keys()):
-                    merged = dict(kw)
-                    for k in need:
-                        if k not in merged and k in ctx:
-                            merged[k] = ctx[k]
-                    return ExecutionPlan(actor, route.do.fn, merged)
-            else:
-                # 0. set_this_body(actor) before parsing and trying can-functions, we
-                #    do have to remeber to clear this with set_this_body() though
-                set_this_body(actor)
-                ret = route.do.fn(*args, **kw)
-                set_this_body()
-                return ret
-        # 4. the applicable can function will return (bool,dict)
-        #    ok,ctx = route.can(**resolved_kwargs)
-        # 5a. if ok is False, and this is the only route, we fall through to
-        #     below and raise any exception in ctx['error']. ctx['error'] if
-        #     given can be an Exception(), or simple text. otherwise, continue
-        # 5b. if ok is True and parse_only is True and we have enough kwargs
-        #     for the route.do function: return an ExecutionPlan, and be sure
-        #     to clear set_this_body()
-        # 5b. if ok is True and the resulting dict has enough kwargs for the
-        #     route.do function, then we can execute it directly (be sure
-        #     set_this_body(actor) is set and that we didn't clear it already).
-        #     though, we do need to clear it again after executing the do fn.
 
+        # if we don't have everything we need, this isn't the can_ for us.
+        if any((t is not ... and a not in kw) or (t is ... and not args) for a, t in route.can.ihint):
+            continue
+        ok, ctx = route.can.fn(*args, **kw)
+        if ok:
+            try:
+                merged = {a: kw[a] for a, _ in route.do.ihint}
+                filled = True
+            except KeyError:
+                filled = False
+            if not filled:
+                raise E.ParseError(f'internal error with "{route.verb.name}" verb')
+            if parse_only:
+                return ExecutionPlan(actor, route.do.fn, merged)
+            set_this_body(actor)
+            ret = route.do.fn(**merged)
+            set_this_body()
+            return ret
+        if "error" in ctx:
+            errors.append(ctx["error"])
     # end-for
-    # 1. if we get here with no execution plan, we'll have to raise an E.ParseError(), probably.
+
+    msg = errors[0] if len(errors) == 1 else f"unable to understand {input_text!r}"
+    if parse_only:
+
+        def error(error="unknown", **kw):
+            raise E.ParseError(error)
+
+        return ExecutionPlan(actor, error, {"error": msg})
+    raise E.ParseError(msg)
 
 
 class ExecutionPlan(namedtuple("XP", ["actor", "fn", "kw"])):
@@ -155,10 +109,11 @@ class FnMap(namedtuple("FM", ["fn", "ihint"])):
 
 class IntroHint(namedtuple("IH", ["aname", "type"])):
     def __repr__(self):
+        v = "*" if self.type is ... else ""
         if self.type in (str, None):
-            return f"{self.aname}"
+            return f"{v}{self.aname}"
         t = self.type.__name__ if inspect.isclass(self.type) else self.type
-        return f"{self.aname}:{t}"
+        return f"{v}{self.aname}:{t}"
 
 
 @lru_cache
@@ -177,7 +132,7 @@ def introspect_hints(fn, do_mode=False):
         if item == fas.varargs:
             ret.append(IntroHint(item, ...))
             continue
-        if an := fas.annotations.get(item, False):
+        if an := fas.annotations.get(item):
             ret.append(IntroHint(item, an))
         else:
             ret.append(IntroHint(item, implied_type(item)))
@@ -223,10 +178,6 @@ def implied_type(name):
 
 
 def type_rank(tp):
-    # Any arg counts as 1 in the final scoring, we just want our StdObj items
-    # to be worth slightly more
-    if tp is ...:
-        return 1
     if inspect.isclass(tp) and issubclass(tp, StdObj):
         return 1 + (tp.sodval / 1000)
     return 1
