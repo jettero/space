@@ -26,37 +26,46 @@ def parse(actor, input_text, parse_only=False):
     objs = [o for o in vmap.objects] + actor.inventory
 
     errors = list()
-    for route in sorted(routes, key=lambda x: (x.score, len(x.can.ihint)), reverse=True):
-        log.debug("    route: %s", repr(route))
+    for route in sorted(routes, key=lambda x: x.score, reverse=True):
+        log.debug("considering route=%s", repr(route))
         remaining = list(tokens)
         kw = {}
         args = []
-        for aname, atype in route.can.ihint:
-            log.debug("    aname=%s atype=%s", aname, repr(atype))
-            if atype in (str, None):
-                if remaining:
-                    kw[aname] = remaining.pop(0)
+        filled = True
+        for ih in route.can.ihint:
+            log.debug("considering ihint=%s", repr(ih))
+            if not remaining:
+                log.debug("rejecting %s: unable to fill ihint=%s, ran out of tokens", repr(route), repr(ih))
+                filled = False
+                break
+            if ih.type in (str, None):
+                kw[ih.name] = remaining.pop(0)
                 continue
-            if atype is ...:
+            if ih.type is ...:
                 args.extend(remaining)
                 remaining = []
                 continue
-            if atype is tuple or atype == tuple[str, ...]:
-                kw[aname] = tuple(remaining)
+            if ih.type is tuple or ih.type == tuple[str, ...]:
+                kw[ih.name] = tuple(remaining)
                 remaining = []
                 continue
-            if inspect.isclass(atype) and issubclass(atype, StdObj):
-                if remaining:
-                    nm = remaining[0]
-                    m = list_match(nm, objs)
-                    if m:
-                        kw[aname] = m[0]
-                        remaining.pop(0)
-                continue
+            if inspect.isclass(ih.type) and issubclass(ih.type, StdObj):
+                if m := [o for o in list_match(remaining[0], objs) if isinstance(o, ih.type)]:
+                    kw[ih.name] = m[0]
+                    remaining.pop(0)
+                    continue
+                log.debug("rejecting %s: unable to fill ihint=%s, no obj", repr(route), repr(ih))
+                filled = False
+                break
+            log.debug("rejecting %s: unable to fill ihint=%s due to unknown type", repr(route), repr(ih))
+            filled = False
+            break
+        ####################### end-route-ihint-for
 
-        # if we don't have everything we need, this isn't the can_ for us.
-        if any((t is not ... and a not in kw) or (t is ... and not args) for a, t in route.can.ihint):
+        if not filled:
+            log.debug("rejecting %s: unable to fill args with available tokens", repr(route))
             continue
+
         ok, ctx = route.can.fn(*args, **kw)
         if ok:
             try:
@@ -80,7 +89,7 @@ def parse(actor, input_text, parse_only=False):
             return ret
         if "error" in ctx:
             errors.append(ctx["error"])
-    # end-for
+        ############################# end-route-for
 
     msg = errors[0] if len(errors) == 1 else f"unable to understand {input_text!r}"
     if parse_only:
@@ -113,13 +122,13 @@ class FnMap(namedtuple("FM", ["fn", "ihint"])):
         return f"FM<{self.fn.__name__}({ihl})>"
 
 
-class IntroHint(namedtuple("IH", ["aname", "type"])):
+class IntroHint(namedtuple("IH", ["name", "type"])):
     def __repr__(self):
         v = "*" if self.type is ... else ""
         if self.type in (str, None):
-            return f"{v}{self.aname}"
+            return f"{v}{self.name}"
         t = self.type.__name__ if inspect.isclass(self.type) else self.type
-        return f"{v}{self.aname}:{t}"
+        return f"{v}{self.name}:{t}"
 
 
 @lru_cache
