@@ -66,7 +66,9 @@ def parse(actor, input_text, parse_only=False):
             log.debug("rejecting %s: unable to fill args with available tokens", repr(route))
             continue
 
+        log.debug("running %s.can.fn(%s, %s)", repr(route), repr(args), repr(kw))
         ok, ctx = route.can.fn(*args, **kw)
+        log.debug("        result: ok=%s ctx=%s", repr(ok), repr(ctx))
         if ok:
             try:
                 merged = {a: ctx[a] for a, _ in route.do.ihint}
