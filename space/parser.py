@@ -92,12 +92,13 @@ def parse(actor, input_text, parse_only=False):
 
     msg = errors[0] if len(errors) == 1 else f"unable to understand {input_text!r}"
     if parse_only:
-
-        def error(error="unknown", **kw):
-            raise E.ParseError(error)
-
+        # We absolutely must present ExecutionPlan.error so the shell can use it.
         return ExecutionPlan(actor, error, {"error": msg})
     raise E.ParseError(msg)
+
+
+def _parse_error(error="unknown", **kw):
+    raise E.ParseError(error)
 
 
 class ExecutionPlan(namedtuple("XP", ["actor", "fn", "kw"])):
@@ -110,6 +111,13 @@ class ExecutionPlan(namedtuple("XP", ["actor", "fn", "kw"])):
 
     def __repr__(self):
         return f"XP<{self.actor}.{self.fn.__name__}({self.kw!r})>"
+
+    @property
+    def error(self):
+        return self.kw.get("error", "unknown")
+
+    def __bool__(self):
+        return self.fn is _parse_error
 
 
 Route = namedtuple("R", ["verb", "can", "do", "score"])
