@@ -15,6 +15,7 @@ from space.newparser import parse, ExecutionPlan
         ("inventory", "do_inventory", {}),
         ("i", "do_inventory", {}),
         ("move s", "do_move_words", {"moves": ("s",)}),
+        ("move nsew nsew", "do_move_words", {"moves": tuple("n s e w n s e w".split())}),
     ],
 )
 def test_look_execution_plan(me, line, fn, kw):
