@@ -96,7 +96,7 @@ def pytest_runtest_makereport(item, call):
         line = rep.location[1] + 1
         head = str(rep.longrepr) if hasattr(rep, "longrepr") else ""
         first = head.splitlines()[0] if head else ""
-        log.error("FAIL %s:%d %s", loc, line, first)
+        log.error("TEST FAIL\n\ttest failed in %s:%d\n\t%s", loc, line, first)
         if hasattr(rep, "longrepr") and hasattr(rep.longrepr, "reprcrash"):
             r = rep.longrepr
             paths = []
