@@ -65,3 +65,4 @@ def do(cmd):
 
 ;do open door; sSW6s3w; get bauble; 3e4n
 ;do move nsew nsew
+;do look

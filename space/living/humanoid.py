@@ -56,7 +56,7 @@ class Humanoid(Living):
                 pass
         return False, {"error": f"It's not possible to get {obj}."}
 
-    def do_get(self, obj):
+    def do_get_obj(self, obj):
         eff = None
         for hand in (self.slots.right_hand_slot, self.slots.left_hand_slot):
             try:
@@ -75,7 +75,7 @@ class Humanoid(Living):
             return False, {"error": f"You don't have {obj}."}
         return True, {"obj": obj}  # keys must match do_drop args
 
-    def do_drop(self, obj):
+    def do_drop_obj(self, obj):
         self.location.add_item(obj)
         self.simple_action("$N $vdrop $o.", obj)
 
