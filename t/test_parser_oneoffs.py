@@ -2,7 +2,7 @@
 
 import pytest
 
-from space.newparser import parse, ExecutionPlan
+from space.parser import parse, ExecutionPlan
 
 
 @pytest.mark.parametrize(
