@@ -87,43 +87,6 @@ def pytest_sessionfinish(session, exitstatus):
                     h.flush()
 
 
-@pytest.hookimpl(hookwrapper=True, tryfirst=True)
-def pytest_runtest_makereport(item, call):
-    outcome = yield
-    rep = outcome.get_result()
-    if rep.when == "call" and rep.failed:
-        loc = rep.location[0]
-        line = rep.location[1] + 1
-        head = str(rep.longrepr) if hasattr(rep, "longrepr") else ""
-        first = head.splitlines()[0] if head else ""
-        log.error("TEST FAIL\n\ttest failed in %s:%d\n\t%s", loc, line, first)
-        if hasattr(rep, "longrepr") and hasattr(rep.longrepr, "reprcrash"):
-            r = rep.longrepr
-            paths = []
-            if hasattr(r, "reprtraceback") and hasattr(r.reprtraceback, "reprentries"):
-                for e in r.reprtraceback.reprentries:
-                    if hasattr(e, "reprfileloc") and hasattr(e.reprfileloc, "path"):
-                        p = e.reprfileloc.path
-                        lno = getattr(e.reprfileloc, "lineno", None)
-                        if p and lno is not None:
-                            paths.append(f"{p}:{lno}")
-                        elif p:
-                            paths.append(str(p))
-            if paths:
-                log.error("STACK:\n%s", "\n".join(paths))
-    if rep.when == "setup" and rep.failed:
-        loc = rep.location[0]
-        line = rep.location[1] + 1
-        msg = str(rep.longrepr) if hasattr(rep, "longrepr") else ""
-        log.error("ERROR during setup %s:%d %s", loc, line, msg.splitlines()[0] if msg else "")
-    if rep.when == "teardown" and rep.failed:
-        loc = rep.location[0]
-        line = rep.location[1] + 1
-        msg = str(rep.longrepr) if hasattr(rep, "longrepr") else ""
-        log.error("ERROR during teardown %s:%d %s", loc, line, msg.splitlines()[0] if msg else "")
-    return rep
-
-
 def pytest_assertrepr_compare(config, op, left, right):
     import pprint
 
