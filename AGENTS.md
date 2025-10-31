@@ -61,6 +61,11 @@ HARD CONSTRAINTS
   instructed to stick to two files or one function, do not stray outside that
   scope without at least asking for permission.
 
+## Imports
+- Place all imports at the top of the file.
+- Order: standard library/builtins, third‑party, then local/space imports.
+- Only break this rule to avoid circular import issues.
+
 ## Layout
 - Code: `space/` • Tests: `t/` • Config: `Makefile`, `pytest.ini`, `.pre-commit-config.yaml`, `pylintrc`.
 - Artifacts: `build/`, `dist/`, `space.egg-info/`.
