@@ -34,8 +34,8 @@ class CanMove:
     def can_move_words(self, moves: tuple[str, ...]):
         c = self.location  # pylint: disable=no-member
         for move in moves:
-            c = c.mpos(move)
             try:
+                c = c.mpos(move)
                 if c.accept(self):
                     continue
             except E.BadDirection as e:

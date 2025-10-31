@@ -40,13 +40,13 @@ def parse(actor, input_text, parse_only=False):
                 log.debug("rejecting %s: unable to fill ihint=%s, ran out of tokens", repr(route), repr(ih))
                 filled = False
                 break
-            if ih.type in (str, None):
-                kw[ih.name] = remaining.pop(0)
-                continue
-            if ih.type is ...:
+            if ih.variadic:
                 kw[ih.name] = tuple(remaining)
                 pop_to_args = ih.name
                 remaining = []
+                continue
+            if ih.type in (str, None):
+                kw[ih.name] = remaining.pop(0)
                 continue
             if ih.type is tuple or ih.type == tuple[str, ...]:
                 kw[ih.name] = tuple(remaining)
