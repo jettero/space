@@ -285,6 +285,9 @@ class Living(ReceivesMessages, CanMove, StdObj):
     def do(self, input_text):
         return self.shell.do(input_text)
 
+    def parse(self, input_text):
+        return self.shell.parse(input_text)
+
     def can_inventory(self):
         return True, {}
 

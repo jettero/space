@@ -82,7 +82,10 @@ class BaseShell:
         # use it for aliases or something
         return line
 
-    def do(self, input_text):
+    def parse(self, input_text):
+        return self.do(input_text, parse_only=True)
+
+    def do(self, input_text, parse_only=False):
         ok = False
         input_text = self.pre_parse_kludges(input_text)
         txts = [f"move {x}" if is_direction_string(x) else x for x in re.split(r"\s*;\s*", input_text)]
@@ -92,6 +95,8 @@ class BaseShell:
             if txt:
                 try:
                     xp = parse(self.owner, txt, parse_only=True)
+                    if parse_only:
+                        return xp
                     if xp:
                         xp()
                         ok = True
