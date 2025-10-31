@@ -43,22 +43,20 @@ def bystander(people):
 
 
 def test_attack_parse(me, target, room):
-    p = sp.Parser()
-    pstate = p.parse(me, "attack jaime")
-    assert pstate.winner.verb.name == "attack"
-    assert pstate.winner.do_args.get("target") == target
+    xp = me.parse("attack jaime")
+    assert xp
+    assert xp.fn.__name__ == "do_attack"
+    assert xp.kw.get("target") == target
 
 
 def test_attack_exec(me, target, room):
-    p = sp.Parser()
     hp1 = target.hp
-    p.parse(me, "attack jaime")()
+    me.parse("attack jaime")()
     hp2 = target.hp
     assert hp2 < hp1
 
 
 def test_move_parse(me, room):
-    p = sp.Parser()
     dt = {
         "n": "north North NORTH nOrth n".split(),
         "s": "south South s".split(),
@@ -68,100 +66,81 @@ def test_move_parse(me, room):
     room[7, 7] = me
     for d, sl in dt.items():
         for s in sl:
-            pstate = p.parse(me, f"move {s}")
-            assert bool(pstate)
-            assert pstate.winner.do_args.get("moves") == (d,)
-            assert pstate.winner.verb.name == "move"
+            xp = me.parse(f"move {s}")
+            assert xp
+            assert xp.kw.get("moves") == (d,)
+            assert xp.fn.__name__ == "do_move_words"
 
 
 def test_move(me, target, room):
-    p = sp.Parser()
     assert me.location.pos == (2, 3)
-    p.parse(me, "move north")()
+    me.parse("move north")()
     assert me.location.pos == (2, 2)
-    p.parse(me, "move east")()
+    me.parse("move east")()
     assert me.location.pos == (3, 2)
-    pstate = p.parse(me, "move s")
-    assert "is already there" in str(pstate.error)
+    xp = me.parse("move s")
+    assert "is already there" in str(xp.error)
     with pytest.raises(E.ParseError):
-        pstate()
+        xp()
     assert me.location.pos == (3, 2)
 
 
 def test_naked_dir_move_cmds(me, bystander, room):
-    p = sp.Parser()
-    pstate = p.parse(me, "move 2sse")
+    xp = me.parse("move 2sse")
     tsse = ("s", "s", "s", "e")
-    assert pstate
-    assert pstate.high_score_verb.name == "move"
-    assert pstate.high_score_args.get("moves") == tsse
+    assert xp
+    assert xp.fn.__name__ == "do_move_words"
+    assert xp.kw.get("moves") == tsse
 
-    pstate = p.parse(me, "move shit")
-    assert not pstate
-    assert pstate.high_score_verb.name == "move"
-    assert pstate.high_score_args == None
+    xp = me.parse("move shit")
+    assert not xp
+    assert xp.error
 
-    pstate = p.parse(me, "2sse")
-    assert pstate
-    assert pstate.high_score_verb.name == "move"
-    assert pstate.high_score_args.get("moves") == tsse
+    xp = me.parse("2sse")
+    assert xp
+    assert xp.fn.__name__ == "do_move_words"
+    assert xp.kw.get("moves") == tsse
 
     tssep = tsse + ("n", "s", "e", "w")
-    pstate = p.parse(me, "move 2sse nsew")
-    assert pstate.high_score_verb.name == "move"
-    assert pstate.high_score_args.get("moves") == tssep
+    xp = me.parse("move 2sse nsew")
+    assert xp.fn.__name__ == "do_move_words"
+    assert xp.kw.get("moves") == tssep
 
-    pstate = p.parse(me, "2sse nsew")
-    assert pstate.high_score_verb.name == "move"
-    assert pstate.high_score_args.get("moves") == tssep
+    xp = me.parse("2sse nsew")
+    assert xp.fn.__name__ == "do_move_words"
+    assert xp.kw.get("moves") == tssep
 
 
 def test_extra_args_fail(me, room):
-    p = sp.Parser()
+    xp = me.parse("move around stuff")
+    assert bool(xp) is False
+    assert "around" in xp.error
+    assert "stuff" in xp.error
 
-    pstate = p.parse(me, "move around stuff")
-    assert bool(pstate) is False
-    assert "around" in pstate.error
-    assert "stuff" in pstate.error
+    xp = me.parse("look")
+    assert bool(xp) is True
 
-    pstate = p.parse(me, "look")
-    assert bool(pstate) is True
-
-    pstate = p.parse(me, "look at things")
-    assert bool(pstate) is False
-    assert "at" in pstate.error
-    assert "things" in pstate.error
+    xp = me.parse("look at things")
+    assert bool(xp) is False
+    assert "at" in xp.error
+    assert "things" in xp.error
 
 
 def test_pstate_nodes(me, room):
-    p = sp.Parser()
-    pstate = p.parse(me, "")
-
-    # Empty input no longer matches verbs; ensure pstate reflects that.
-    assert pstate.states is None
-    assert bool(pstate) is False
-    assert "unable to understand" in pstate.error
+    xp = me.parse("")
+    assert bool(xp) is False
+    assert "unable to understand" in xp.error
 
 
 def test_all_verbs_fname_contains_name(objs):
+    # New parser doesn't expose PSNode/PState; emulate by ensuring verbs loaded
     sp.find_verb(False)
     assert VERBS, "expected find_verb/parse to construct all verbs by now"
-
-    # Construct a PSNode chain via Parser.plan/evaluate by seeding PState
-    # Use empty input to avoid leftover tokens from a bogus verb; then seed states.
-    ps = sp.PState(objs.me, "")
-    # Seed all verbs; PSNode expects positional verbs, not the verb dict
-    ps.states = sp.PSNode(*VERBS.values())
-    # Ensure a fresh fill/plan and no extra tokens to mismatch rhints.
-    ps.filled = False
-    ps.tokens = []
-    p = sp.Parser()
-    p.plan(ps)
-    p.evaluate(ps)
-
-    for psn in ps.states:  # iterate all verbs and kids
-        if psn.fname:
-            assert psn.verb.name in psn.fname
+    me = objs.me
+    for name in VERBS.keys():
+        xp = me.parse(name)
+        if xp:
+            assert name in xp.fn.__name__
 
 
 @pytest.mark.parametrize(
@@ -169,4 +148,4 @@ def test_all_verbs_fname_contains_name(objs):
     [name for name, v in VERBS.items()],
 )
 def test_all_verb_and_emote_names_parse_cleanly(objs, vname):
-    assert "ambiguous" not in sp.Parser().parse(objs.me, vname).error
+    assert "ambiguous" not in objs.me.parse(vname).error
