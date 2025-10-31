@@ -2,8 +2,12 @@
 # coding: utf-8
 
 from functools import lru_cache
+from collections import namedtuple
 from typing import Any, get_args, get_origin, Literal, Annotated, Union, get_type_hints
 import inspect
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def deep_eq(a, b):
@@ -20,56 +24,82 @@ def deep_eq(a, b):
     return a == b
 
 
+def iscallable(x):
+    return inspect.isfunction(x) or inspect.ismethod(x) or inspect.isbuiltin(x)
+
+
+class IntroHint(namedtuple("IH", ["name", "type", "variadic"])):
+    def __repr__(self):
+        v = "*" if self.variadic else ""
+        if self.type in (str, None):
+            return f"{v}{self.name}"
+        t = self.type.__name__ if inspect.isclass(self.type) else self.type
+        return f"{v}{self.name}:{t}"
+
+    def match(self, val):
+        if self.variadic:
+            return isinstance(val, tuple) and all(matches_type_hint(x, self.type) for x in val)
+        return matches_type_hint(val, self.type)
+
+
 @lru_cache
-def get_introspection_hints(func, unhinted_assumed_type=str):
+def get_introspection_names(func, assume_type=Any):
     sig = inspect.signature(func)
     ordered = []
-    raw = getattr(func, "__annotations__", {})
+    resolved = get_type_hints(func, globalns=getattr(func, "__globals__", {}), localns=None)  # type: ignore[attr-defined]
+    return [IntroHint(n, assume_type, p.kind is inspect.Parameter.VAR_POSITIONAL) for n, p in sig.parameters.items()]
+
+
+@lru_cache
+def get_introspection_hints(func, unhinted_assumed_type=str, imply_type_callback=None):
+    sig = inspect.signature(func)
+    ordered = []
     resolved = get_type_hints(func, globalns=getattr(func, "__globals__", {}), localns=None)  # type: ignore[attr-defined]
     for name, param in sig.parameters.items():
-        if param.kind is inspect.Parameter.VAR_POSITIONAL:
-            ordered.append((name, ...))
+        variadic = param.kind is inspect.Parameter.VAR_POSITIONAL
+        if r := resolved.get(name):
+            ordered.append(IntroHint(name, r, variadic))
             continue
-        ann = raw.get(name, inspect._empty)
-        if ann is inspect._empty:
-            ordered.append((name, unhinted_assumed_type))
-            continue
-        ordered.append((name, resolved.get(name, ann)))
+        if callable(imply_type_callback):
+            if r := imply_type_callback(name):
+                ordered.append(IntroHint(name, r, variadic))
+                continue
+        ordered.append(IntroHint(name, unhinted_assumed_type, variadic))
     return ordered
 
 
-def matches_type_hint(value, annotation):
-    origin = get_origin(annotation)
+def matches_type_hint(val, ihint):
+    origin = get_origin(ihint.type)
     if origin is Annotated:
-        return matches_type(value, get_args(annotation)[0])
+        return matches_type_hint(val, get_args(ihint.type)[0])
     if origin is Literal:
-        return any(value == lit for lit in get_args(annotation))
+        return any(val == lit for lit in get_args(ihint.type))
     if origin is None:
-        if annotation is Any:
+        if ihint.type is Any:
             return True
-        return isinstance(value, annotation)
+        return isinstance(val, ihint.type)
     if origin is tuple:
-        if not isinstance(value, tuple):
+        if not isinstance(val, tuple):
             return False
-        args = get_args(annotation)
+        args = get_args(ihint.type)
         if len(args) == 2 and args[1] is Ellipsis:
-            return all(matches_type(v, args[0]) for v in value)
-        if len(value) != len(args):
+            return all(matches_type_hint(v, args[0]) for v in val)
+        if len(val) != len(args):
             return False
-        return all(matches_type(v, t) for v, t in zip(value, args))
+        return all(matches_type_hint(v, t) for v, t in zip(val, args))
     if origin is list:
-        return isinstance(value, list) and all(matches_type(v, get_args(annotation)[0]) for v in value)
+        return isinstance(val, list) and all(matches_type_hint(v, get_args(ihint.type)[0]) for v in val)
     if origin is set:
-        return isinstance(value, set) and all(matches_type(v, get_args(annotation)[0]) for v in value)
+        return isinstance(val, set) and all(matches_type_hint(v, get_args(ihint.type)[0]) for v in val)
     if origin is dict:
-        if not isinstance(value, dict):
+        if not isinstance(val, dict):
             return False
-        kt, vt = get_args(annotation)
-        return all(matches_type(k, kt) and matches_type(v, vt) for k, v in value.items())
+        kt, vt = get_args(ihint.type)
+        return all(matches_type_hint(k, kt) and matches_type_hint(v, vt) for k, v in val.items())
     if origin is type(None):
-        return value is None
-    if origin is None and annotation is None:
-        return value is None
+        return val is None
+    if origin is None and ihint.type is None:
+        return val is None
     if origin is Union or str(origin) in {"types.UnionType"}:
-        return any(matches_type(value, t) for t in get_args(annotation))
-    return isinstance(value, origin)
+        return any(matches_type_hint(val, t) for t in get_args(ihint.type))
+    return isinstance(val, origin)

@@ -192,8 +192,8 @@ class Living(ReceivesMessages, CanMove, StdObj):
     def can_attack_living(self, targ):  # targ:Living is implied via space.parser.implied_type
         dist = self.unit_distance_to(targ)
         if dist is not None and dist <= self.reach:
-            return (True, {"target": targ})
-        return (False, {"error": "There's no targets with that name in range."})
+            return True, {"target": targ}
+        return False, {"error": f"{targ} is out of range"}
 
     def do_attack_living(self, target):
         self.attack(target)
@@ -202,7 +202,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
         return True, {}
 
     def can_look_living(self, living):
-        return (False, {"error": "XXX: this should work sometimes"})
+        return False, {"error": "XXX: this should work sometimes"}
 
     def do_look(self):
         from ..shell.message import MapMessage

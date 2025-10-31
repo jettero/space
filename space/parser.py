@@ -6,6 +6,7 @@ from .find import find_verb, set_this_body
 import space.exceptions as E
 from .living import Living
 from .stdobj import StdObj
+from .util import get_introspection_hints, get_introspection_names
 
 log = logging.getLogger(__name__)
 
@@ -134,38 +135,6 @@ class FnMap(namedtuple("FM", ["fn", "ihint"])):
         return f"FM<{self.fn.__name__}({ihl})>"
 
 
-class IntroHint(namedtuple("IH", ["name", "type"])):
-    def __repr__(self):
-        v = "*" if self.type is ... else ""
-        if self.type in (str, None):
-            return f"{v}{self.name}"
-        t = self.type.__name__ if inspect.isclass(self.type) else self.type
-        return f"{v}{self.name}:{t}"
-
-
-@lru_cache
-def introspect_hints(fn, do_mode=False):
-    fas = inspect.getfullargspec(fn)
-    todo = list(fas.args)
-    if inspect.ismethod(fn):
-        todo = todo[1:]
-    if fas.varargs:
-        todo.append(fas.varargs)
-    todo += fas.kwonlyargs
-    if do_mode:
-        return tuple(IntroHint(item, None) for item in todo)
-    ret = list()
-    for item in todo:
-        if item == fas.varargs:
-            ret.append(IntroHint(item, ...))
-            continue
-        if an := fas.annotations.get(item):
-            ret.append(IntroHint(item, an))
-        else:
-            ret.append(IntroHint(item, implied_type(item)))
-    return tuple(ret)
-
-
 def list_match(name, objs):
     if isinstance(objs, (types.GeneratorType, list, tuple)):
         s = name.split(".", 1)
@@ -183,9 +152,9 @@ def find_routes(actor, verbs):
         for fn in [x for x in dir(actor) if x == can_name or x.startswith(f"{can_name}_")]:
             if do := getattr(actor, f"do_{fn[4:]}", False):
                 can = getattr(actor, fn, False)
-                can = FnMap(can, introspect_hints(can))
-                do = FnMap(do, introspect_hints(do, do_mode=True))
-                score = sum(type_rank(t) for a, t in can.ihint)
+                can = FnMap(can, get_introspection_hints(can))
+                do = FnMap(do, get_introspection_names(do))
+                score = sum(type_rank(t, v) for a, t, v in can.ihint)
                 yield Route(verb, can, do, score)
 
 
@@ -204,7 +173,7 @@ def implied_type(name):
     return str
 
 
-def type_rank(tp):
-    if inspect.isclass(tp) and issubclass(tp, StdObj):
-        return 1 + (tp.sodval / 1000)
+def type_rank(t, v):
+    if inspect.isclass(t) and issubclass(t, StdObj):
+        return 1 + (t.stdobj_dist_val / 1000)
     return 1
