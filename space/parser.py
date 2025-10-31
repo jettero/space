@@ -25,12 +25,13 @@ def parse(actor, input_text, parse_only=False):
     vmap = actor.location.map.visicalc_submap(actor)
     objs = [o for o in vmap.objects] + actor.inventory
 
+    pop_to_args = None
+
     errors = list()
     for route in sorted(routes, key=lambda x: x.score, reverse=True):
         log.debug("considering route=%s", repr(route))
         remaining = list(tokens)
         kw = {}
-        args = []
         filled = True
         for ih in route.can.ihint:
             log.debug("considering ihint=%s", repr(ih))
@@ -42,7 +43,8 @@ def parse(actor, input_text, parse_only=False):
                 kw[ih.name] = remaining.pop(0)
                 continue
             if ih.type is ...:
-                args.extend(remaining)
+                kw[ih.name] = tuple(remaining)
+                pop_to_args = ih.name
                 remaining = []
                 continue
             if ih.type is tuple or ih.type == tuple[str, ...]:
@@ -68,7 +70,9 @@ def parse(actor, input_text, parse_only=False):
 
         log.debug("running %s.can.fn(%s, %s)", repr(route), repr(args), repr(kw))
         set_this_body(actor)
-        ok, ctx = route.can.fn(*args, **(route.verb.preprocess_tokens(actor, **kw)))
+        kw = route.verb.preprocess_tokens(actor, **kw)
+        args = kw.pop(pop_to_args) if pop_to_args in kw else tuple()
+        ok, ctx = route.can.fn(*args, **kw)
         set_this_body()
         log.debug("can.fn result: ok=%s ctx=%s", repr(ok), repr(ctx))
         if ok:
