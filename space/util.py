@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
-from typing import Any, get_args, get_origin, Literal, Annotated, Union
+
+from functools import lru_cache
+from typing import Any, get_args, get_origin, Literal, Annotated, Union, get_type_hints
+import inspect
 
 
 def deep_eq(a, b):
@@ -17,7 +20,25 @@ def deep_eq(a, b):
     return a == b
 
 
-def matches_type(value: Any, annotation: Any) -> bool:
+@lru_cache
+def get_introspection_hints(func, unhinted_assumed_type=str):
+    sig = inspect.signature(func)
+    ordered = []
+    raw = getattr(func, "__annotations__", {})
+    resolved = get_type_hints(func, globalns=getattr(func, "__globals__", {}), localns=None)  # type: ignore[attr-defined]
+    for name, param in sig.parameters.items():
+        if param.kind is inspect.Parameter.VAR_POSITIONAL:
+            ordered.append((name, ...))
+            continue
+        ann = raw.get(name, inspect._empty)
+        if ann is inspect._empty:
+            ordered.append((name, unhinted_assumed_type))
+            continue
+        ordered.append((name, resolved.get(name, ann)))
+    return ordered
+
+
+def matches_type_hint(value, annotation):
     origin = get_origin(annotation)
     if origin is Annotated:
         return matches_type(value, get_args(annotation)[0])
