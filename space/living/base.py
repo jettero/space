@@ -62,7 +62,7 @@ class CanMove:
         self.move(moves)
         self.simple_action(f"$N $vmove {desc}.")
 
-    def do_move_obj_words(self, obj, moves):
+    def do_move_obj_words(self, obj, moves):  # space.parser.implied_types makes these obj:StdObj and moves:tuple[str,...]
         log.debug("do_move_obj_words(%s, %s)", obj, moves)
         from ..map.dir_util import moves_to_description
 
@@ -189,11 +189,10 @@ class Living(ReceivesMessages, CanMove, StdObj):
             return v.length
         return INFINITY
 
-    def can_attack_living(self, living):
-        for targ in living:
-            dist = self.unit_distance_to(targ)
-            if dist is not None and dist <= self.reach:
-                return (True, {"target": targ})  # "target" is do_attack argument name
+    def can_attack_living(self, targ):  # targ:Living is implied via space.parser.implied_type
+        dist = self.unit_distance_to(targ)
+        if dist is not None and dist <= self.reach:
+            return (True, {"target": targ})
         return (False, {"error": "There's no targets with that name in range."})
 
     def do_attack_living(self, target):
