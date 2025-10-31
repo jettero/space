@@ -85,9 +85,3 @@ def pytest_sessionfinish(session, exitstatus):
             for h in lg.handlers:
                 if getattr(h, "stream", None) and not getattr(h.stream, "closed", False):
                     h.flush()
-
-
-def pytest_assertrepr_compare(config, op, left, right):
-    import pprint
-
-    return ["", f"OP:  ¿{op}?", f"LHS: {pprint.pformat(left, width=4000)}", f"RHS: {pprint.pformat(right, width=4000)}"]

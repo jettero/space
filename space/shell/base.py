@@ -82,10 +82,10 @@ class BaseShell:
         # use it for aliases or something
         return line
 
-    def parse(self, input_text):
-        return self.do(input_text, parse_only=True)
+    def parse(self, input_text, parse_only=True, reraise=True):
+        return self.do(input_text, parse_only=parse_only, reraise=reraise)
 
-    def do(self, input_text, parse_only=False):
+    def do(self, input_text, parse_only=False, reraise=False):
         ok = False
         input_text = self.pre_parse_kludges(input_text)
         txts = [f"move {x}" if is_direction_string(x) else x for x in re.split(r"\s*;\s*", input_text)]
@@ -107,6 +107,8 @@ class BaseShell:
                 except Exception as e:  # pylint: disable=broad-except
                     log.exception("during input: %s", input_text)
                     self.receive_text(f"error: {e}")
+                    if reraise:
+                        raise e
         if self.owner.location.pos != p0:
             self.owner.do("look")
         return ok
