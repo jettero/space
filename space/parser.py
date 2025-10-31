@@ -20,8 +20,8 @@ def parse(actor, input_text, parse_only=False):
         return
     vtok, *tokens = parts
     verbs = find_verb(vtok)
-    routes = find_routes(actor, verbs)
-    log.debug("-=: parse(%s, %s) verbs=%s", repr(actor), repr(input_text), repr(verbs))
+    routes = find_routes(actor, verbs)  #    ↓ often a weakref
+    log.debug("-=: parse(%s, %s) verbs=%s", actor.__repr__(), repr(input_text), repr(verbs))
     vmap = actor.location.map.visicalc_submap(actor)
     objs = [o for o in vmap.objects] + actor.inventory
 
@@ -68,10 +68,10 @@ def parse(actor, input_text, parse_only=False):
             log.debug("rejecting %s: unable to fill args with available tokens", repr(route))
             continue
 
-        log.debug("running %s.can.fn(%s, %s)", repr(route), repr(args), repr(kw))
         set_this_body(actor)
         kw = route.verb.preprocess_tokens(actor, **kw)
         args = kw.pop(pop_to_args) if pop_to_args in kw else tuple()
+        log.debug("running %s.can.fn(%s, %s)", repr(route), repr(args), repr(kw))
         ok, ctx = route.can.fn(*args, **kw)
         set_this_body()
         log.debug("can.fn result: ok=%s ctx=%s", repr(ok), repr(ctx))
