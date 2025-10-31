@@ -65,6 +65,10 @@ def parse(actor, input_text, parse_only=False):
             break
         ####################### end-route-ihint-for
 
+        if remaining:
+            log.debug("rejecting %s: failed to use all tokens (remaining: %s)", repr(route), repr(remaining))
+            continue
+
         if not filled:
             log.debug("rejecting %s: unable to fill args with available tokens", repr(route))
             continue
