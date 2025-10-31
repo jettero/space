@@ -4,6 +4,7 @@
 import logging
 import pytest
 
+from space.shell.list import Shell as ListShell
 from space.living import Human
 from space.map import Room
 import space.parser as sp
@@ -15,16 +16,24 @@ log = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def people():
-    return (Human("John Snow"), Human("Jaime Lannister"), Human("Jorah Mormont"))
+def room_and_people():
+    room = Room()
+    people = (Human("John Snow"), Human("Jaime Lannister"), Human("Jorah Mormont"))
+    for dood in people:
+        dood.shell = ListShell()
+    for i, p in enumerate(people):
+        room[2 + i, 3].add_item(p)
+    return room, people
 
 
 @pytest.fixture
-def room(people):
-    r = Room()
-    for i, p in enumerate(people):
-        r[2 + i, 3].add_item(p)
-    return r
+def room(room_and_people):
+    return room_and_people[0]
+
+
+@pytest.fixture
+def people(room_and_people):
+    return room_and_people[1]
 
 
 @pytest.fixture
@@ -43,6 +52,7 @@ def bystander(people):
 
 
 def test_attack_parse(me, target, room):
+    me.do("look")
     xp = me.parse("attack jaime")
     assert xp
     assert xp.fn.__name__ == "do_attack"

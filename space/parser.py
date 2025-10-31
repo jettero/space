@@ -152,7 +152,7 @@ def find_routes(actor, verbs):
         for fn in [x for x in dir(actor) if x == can_name or x.startswith(f"{can_name}_")]:
             if do := getattr(actor, f"do_{fn[4:]}", False):
                 can = getattr(actor, fn, False)
-                can = FnMap(can, get_introspection_hints(can))
+                can = FnMap(can, get_introspection_hints(can, imply_type_callback=implied_type))
                 do = FnMap(do, get_introspection_names(do))
                 score = sum(type_rank(t, v) for a, t, v in can.ihint)
                 yield Route(verb, can, do, score)

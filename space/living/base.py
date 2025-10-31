@@ -156,7 +156,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
         # employed that way
         return Kinetic(Roll("1d2").roll())
 
-    def do_attack_living(self, target):
+    def attack(self, target):
         # XXX: clearly, we need to send this instruction to a fight daemon to
         # see when the attack happens and whether it succeeds
         # XXX: we should really roll to see if we hit
@@ -167,10 +167,10 @@ class Living(ReceivesMessages, CanMove, StdObj):
         # XXX: any time we deliver a message to a player, we should deliver
         # something to all players in view and that should automatically parse
         # context, e.g.: $N $vattack $t causing $o damage.
-        self.targeted_action("$N $vattack $t causing $o damage.", other, d)
+        self.targeted_action("$N $vattack $t causing $o damage.", target, d)
 
-        log.debug("%s .attack( %s ) weapon=%s damage=%s", self, other, w, d)
-        other.hurt(d)
+        log.debug("%s .attack( %s ) weapon=%s damage=%s", self, target, w, d)
+        target.hurt(d)
 
     def unit_vect_to(self, other):
         try:
@@ -191,9 +191,10 @@ class Living(ReceivesMessages, CanMove, StdObj):
 
     def can_attack_living(self, targ):  # targ:Living is implied via space.parser.implied_type
         dist = self.unit_distance_to(targ)
-        if dist is not None and dist <= self.reach:
-            return True, {"target": targ}
-        return False, {"error": f"{targ} is out of range"}
+        log.debug("%s.can_attack_living(%s), dist: %f", repr(self), repr(targ), dist)
+        if dist > self.reach:
+            return False, {"error": f"{targ} is out of range"}
+        return True, {"target": targ}
 
     def do_attack_living(self, target):
         self.attack(target)
