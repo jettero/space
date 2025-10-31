@@ -3,8 +3,6 @@
 
 import pytest
 
-from space.parser import Parser
-
 import space.exceptions as E
 
 
@@ -13,55 +11,52 @@ def me(objs):
     return objs.me
 
 
-def test_open_door(me, a_map):
-    p = Parser()
-    pstate = p.parse(me, "open door")
-    assert pstate
-    assert pstate.winner.verb.name == "open"
+def test_open_door(me):
+    xp = me.parse("open door")
+    assert xp
+    assert xp.fn.__name__ == "do_open_obj"
 
 
-# def test_open_south_door(me, a_map):
-#     p = Parser()
-#     pstate = p.parse(me, 'open south door')
-#     assert pstate
-#     assert pstate.winner.verb.name == 'open'
+def test_open_south_door(me):
+    xp = me.parse("open south door")
+    assert xp
+    assert xp.fn.__name__ == "do_open_word_obj"
+    xp()
 
-# def test_open_north_door_fail(me, a_map):
-#     p = Parser()
-#     pstate = p.parse(me, 'open north door')
-#     assert not pstate
-#     with pytest.raises(E.ParseError, match=r"north|no .*door|can't|cannot|invalid|not.*exist"):
-#         pstate()
 
-# def test_open_nonsense_fails(me, a_map):
-#     p = Parser()
-#     pstate = p.parse(me, 'open nothingburger')
-#     assert not pstate
-#     with pytest.raises(E.ParseError, match=r"nothingburger|no .*target|unknown|not .*found|invalid"):
-#         pstate()
+def test_open_north_door_fail(me):
+    xp = me.parse("open north door")
+    assert not xp
+    with pytest.raises(E.ParseError, match=r"no door to the north"):
+        xp()
 
-# def test_open_nonsense_door_fails(me, a_map):
-#     p = Parser()
-#     pstate = p.parse(me, 'open nothingburger door')
-#     assert not pstate
-#     with pytest.raises(E.ParseError, match=r"nothingburger|no .*target|unknown|not .*found|invalid"):
-#         pstate()
 
-# def test_open_door_and_move_through_it(me, a_map):
-#     p = Parser()
+def test_open_nonsense_fails(me):
+    xp = me.parse("open nothingburger")
+    assert not xp
+    with pytest.raises(E.ParseError, match=r"nothingburger"):
+        xp()
 
-#     pstate = p.parse(me, 'move south')
-#     assert not pstate
-#     assert pstate.winner is None
-#     assert 'door is closed' in pstate.error
-#     with pytest.raises(E.ParseError, match=r"door is closed"):
-#         pstate()
 
-#     p_open = p.parse(me, 'open door')
-#     assert p_open and p_open.winner.verb.name == 'open'
-#     p_open()
+def test_open_nonsense_door_fails(me):
+    xp = me.parse("open nothingburger door")
+    assert not xp
+    # When direction word isn't a direction, parse() in shell returns bool False rather than XP.
+    # We still ensure the command fails as expected.
 
-#     p_move = p.parse(me, 'move south')
-#     assert p_move and p_move.winner.verb.name == 'move'
-#     p_move()
-#     assert me.location.pos == (8, 2)
+
+def test_open_door_and_move_through_it(me):
+    xp = me.parse("move south")
+    assert not xp
+    assert "door is closed" in str(xp.error)
+    with pytest.raises(E.ParseError, match=r"door is closed"):
+        xp()
+
+    xp = me.parse("open door")
+    assert xp and xp.fn.__name__ == "do_open_obj"
+    xp()
+
+    xp = me.parse("move south")
+    assert xp and xp.fn.__name__ == "do_move_words"
+    xp()
+    assert me.location.pos == (8, 2)

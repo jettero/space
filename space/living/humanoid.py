@@ -92,6 +92,25 @@ class Humanoid(Living):
         obj.do_open()
         self.simple_action("$N $vopen $o.", obj)
 
+    def can_open_word_obj(self, word: str, obj: Door):
+        from ..map.dir_util import move_string_to_dirs
+
+        dirs = tuple(move_string_to_dirs(word))
+        if len(dirs) != 1:
+            return False, {"error": f"direction {word!r} is too complicated"}
+        d = dirs[0]
+        if self.unit_distance_to(obj) > self.reach:
+            return False, {"error": f"{obj} is too far away"}
+        if self.location.mpos(d).pos == obj.location.pos:
+            ok, ctx = self.can_open_obj(obj)
+            if ok:
+                return True, {"word": word, "obj": obj}
+            return ok, ctx
+        return False, {"error": f"no {obj.s} to the {word}"}
+
+    def do_open_word_obj(self, word, obj: Door):
+        self.do_open_obj(obj)
+
     def can_close_obj(self, obj: Door):
         ok, err = obj.can_close()
         if ok:
