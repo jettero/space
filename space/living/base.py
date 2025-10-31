@@ -156,7 +156,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
         # employed that way
         return Kinetic(Roll("1d2").roll())
 
-    def attack(self, other):
+    def do_attack_living(self, target):
         # XXX: clearly, we need to send this instruction to a fight daemon to
         # see when the attack happens and whether it succeeds
         # XXX: we should really roll to see if we hit
@@ -190,24 +190,19 @@ class Living(ReceivesMessages, CanMove, StdObj):
         return INFINITY
 
     def can_attack_living(self, living):
-        # candidates are pre-sorted by router; pick first in reach
         for targ in living:
             dist = self.unit_distance_to(targ)
-            log.debug("can_attack_living() considering %s at a distance of %s", targ, dist)
             if dist is not None and dist <= self.reach:
-                log.debug("  … seems good, returning")
                 return (True, {"target": targ})  # "target" is do_attack argument name
-        log.debug("  … nothing seemed to match")
         return (False, {"error": "There's no targets with that name in range."})
 
-    def do_attack(self, target):
+    def do_attack_living(self, target):
         self.attack(target)
 
     def can_look(self):
-        # XXX: this accepts any amount of words after 'look'
         return True, {}
 
-    def can_look_living(self):
+    def can_look_living(self, living):
         return (False, {"error": "XXX: this should work sometimes"})
 
     def do_look(self):
