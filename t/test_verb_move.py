@@ -1,8 +1,6 @@
 # coding: utf-8
 
 import pytest
-
-from space.parser import Parser
 from space.map.dir_util import move_string_to_dirs, is_direction_string
 
 
@@ -42,91 +40,87 @@ def test_dir_util_parses_long_word_forms():
 def test_parser_rewrites_bare_direction_to_move(e_map, eroom):
     # Parser should rewrite bare direction strings as 'move …'
     me = eroom.o.me
-    p = Parser()
 
     # single step
-    ps = p.parse(me, "s")
-    assert ps
-    assert ps.winner.verb.name == "move"
-    assert ps.winner.do_args.get("moves") == ("s",)
+    xp = me.parse("s")
+    assert xp
+    assert xp.fn.__name__ == "do_move_words"
+    assert xp.kw.get("moves") == ("s",)
 
     # repeated single via count
-    ps = p.parse(me, "3s")
-    assert ps
-    assert ps.winner.verb.name == "move"
-    assert ps.winner.do_args.get("moves") == ("s", "s", "s")
+    xp = me.parse("3s")
+    assert xp
+    assert xp.fn.__name__ == "do_move_words"
+    assert xp.kw.get("moves") == ("s", "s", "s")
 
     # concatenated repeated letters
-    ps = p.parse(me, "ss")
-    assert ps
-    assert ps.winner.verb.name == "move"
-    assert ps.winner.do_args.get("moves") == ("s", "s")
+    xp = me.parse("ss")
+    assert xp
+    assert xp.fn.__name__ == "do_move_words"
+    assert xp.kw.get("moves") == ("s", "s")
 
     # cardinal + diagonal
-    ps = p.parse(me, "sSW")
-    assert ps
-    assert ps.winner.verb.name == "move"
-    assert ps.winner.do_args.get("moves") == ("s", "sw")
+    xp = me.parse("sSW")
+    assert xp
+    assert xp.fn.__name__ == "do_move_words"
+    assert xp.kw.get("moves") == ("s", "sw")
 
 
 def test_parser_move_action_preprocess_tokens_expands_moves(e_map, eroom):
     me = eroom.o.me
-    p = Parser()
 
     # ensure that using explicit 'move' verb with direction string expands via dir_util
-    ps = p.parse(me, "move 3s SW")
-    assert ps
-    assert ps.winner.verb.name == "move"
-    assert ps.winner.do_args.get("moves") == ("s", "s", "s", "sw")
+    xp = me.parse("move 3s SW")
+    assert xp
+    assert xp.fn.__name__ == "do_move_words"
+    assert xp.kw.get("moves") == ("s", "s", "s", "sw")
 
 
 def test_parser_multi_concat_and_counts_complex(e_map, eroom):
     me = eroom.o.me
-    p = Parser()
 
     # complex input combines counts and concatenation; ensure order preserved
     # Note: requested example: '3ssSW' -> ['s','s','s','s','SW']
     # Our lexer canonicalizes 'SW' token value to 'sw' for the diagonal.
-    ps = p.parse(me, "3ssSW")
-    assert ps
-    assert ps.winner.verb.name == "move"
-    assert ps.winner.do_args.get("moves") == ("s", "s", "s", "s", "sw")
+    xp = me.parse("3ssSW")
+    assert xp
+    assert xp.fn.__name__ == "do_move_words"
+    assert xp.kw.get("moves") == ("s", "s", "s", "s", "sw")
 
 
 def test_exec_moves_final_position(e_map, eroom):
     # Use provided empty 20x20 room with me centered from fixtures
     me = eroom.o.me
-    p = Parser()
 
     # start at (9,9)
     assert me.location.pos == (9, 9)
 
     # After 's', expect (9,10)
-    ps = p.parse(me, "s")
-    assert ps
-    ps()
+    xp = me.parse("s")
+    assert xp
+    xp()
     assert me.location.pos == (9, 10)
 
     # 'ss' -> (9,12)
-    ps = p.parse(me, "ss")
-    assert ps
-    ps()
+    xp = me.parse("ss")
+    assert xp
+    xp()
     assert me.location.pos == (9, 12)
 
     # '3s' -> (9,15)
-    ps = p.parse(me, "3s")
-    assert ps
-    ps()
+    xp = me.parse("3s")
+    assert xp
+    xp()
     assert me.location.pos == (9, 15)
 
     # 'SW' diagonal applies 's' then 'w' -> from (9,15) to (8,16)
-    ps = p.parse(me, "SW")
-    assert ps
-    ps()
+    xp = me.parse("SW")
+    assert xp
+    xp()
     assert me.location.pos == (8, 16)
 
     # 'sSW' -> south to (9,16)->(9,17), then diagonal to (7,18)
-    ps = p.parse(me, "sSW")
-    assert ps
-    ps()
+    xp = me.parse("sSW")
+    assert xp
+    xp()
     assert me.location.pos == (7, 18)
