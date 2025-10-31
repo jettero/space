@@ -102,8 +102,10 @@ def test_naked_dir_move_cmds(me, bystander, room):
     assert xp.fn.__name__ == "do_move_words"
     assert xp.kw.get("moves") == tsse
 
-    xp = me.parse("move shit")
+    xp = me.shell.parse("move shit")
     assert not xp
+    assert "bad direction" in str(xp.error) or "is a bad direction" in str(xp.error)
+    assert "shit" in str(xp.error)
 
     xp = me.parse("2sse")
     assert xp
