@@ -173,6 +173,11 @@ def test_nicknames_quick(me):
 
 TABLE = [
     (
+        "itsatest",
+        ("can_itsatest",),
+        ("do_itsatest",),
+    ),
+    (
         "itsatest foo bar",
         ("can_itsatest_words", "words", ("foo", "bar")),
         ("do_itsatest_words", "words", ("foo", "bar")),
@@ -211,6 +216,11 @@ TABLE = [
         "itsatest stupid foo bar",
         ("can_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
         ("do_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
+    ),
+    (
+        "itsatest foo bar stupid",
+        ("can_itsatest_words_living", "words", ("foo", "bar"), "living", "objs.stupid"),
+        ("do_itsatest_words_living", "words", ("foo", "bar"), "living", "objs.stupid"),
     ),
     (
         "itsatest stupid foo bar",
