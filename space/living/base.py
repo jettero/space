@@ -205,11 +205,27 @@ class Living(ReceivesMessages, CanMove, StdObj):
     def can_look_living(self, living):
         return False, {"error": "XXX: this should work sometimes"}
 
+    def can_look_words(self, words: tuple[str, ...]):
+        w = tuple(x.lower() for x in words)
+        if len(w) == 1 and w[0] in ("around", "room", "things"):
+            return True, {}
+        rest = " ".join(w[1:])
+        if w[0] in ("at",):
+            if rest in ("room", "the room", "things"):
+                return True, {}
+        elif w[0] in ("around",):
+            if rest in ("room", "the room"):
+                return True, {}
+        return False, {"error": "look at what?"}
+
     def do_look(self):
         from ..shell.message import MapMessage
 
         self.simple_action("$N $vlook around.")
         self.tell(MapMessage(self.location.map.visicalc_submap(self)))
+
+    def do_look_words(self):
+        return self.do_look()
 
     @property
     def hp(self):

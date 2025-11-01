@@ -130,7 +130,7 @@ def test_extra_args_fail(me, room):
     assert xp
 
     xp = me.parse("look at things")
-    assert not xp
+    assert xp
 
 
 def test_pstate_nodes(me, room):
@@ -144,7 +144,10 @@ def test_pstate_nodes(me, room):
         ("look", "do_look", {}),
         ("say hi", "do_say_words", {"words": "hi"}),
         ("l", "do_look", {}),
-        ("look at room", "do_look", {}),
+        ("look at room", "do_look_words", {}),
+        ("look at the room", "do_look_words", {}),
+        ("look around", "do_look_words", {}),
+        ("look around the room", "do_look_words", {}),
         ("inventory", "do_inventory", {}),
         ("i", "do_inventory", {}),
         ("move s", "do_move_words", {"moves": ("s",)}),
