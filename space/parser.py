@@ -20,8 +20,7 @@ def parse(actor, input_text, parse_only=False):
     if not parts:
         return
     vtok, *tokens = parts
-    verbs = find_verb(vtok)
-    routes = find_routes(actor, verbs)  #    ↓ often a weakref
+    verbs = find_verb(vtok)  #    ↓ often a weakproxy, so we call __repr__()
     log.debug("-=: parse(%s, %s) verbs=%s", actor.__repr__(), repr(input_text), repr(verbs))
     vmap = actor.location.map.visicalc_submap(actor)
     objs = [o for o in vmap.objects] + actor.inventory
@@ -29,7 +28,7 @@ def parse(actor, input_text, parse_only=False):
     pop_to_args = None
 
     errors = list()
-    for route in sorted(routes, key=lambda x: x.score, reverse=True):
+    for route in find_routes(actor, verbs):
         log.debug("considering route=%s", repr(route))
         remaining = list(tokens)
         kw = {}
@@ -151,6 +150,12 @@ def list_match(name, objs):
 
 
 def find_routes(actor, verbs):
+    return tuple(sorted(_find_routes(actor, verbs), key=lambda x: x.score, reverse=True))
+
+
+def _find_routes(actor, verbs):
+    if isinstance(verbs, str):
+        verbs = find_verb(verbs)
     for verb in verbs:
         can_name = f"can_{verb.name}"
         for fn in [x for x in dir(actor) if x == can_name or x.startswith(f"{can_name}_")]:
