@@ -4,6 +4,7 @@ import pytest
 from space.living import Living
 from space.stdobj import StdObj
 from space.verb import Verb, register_outside_verb
+from space.parser import find_routes
 
 
 MARKERS = list()
@@ -169,6 +170,19 @@ def test_nicknames_quick(me):
     assert me.do("itsatest") is True
     assert me.do("itsa") is True
     assert MARKERS == [("can_itsatest",), ("do_itsatest",), ("can_itsatest",), ("do_itsatest",)]
+
+
+def test_method_scores(me):
+    scores = {x.name: x.score for x in find_routes(me, "itsatest")}
+    assert scores["itsatest_living"] > scores["itsatest_obj"] > scores["itsatest_words"] > scores["itsatest"]
+    assert scores["itsatest_obj_living"] > scores["itsatest_obj"]
+    assert scores["itsatest_word_living"] > scores["itsatest_word"]
+    assert scores["itsatest_obj_words"] > scores["itsatest_obj"] > scores["itsatest_word"]
+    assert scores["itsatest_words_obj"] > scores["itsatest_obj"] > scores["itsatest_words"]
+    assert scores["itsatest_words_obj_words"] > scores["itsatest_words_obj"]
+    assert scores["itsatest_living_words"] > scores["itsatest_living"] > scores["itsatest_words"]
+    assert scores["itsatest_words_living"] > scores["itsatest_words"]
+    assert scores["itsatest_words"] < scores["itsatest_word"]
 
 
 TABLE = [
