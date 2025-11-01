@@ -130,7 +130,7 @@ def test_extra_args_fail(me, room):
     assert xp
 
     xp = me.parse("look at things")
-    assert bool(xp) is True
+    assert not xp
 
 
 def test_pstate_nodes(me, room):
