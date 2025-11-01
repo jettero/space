@@ -38,6 +38,8 @@ def parse(actor, input_text, parse_only=False):
         filled = True
         max_ino = len(route.can.ihint) - 1
         remaining = list(tokens)
+        already_filled = set()  # if we steal a token, we skip this ihint in the mainloop
+        max_fill = dict()  # and then we limit the earlier variadic to this many tokens
         kw = {}
         if len(remaining) > len(route.can.ihint):
             for i, iih in enumerate(route.can.ihint):
@@ -64,10 +66,15 @@ def parse(actor, input_text, parse_only=False):
                                     for b in range(start, stop):
                                         if m := [o for o in list_match(remaining[b], objs) if isinstance(o, jih.type)]:
                                             log.debug('stealing remaining[%d] token "%s" for %s', b, remaining[b], jih)
-                                            kw[ih.name] = m[0]
+                                            kw[jih.name] = m[0]
                                             remaining.pop(b)
+                                            already_filled.add(j)
+                                            max_fill[i] = b
                                             break
         for ino, ih in enumerate(route.can.ihint):
+            if ino in already_filled:
+                log.debug("skipping ihint=%s, already filled earlier", ih)
+                continue
             log.debug("considering ihint=%s", repr(ih))
             if not remaining:
                 # XXX: we shouldn't really need this clause if we just check beforehand to
@@ -86,6 +93,12 @@ def parse(actor, input_text, parse_only=False):
                 kw[ih.name] = remaining.pop(0)
                 continue
             if ih.multi is str:
+                if b := max_fill.get(ino):
+                    log.debug("filling %s::%s with max_fill endpoint %d", route.name, ih, b)
+                    kw[ih.name] = fval = tuple(remaining[:b])
+                    remaining = remaining[b:]
+                    log.debug("filling result kw=%s remaining=%s", fval, remaining)
+                    continue
                 ir = max_ino - ino
                 if ir > 0:
                     log.debug("filling %s::%s ino=%d/%d ir=%d remaining=%s", route.name, ih, ino, max_ino, ir, remaining)
