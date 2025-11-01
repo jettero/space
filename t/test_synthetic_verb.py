@@ -215,7 +215,6 @@ def test_nicknames_quick(me):
             ("can_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
             ("do_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
         ),
-        # The parser prefers variadic words greedily; put living first
         (
             "itsatest stupid foo bar",
             ("can_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
@@ -264,10 +263,14 @@ def test_itsatest_parametric(me, objs, cmd, can_marker, do_marker):
             return objs.stupid
         return marker
 
+    can_marker = resolve(can_marker)
+    do_marker = resolve(do_marker)
+
     MARKERS.clear()
     assert me.do(cmd) is True
-    assert resolve(can_marker) in MARKERS
-    assert resolve(do_marker) in MARKERS
+    CM, DM = MARKERS
+    assert can_marker == CM
+    assert do_marker == DM
 
 
 def test_itsatest_coverage():
