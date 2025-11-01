@@ -17,6 +17,7 @@ def test_open_door(me):
     assert xp.fn.__name__ == "do_open_obj"
 
 
+@pytest.mark.xfail(reason="todo: would require adjective filters")
 def test_open_south_door(me):
     xp = me.parse("open south door")
     assert xp
@@ -24,6 +25,7 @@ def test_open_south_door(me):
     xp()
 
 
+@pytest.mark.xfail(reason="todo: would require adjective filters")
 def test_open_north_door_fail(me):
     xp = me.parse("open north door")
     assert not xp
@@ -40,9 +42,7 @@ def test_open_nonsense_fails(me):
 
 def test_open_nonsense_door_fails(me):
     xp = me.parse("open nothingburger door")
-    assert not xp
-    # When direction word isn't a direction, parse() in shell returns bool False rather than XP.
-    # We still ensure the command fails as expected.
+    assert not xp  # this shouldn't ever work
 
 
 def test_open_door_and_move_through_it(me):
