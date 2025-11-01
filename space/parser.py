@@ -1,6 +1,7 @@
 import shlex, inspect, logging, types
 from functools import lru_cache
 from collections import namedtuple
+from typing import get_origin, get_args
 
 from .find import find_verb, set_this_body
 import space.exceptions as E
@@ -186,6 +187,9 @@ def implied_type(name):
 
 
 def type_rank(t, v):
+    score = 1.0
     if inspect.isclass(t) and issubclass(t, StdObj):
-        return 1 + (t.stdobj_dist_val / 1000)
-    return 1
+        score += t.stdobj_dist_val / 1000
+    if v or get_origin(t) is tuple:
+        score -= 0.000_000_1
+    return score
