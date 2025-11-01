@@ -30,17 +30,26 @@ def parse(actor, input_text, parse_only=False):
 
     errors = list()
     for route in find_routes(actor, verbs):
+        if len(tokens) < len(route.can.ihint):
+            log.debug("pre-rejecting %s: not enough tokens to fill all ihints", route)
+            filled = False
+            continue
+
         log.debug("considering route=%s", repr(route))
+        filled = True
+        max_ino = len(route.can.ihint) - 1
         remaining = list(tokens)
         kw = {}
-        filled = True
-        for ih in route.can.ihint:
+        for ino, ih in enumerate(route.can.ihint):
             log.debug("considering ihint=%s", repr(ih))
             if not remaining:
+                # XXX: we shouldn't really need this clause if we just check
+                # beforehand to see if we have enough tokens
                 log.debug("rejecting %s: unable to fill ihint=%s, ran out of tokens", repr(route), repr(ih))
                 filled = False
                 break
             if ih.variadic:
+                # this pretty much has to be the last arg, so we can just slurp the rest of the tokens
                 kw[ih.name] = tuple(remaining)
                 pop_to_args = ih.name
                 remaining = []
@@ -49,9 +58,20 @@ def parse(actor, input_text, parse_only=False):
                 kw[ih.name] = remaining.pop(0)
                 continue
             if ih.type is tuple or ih.type == tuple[str, ...]:
-                kw[ih.name] = tuple(remaining)
-                remaining = []
+                ir = max_ino - ino
+                if ir > 0:
+                    log.debug("filling %s::%s ino=%d/%d ir=%d remaining=%s", route.name, ih, ino, max_ino, ir, remaining)
+                    kw[ih.name] = fval = tuple(remaining[:-ir])
+                    remaining = remaining[-ir:]
+                    log.debug("filling result kw=%s remaining=%s", fval, remaining)
+                else:
+                    kw[ih.name] = tuple(remaining)
+                    remaining = []
                 continue
+
+            # XXX: we really need a case here for tuple[cls,...] where cls is a subclass of StdObj
+            # it'd look a lot like the below and a little like tuple[str, ...] above
+
             if issubclass(ih.type, StdObj):
                 if m := [o for o in list_match(remaining[0], objs) if isinstance(o, ih.type)]:
                     kw[ih.name] = m[0]
