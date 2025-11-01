@@ -43,7 +43,12 @@ class IntroHint(namedtuple("IH", ["name", "type", "variadic"])):
 
     def __init__(self, *a, **kw):
         super().__init__()
-        self.multi = self.variadic or self.type is tuple or get_origin(self.type) is tuple
+        if get_origin(self.type) is tuple:
+            args = get_args(self.type)
+            if len(args) == 2 and args[-1] is ...:
+                self.multi = args[0]
+        else:
+            self.multi = self.variadic or self.type is tuple
 
 
 @lru_cache

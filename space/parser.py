@@ -1,7 +1,6 @@
 import shlex, inspect, logging, types
 from functools import lru_cache
 from collections import namedtuple
-from typing import get_origin, get_args
 
 from .find import find_verb, set_this_body
 import space.exceptions as E
@@ -40,16 +39,45 @@ def parse(actor, input_text, parse_only=False):
         max_ino = len(route.can.ihint) - 1
         remaining = list(tokens)
         kw = {}
+        if len(remaining) > len(route.can.ihint):
+            for i, iih in enumerate(route.can.ihint):
+                if iih.multi:
+                    for j, jih in [(j, route.can.ihint[j]) for j in range(i + 1, len(route.can.ihint))]:
+                        if issubclass(jih.type, StdObj):
+                            for k, kih in [(k, route.can.ihint[k]) for k in range(j + 1, len(route.can.ihint))]:
+                                if kih.multi:
+                                    # if we have more than enough tokens and more than one multi
+                                    # hint we can present more than one token choice to any obj
+                                    # between them
+                                    start = j
+                                    stop = start + len(remaining) - len(route.can.ihint) + 1
+                                    log.debug(
+                                        "early token stealing <%s,%s,%s> // choices=%s[%d:%d] => %s",
+                                        iih,
+                                        jih,
+                                        kih,
+                                        remaining,
+                                        start,
+                                        stop,
+                                        remaining[start:stop],
+                                    )
+                                    for b in range(start, stop):
+                                        if m := [o for o in list_match(remaining[b], objs) if isinstance(o, jih.type)]:
+                                            log.debug('stealing remaining[%d] token "%s" for %s', b, remaining[b], jih)
+                                            kw[ih.name] = m[0]
+                                            remaining.pop(b)
+                                            break
         for ino, ih in enumerate(route.can.ihint):
             log.debug("considering ihint=%s", repr(ih))
             if not remaining:
-                # XXX: we shouldn't really need this clause if we just check
-                # beforehand to see if we have enough tokens
+                # XXX: we shouldn't really need this clause if we just check beforehand to
+                # see if we have enough tokens
                 log.debug("rejecting %s: unable to fill ihint=%s, ran out of tokens", repr(route), repr(ih))
                 filled = False
                 break
             if ih.variadic:
-                # this pretty much has to be the last arg, so we can just slurp the rest of the tokens
+                # this pretty much has to be the last arg, so we can just slurp the rest
+                # of the tokens
                 kw[ih.name] = tuple(remaining)
                 pop_to_args = ih.name
                 remaining = []
@@ -57,7 +85,7 @@ def parse(actor, input_text, parse_only=False):
             if ih.type in (str, None):
                 kw[ih.name] = remaining.pop(0)
                 continue
-            if ih.type is tuple or ih.type == tuple[str, ...]:
+            if ih.multi is str:
                 ir = max_ino - ino
                 if ir > 0:
                     log.debug("filling %s::%s ino=%d/%d ir=%d remaining=%s", route.name, ih, ino, max_ino, ir, remaining)
@@ -69,8 +97,9 @@ def parse(actor, input_text, parse_only=False):
                     remaining = []
                 continue
 
-            # XXX: we really need a case here for tuple[cls,...] where cls is a subclass of StdObj
-            # it'd look a lot like the below and a little like tuple[str, ...] above
+            # XXX: we really need a case here (or maybe the loop above) for
+            # tuple[cls,...] where cls is a subclass of StdObj it'd look a lot
+            # like the below and a little like tuple[str, ...] above
 
             if issubclass(ih.type, StdObj):
                 if m := [o for o in list_match(remaining[0], objs) if isinstance(o, ih.type)]:
@@ -187,7 +216,7 @@ def _find_routes(actor, verbs):
                 can = getattr(actor, fn, False)
                 can = FnMap(can, get_introspection_hints(can, imply_type_callback=implied_type))
                 do = FnMap(do, get_introspection_names(do))
-                score = sum(type_rank(t, v) for a, t, v in can.ihint)
+                score = sum(type_rank(x) for x in can.ihint)
                 yield Route(verb, can, do, score)
 
 
@@ -206,10 +235,10 @@ def implied_type(name):
     return str
 
 
-def type_rank(t, v):
+def type_rank(ih):
     score = 1.0
-    if issubclass(t, StdObj):
-        score += t.stdobj_dist_val / 1000
-    if v or get_origin(t) is tuple:
-        score -= 0.000_000_1
+    if issubclass(ih.type, StdObj):
+        score += ih.type.stdobj_dist_val / 1000
+    if ih.multi:
+        score -= 0.000_001
     return score
