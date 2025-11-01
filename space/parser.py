@@ -129,7 +129,10 @@ class ExecutionPlan(namedtuple("XP", ["actor", "fn", "kw"])):
         return not (self.fn is _parse_error)
 
 
-Route = namedtuple("R", ["verb", "can", "do", "score"])
+class Route(namedtuple("R", ["verb", "can", "do", "score"])):
+    @property
+    def name(self):
+        return self.can.fn.__name__[4:]
 
 
 class FnMap(namedtuple("FM", ["fn", "ihint"])):
