@@ -41,6 +41,10 @@ class IntroHint(namedtuple("IH", ["name", "type", "variadic"])):
             return isinstance(val, tuple) and all(matches_type_hint(x, self.type) for x in val)
         return matches_type_hint(val, self.type)
 
+    def __init__(self, *a, **kw):
+        super().__init__()
+        self.multi = self.variadic or self.type is tuple or get_origin(self.type) is tuple
+
 
 @lru_cache
 def get_introspection_names(func, assume_type=Any):
