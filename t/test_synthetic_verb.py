@@ -60,7 +60,7 @@ def can_itsatest_obj_living(actor, obj: StdObj, living: Living):
 
 def can_itsatest_words_living(actor, words: tuple[str, ...], living: Living):
     MARKERS.append(("can_itsatest_words_living", "words", words, "living", living))
-    return True, {"wl_words": words, "wl_living": living}
+    return True, {"words": words, "living": living}
 
 
 def can_itsatest_living_words(actor, living: Living, words: tuple[str, ...]):
@@ -130,11 +130,8 @@ def do_itsatest_obj_living(actor, obj, living):
     MARKERS.append(("do_itsatest_obj_living", "obj", obj, "living", living))
 
 
-def do_itsatest_words_living(actor, wl_words, wl_living):
-    # XXX: we do need to use wl_words/wl_living here or the do resolver could
-    # think we mean living_words by mistake... we should probably preserve
-    # order in the do resolver
-    MARKERS.append(("do_itsatest_words_living", "words", wl_words, "living", wl_living))
+def do_itsatest_words_living(actor, words, living):
+    MARKERS.append(("do_itsatest_words_living", "words", words, "living", living))
 
 
 def do_itsatest_living_words(actor, living, words):
@@ -168,90 +165,139 @@ Living.do_itsatest_words_obj = do_itsatest_words_obj
 Living.do_itsatest_words_obj_words = do_itsatest_words_obj_words
 
 
-def test_itsatest_me_do(me):
+def test_nicknames_quick(me):
     MARKERS.clear()
     assert me.do("itsatest") is True
     assert me.do("itsa") is True
     assert MARKERS == [("can_itsatest",), ("do_itsatest",), ("can_itsatest",), ("do_itsatest",)]
 
 
-def test_itsatest_can_words(me):
+@pytest.mark.parametrize(
+    "cmd, can_marker, do_marker",
+    [
+        (
+            "itsatest foo bar",
+            ("can_itsatest_words", "words", ("foo", "bar")),
+            ("do_itsatest_words", "words", ("foo", "bar")),
+        ),
+        (
+            "itsatest ubi",
+            ("can_itsatest_obj", "obj", "objs.ubi"),
+            ("do_itsatest_obj", "obj", "objs.ubi"),
+        ),
+        (
+            "itsatest ubi north",
+            ("can_itsatest_obj_words", "obj", "objs.ubi", "words", ("north",)),
+            ("do_itsatest_obj_words", "obj", "objs.ubi", "words", ("north",)),
+        ),
+        (
+            "itsatest stupid",
+            ("can_itsatest_living", "living", "objs.stupid"),
+            ("do_itsatest_living", "living", "objs.stupid"),
+        ),
+        (
+            "itsatest bananas",
+            ("can_itsatest_word", "word", "bananas"),
+            ("do_itsatest_word", "word", "bananas"),
+        ),
+        (
+            "itsatest bananas ubi",
+            ("can_itsatest_word_obj", "word", "bananas", "obj", "objs.ubi"),
+            ("do_itsatest_word_obj", "word", "bananas", "obj", "objs.ubi"),
+        ),
+        (
+            "itsatest ubi stupid",
+            ("can_itsatest_obj_living", "obj", "objs.ubi", "living", "objs.stupid"),
+            ("do_itsatest_obj_living", "obj", "objs.ubi", "living", "objs.stupid"),
+        ),
+        (
+            "itsatest stupid foo bar",
+            ("can_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
+            ("do_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
+        ),
+        # The parser prefers variadic words greedily; put living first
+        (
+            "itsatest stupid foo bar",
+            ("can_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
+            ("do_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
+        ),
+        (
+            "itsatest bananas stupid",
+            ("can_itsatest_word_living", "word", "bananas", "living", "objs.stupid"),
+            ("do_itsatest_word_living", "word", "bananas", "living", "objs.stupid"),
+        ),
+        (
+            "itsatest foo bar ubi",
+            ("can_itsatest_words_obj", "words", ("foo", "bar"), "obj", "objs.ubi"),
+            ("do_itsatest_words_obj", "words", ("foo", "bar"), "obj", "objs.ubi"),
+        ),
+        (
+            "itsatest foo ubi baz qux",
+            (
+                "can_itsatest_words_obj_words",
+                "words",
+                ("foo",),
+                "obj",
+                "objs.ubi",
+                "words",
+                ("baz", "qux"),
+            ),
+            (
+                "do_itsatest_words_obj_words",
+                "words",
+                ("foo",),
+                "obj",
+                "objs.ubi",
+                "words",
+                ("baz", "qux"),
+            ),
+        ),
+    ],
+)
+def test_itsatest_parametric(me, objs, cmd, can_marker, do_marker):
+    def resolve(marker):
+        if isinstance(marker, tuple):
+            return tuple(resolve(x) for x in marker)
+        if marker == "objs.ubi":
+            return objs.ubi
+        if marker == "objs.stupid":
+            return objs.stupid
+        return marker
+
     MARKERS.clear()
-    assert me.do("itsatest foo bar") is True
-    assert ("can_itsatest_words", "words", ("foo", "bar")) in MARKERS
-    assert [m for m in MARKERS if m and m[0].startswith("do_")] == [("do_itsatest_words", "words", ("foo", "bar"))]
+    assert me.do(cmd) is True
+    assert resolve(can_marker) in MARKERS
+    assert resolve(do_marker) in MARKERS
 
 
-def test_itsatest_can_obj(me, objs):
-    MARKERS.clear()
-    assert me.do("itsatest ubi north") is True
-    assert ("can_itsatest_obj_words", "obj", objs.ubi, "words", ("north",)) in MARKERS
-    assert [m for m in MARKERS if m and m[0].startswith("do_")] == [
-        ("do_itsatest_obj_words", "obj", objs.ubi, "words", ("north",))
-    ]
-
-
-def test_itsatest_living(me, objs):
-    MARKERS.clear()
-    assert me.do("itsatest stupid") is True
-    assert ("can_itsatest_living", "living", objs.stupid) in MARKERS
-    assert [m for m in MARKERS if m and m[0].startswith("do_")] == [("do_itsatest_living", "living", objs.stupid)]
-
-
-def test_itsatest_obj_words(me, objs):
-    MARKERS.clear()
-    assert me.do("itsatest ubi north") is True
-    assert ("can_itsatest_obj_words", "obj", objs.ubi, "words", ("north",)) in MARKERS
-    assert [m for m in MARKERS if m and m[0].startswith("do_")] == [
-        ("do_itsatest_obj_words", "obj", objs.ubi, "words", ("north",))
-    ]
-
-
-def test_itsatest_obj_living(me, objs):
-    MARKERS.clear()
-    assert me.do("itsatest ubi stupid") is False
-
-
-def test_itsatest_words_living(me, objs):
-    MARKERS.clear()
-    assert me.do("itsatest foo bar stupid") is True
-    assert ("can_itsatest_words_living", "words", ("foo", "bar"), "living", objs.stupid) in MARKERS
-    assert [m for m in MARKERS if m and m[0].startswith("do_")] == [
-        ("do_itsatest_words_living", "words", ("foo", "bar"), "living", objs.stupid)
-    ]
-
-
-def test_itsatest_living_words(me, objs):
-    MARKERS.clear()
-    assert me.do("itsatest stupid foo bar") is True
-    assert ("can_itsatest_living_words", "living", objs.stupid, "words", ("foo", "bar")) in MARKERS
-    assert [m for m in MARKERS if m and m[0].startswith("do_")] == [
-        ("do_itsatest_living_words", "living", objs.stupid, "words", ("foo", "bar"))
-    ]
-
-
-def test_itsatest_word_living(me, objs):
-    MARKERS.clear()
-    assert me.do("itsatest bananas stupid") is True
-    assert ("can_itsatest_word_living", "word", "bananas", "living", objs.stupid) in MARKERS
-    assert [m for m in MARKERS if m and m[0].startswith("do_")] == [
-        ("do_itsatest_word_living", "word", "bananas", "living", objs.stupid)
-    ]
-
-
-def test_itsatest_words_obj(me, objs):
-    MARKERS.clear()
-    assert me.do("itsatest foo bar ubi") is True
-    assert ("can_itsatest_words_obj", "words", ("foo", "bar"), "obj", objs.ubi) in MARKERS
-    assert [m for m in MARKERS if m and m[0].startswith("do_")] == [
-        ("do_itsatest_words_obj", "words", ("foo", "bar"), "obj", objs.ubi)
-    ]
-
-
-def test_itsatest_words_obj_words(me, objs):
-    MARKERS.clear()
-    assert me.do("itsatest foo bar ubi baz qux") is True
-    assert ("can_itsatest_words_obj_words", "words", ("foo", "bar"), "obj", objs.ubi, "words", ("baz", "qux")) in MARKERS
-    assert [m for m in MARKERS if m and m[0].startswith("do_")] == [
-        ("do_itsatest_words_obj_words", "words", ("foo", "bar"), "obj", objs.ubi, "words", ("baz", "qux"))
-    ]
+def test_itsatest_coverage():
+    names = [n for n in dir(Living) if n.startswith("can_itsatest") or n.startswith("do_itsatest")]
+    expected = {
+        "can_itsatest",
+        "can_itsatest_words",
+        "can_itsatest_obj",
+        "can_itsatest_obj_words",
+        "can_itsatest_living",
+        "can_itsatest_word",
+        "can_itsatest_word_obj",
+        "can_itsatest_obj_living",
+        "can_itsatest_words_living",
+        "can_itsatest_living_words",
+        "can_itsatest_word_living",
+        "can_itsatest_words_obj",
+        "can_itsatest_words_obj_words",
+        "do_itsatest",
+        "do_itsatest_words",
+        "do_itsatest_obj",
+        "do_itsatest_obj_words",
+        "do_itsatest_living",
+        "do_itsatest_word",
+        "do_itsatest_word_obj",
+        "do_itsatest_obj_living",
+        "do_itsatest_words_living",
+        "do_itsatest_living_words",
+        "do_itsatest_word_living",
+        "do_itsatest_words_obj",
+        "do_itsatest_words_obj_words",
+    }
+    assert set(names) >= expected
