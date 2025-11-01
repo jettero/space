@@ -6,8 +6,7 @@ from space.stdobj import StdObj
 from space.verb import Verb, register_outside_verb
 
 
-# global marker store for assertions
-MARKERS = []
+MARKERS = list()
 
 
 class Action(Verb):
@@ -172,87 +171,87 @@ def test_nicknames_quick(me):
     assert MARKERS == [("can_itsatest",), ("do_itsatest",), ("can_itsatest",), ("do_itsatest",)]
 
 
-@pytest.mark.parametrize(
-    "cmd, can_marker, do_marker",
-    [
+TABLE = [
+    (
+        "itsatest foo bar",
+        ("can_itsatest_words", "words", ("foo", "bar")),
+        ("do_itsatest_words", "words", ("foo", "bar")),
+    ),
+    (
+        "itsatest ubi",
+        ("can_itsatest_obj", "obj", "objs.ubi"),
+        ("do_itsatest_obj", "obj", "objs.ubi"),
+    ),
+    (
+        "itsatest ubi north",
+        ("can_itsatest_obj_words", "obj", "objs.ubi", "words", ("north",)),
+        ("do_itsatest_obj_words", "obj", "objs.ubi", "words", ("north",)),
+    ),
+    (
+        "itsatest stupid",
+        ("can_itsatest_living", "living", "objs.stupid"),
+        ("do_itsatest_living", "living", "objs.stupid"),
+    ),
+    (
+        "itsatest bananas",
+        ("can_itsatest_word", "word", "bananas"),
+        ("do_itsatest_word", "word", "bananas"),
+    ),
+    (
+        "itsatest bananas ubi",
+        ("can_itsatest_word_obj", "word", "bananas", "obj", "objs.ubi"),
+        ("do_itsatest_word_obj", "word", "bananas", "obj", "objs.ubi"),
+    ),
+    (
+        "itsatest ubi stupid",
+        ("can_itsatest_obj_living", "obj", "objs.ubi", "living", "objs.stupid"),
+        ("do_itsatest_obj_living", "obj", "objs.ubi", "living", "objs.stupid"),
+    ),
+    (
+        "itsatest stupid foo bar",
+        ("can_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
+        ("do_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
+    ),
+    (
+        "itsatest stupid foo bar",
+        ("can_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
+        ("do_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
+    ),
+    (
+        "itsatest bananas stupid",
+        ("can_itsatest_word_living", "word", "bananas", "living", "objs.stupid"),
+        ("do_itsatest_word_living", "word", "bananas", "living", "objs.stupid"),
+    ),
+    (
+        "itsatest foo bar ubi",
+        ("can_itsatest_words_obj", "words", ("foo", "bar"), "obj", "objs.ubi"),
+        ("do_itsatest_words_obj", "words", ("foo", "bar"), "obj", "objs.ubi"),
+    ),
+    (
+        "itsatest foo ubi baz qux",
         (
-            "itsatest foo bar",
-            ("can_itsatest_words", "words", ("foo", "bar")),
-            ("do_itsatest_words", "words", ("foo", "bar")),
+            "can_itsatest_words_obj_words",
+            "words",
+            ("foo",),
+            "obj",
+            "objs.ubi",
+            "words",
+            ("baz", "qux"),
         ),
         (
-            "itsatest ubi",
-            ("can_itsatest_obj", "obj", "objs.ubi"),
-            ("do_itsatest_obj", "obj", "objs.ubi"),
+            "do_itsatest_words_obj_words",
+            "words",
+            ("foo",),
+            "obj",
+            "objs.ubi",
+            "words",
+            ("baz", "qux"),
         ),
-        (
-            "itsatest ubi north",
-            ("can_itsatest_obj_words", "obj", "objs.ubi", "words", ("north",)),
-            ("do_itsatest_obj_words", "obj", "objs.ubi", "words", ("north",)),
-        ),
-        (
-            "itsatest stupid",
-            ("can_itsatest_living", "living", "objs.stupid"),
-            ("do_itsatest_living", "living", "objs.stupid"),
-        ),
-        (
-            "itsatest bananas",
-            ("can_itsatest_word", "word", "bananas"),
-            ("do_itsatest_word", "word", "bananas"),
-        ),
-        (
-            "itsatest bananas ubi",
-            ("can_itsatest_word_obj", "word", "bananas", "obj", "objs.ubi"),
-            ("do_itsatest_word_obj", "word", "bananas", "obj", "objs.ubi"),
-        ),
-        (
-            "itsatest ubi stupid",
-            ("can_itsatest_obj_living", "obj", "objs.ubi", "living", "objs.stupid"),
-            ("do_itsatest_obj_living", "obj", "objs.ubi", "living", "objs.stupid"),
-        ),
-        (
-            "itsatest stupid foo bar",
-            ("can_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
-            ("do_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
-        ),
-        (
-            "itsatest stupid foo bar",
-            ("can_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
-            ("do_itsatest_living_words", "living", "objs.stupid", "words", ("foo", "bar")),
-        ),
-        (
-            "itsatest bananas stupid",
-            ("can_itsatest_word_living", "word", "bananas", "living", "objs.stupid"),
-            ("do_itsatest_word_living", "word", "bananas", "living", "objs.stupid"),
-        ),
-        (
-            "itsatest foo bar ubi",
-            ("can_itsatest_words_obj", "words", ("foo", "bar"), "obj", "objs.ubi"),
-            ("do_itsatest_words_obj", "words", ("foo", "bar"), "obj", "objs.ubi"),
-        ),
-        (
-            "itsatest foo ubi baz qux",
-            (
-                "can_itsatest_words_obj_words",
-                "words",
-                ("foo",),
-                "obj",
-                "objs.ubi",
-                "words",
-                ("baz", "qux"),
-            ),
-            (
-                "do_itsatest_words_obj_words",
-                "words",
-                ("foo",),
-                "obj",
-                "objs.ubi",
-                "words",
-                ("baz", "qux"),
-            ),
-        ),
-    ],
-)
+    ),
+]
+
+
+@pytest.mark.parametrize("cmd, can_marker, do_marker", TABLE)
 def test_itsatest_parametric(me, objs, cmd, can_marker, do_marker):
     def resolve(marker):
         if isinstance(marker, tuple):
@@ -274,33 +273,6 @@ def test_itsatest_parametric(me, objs, cmd, can_marker, do_marker):
 
 
 def test_itsatest_coverage():
-    names = [n for n in dir(Living) if n.startswith("can_itsatest") or n.startswith("do_itsatest")]
-    expected = {
-        "can_itsatest",
-        "can_itsatest_words",
-        "can_itsatest_obj",
-        "can_itsatest_obj_words",
-        "can_itsatest_living",
-        "can_itsatest_word",
-        "can_itsatest_word_obj",
-        "can_itsatest_obj_living",
-        "can_itsatest_words_living",
-        "can_itsatest_living_words",
-        "can_itsatest_word_living",
-        "can_itsatest_words_obj",
-        "can_itsatest_words_obj_words",
-        "do_itsatest",
-        "do_itsatest_words",
-        "do_itsatest_obj",
-        "do_itsatest_obj_words",
-        "do_itsatest_living",
-        "do_itsatest_word",
-        "do_itsatest_word_obj",
-        "do_itsatest_obj_living",
-        "do_itsatest_words_living",
-        "do_itsatest_living_words",
-        "do_itsatest_word_living",
-        "do_itsatest_words_obj",
-        "do_itsatest_words_obj_words",
-    }
-    assert set(names) >= expected
+    dir_names = {n for n in dir(Living) if n.startswith("can_itsatest") or n.startswith("do_itsatest")}
+    table_names = {item[0] for x in TABLE for item in x[1:]}
+    assert dir_names == table_names
