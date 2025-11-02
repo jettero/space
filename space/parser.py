@@ -64,7 +64,9 @@ def parse(actor, input_text, parse_only=False):
                                         remaining[start:stop],
                                     )
                                     for b in range(start, stop):
-                                        if m := [o for o in list_match(remaining[b], objs) if isinstance(o, jih.type)]:
+                                        if m := list_match(
+                                            remaining[b], objs, rtype=jih.type, adj=route.adj(jih.name, **kw), aerr=errors
+                                        ):
                                             log.debug('stealing remaining[%d] token "%s" for %s', b, remaining[b], jih)
                                             kw[jih.name] = m[0]
                                             remaining.pop(b)
@@ -115,7 +117,7 @@ def parse(actor, input_text, parse_only=False):
             # like the below and a little like tuple[str, ...] above
 
             if issubclass(ih.type, StdObj):
-                if m := [o for o in list_match(remaining[0], objs) if isinstance(o, ih.type)]:
+                if m := list_match(remaining[0], objs, rtype=ih.type, adj=route.adj(ih.name, **kw), aerr=errors):
                     kw[ih.name] = m[0]
                     remaining.pop(0)
                     continue
@@ -161,9 +163,9 @@ def parse(actor, input_text, parse_only=False):
             errors.append(ctx["error"])
         ############################# end-route-for
 
-    msg = errors[0] if len(errors) == 1 else f"unable to understand {input_text!r}"
+    msg = errors[0] if errors else f"unable to understand {input_text!r}"
     if parse_only:
-        # We absolutely must present ExecutionPlan.error so the shell can use it.
+        # we must present ExecutionPlan.error so the shell can use it
         return ExecutionPlan(actor, _parse_error, {"error": msg})
     raise E.ParseError(msg)
 
@@ -197,6 +199,9 @@ class Route(namedtuple("R", ["verb", "can", "do", "score"])):
     def name(self):
         return self.can.fn.__name__[4:]
 
+    def adj(self, arg_name, **kw):
+        return tuple(kw[k] for k in self.can.fn.__dict__.get("adj_map", {}).get(arg_name, []) if k in kw)
+
 
 class FnMap(namedtuple("FM", ["fn", "ihint"])):
     def __repr__(self):
@@ -204,10 +209,16 @@ class FnMap(namedtuple("FM", ["fn", "ihint"])):
         return f"FM<{self.fn.__name__}({ihl})>"
 
 
-def list_match(name, objs, adj=list(), rtype=StdObj):
-    if isinstance(objs, (types.GeneratorType, list, tuple)):
-        return tuple(o for o in objs if isinstance(o, rtype) and o.parse_match(name, *adj))
-    return tuple()
+def list_match(name, objs, adj=list(), rtype=StdObj, aerr=None):
+    ret = (
+        tuple(o for o in objs if isinstance(o, rtype) and o.parse_match(name, *adj))
+        if isinstance(objs, (types.GeneratorType, list, tuple))
+        else tuple()
+    )
+    if not ret and isinstance(aerr, list):
+        names = " ".join([*adj, name])
+        aerr.append(f'unable to find the "{names}"')
+    return ret
 
 
 def find_routes(actor, verbs):

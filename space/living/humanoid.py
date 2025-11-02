@@ -10,6 +10,7 @@ from .gender import Male, Female, Unknown
 from .slots import Slots as BaseSlots, BeltSlot, HandSlot, LegsSlot, TorsoSlot, HeadSlot, FeetSlot, PackSlot
 from ..door import Door
 from ..stdobj import StdObj
+from ..pfilter import adj_map
 
 log = logging.getLogger(__name__)
 
@@ -92,6 +93,7 @@ class Humanoid(Living):
         obj.do_open()
         self.simple_action("$N $vopen $o.", obj)
 
+    @adj_map(obj="word")
     def can_open_word_obj(self, word: str, obj: Door):
         # XXX: there's really no way to get the behavior we want here without
         # some kind of adj-filter system for the object resolver in the parser.
