@@ -4,6 +4,7 @@ import re
 import logging
 import lark
 import space.exceptions as E
+from ..find import this_body
 
 log = logging.getLogger(__name__)
 
@@ -176,3 +177,47 @@ def moves_to_description(moves):
     minor_dir = ("north" if dy < 0 else "south") if major_is_x else ("east" if dx > 0 else "west")
     desc = f"about {major}m {major_dir} and {minor}m {minor_dir}"
     return desc
+
+
+def positional_adjectives(obj):
+    ret = set()
+    dx = dy = None
+    try:
+        tbx, tby = this_body().location.pos
+        ox, oy = obj.location.pos
+        dx = ox - tbx
+        dy = oy - tby
+    except AttributeError:
+        return ret
+
+    if dx == 0 and dy == 0:
+        ret.update(("here", "close", "near"))
+    else:
+        ax = abs(dx)
+        ay = abs(dy)
+        if ax and ay:
+            if dx > 0 and dy < 0:
+                ret.add("northeast")
+            elif dx > 0 and dy > 0:
+                ret.add("southeast")
+            elif dx < 0 and dy < 0:
+                ret.add("northwest")
+            elif dx < 0 and dy > 0:
+                ret.add("southwest")
+        if ax >= ay:
+            if dx > 0:
+                ret.add("east")
+            elif dx < 0:
+                ret.add("west")
+        if ay >= ax:
+            if dy > 0:
+                ret.add("south")
+            elif dy < 0:
+                ret.add("north")
+        manhattan = ax + ay
+        if manhattan <= 2:
+            ret.update(("close", "near"))
+        elif manhattan >= 5:
+            ret.add("far")
+
+    return ret
