@@ -1,5 +1,6 @@
 # coding: utf-8
 
+import re
 import logging
 import weakref
 
@@ -89,22 +90,34 @@ class baseobj:  # pylint: disable=invalid-name
     def parse_do(self, method, **kw):
         MethodNameRouter(self, f"do_{method}")(**kw)
 
-    def parse_match(self, txt, id_=None):
-        log.debug("%s .parse_match(txt=%s, id=%s)", self, txt, id_)
-        if id_ is not None:
-            id1 = id_.lower()
+    def parse_match(self, *names):
+        log.debug("%s.parse_match(%s)", self, names)
+
+        if len(names) == 1 and isinstance(names[0], (list, tuple)):
+            names = names[0]
+        if not names:
+            return False
+        if m := re.match(r"^(.+)\.(.+)$", names[0]):
+            name[0], id1 = m.groups()
             id2 = self.id
             if not (id2.startswith(id1) or id2.endswith(id1)):
                 return False
+
         try:
             tok = self.tokens
         except AttributeError:
             tok = self._tokenize()
 
-        for t in tok:
-            if len(t) == 1 and t == txt:
-                # case sensitive abbr match
-                return True
-            if t.startswith(txt.lower()):
-                return True
-        return False
+        for n in names:
+            matched = False
+            for t in tok:
+                if len(t) == 1 and t == n:
+                    matched = True
+                    break
+                if t.startswith(n.lower()):
+                    matched = True
+                    break
+            if not matched:
+                return False
+
+        return True
