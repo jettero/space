@@ -204,14 +204,9 @@ class FnMap(namedtuple("FM", ["fn", "ihint"])):
         return f"FM<{self.fn.__name__}({ihl})>"
 
 
-def list_match(name, objs):
+def list_match(name, objs, adj=list(), rtype=StdObj):
     if isinstance(objs, (types.GeneratorType, list, tuple)):
-        s = name.split(".", 1)
-        if len(s) not in (1, 2):
-            raise ValueError(f"len(name.split(., 1)) not in (1,2)")
-        objs = [i for i in objs if i.parse_match(*s)]
-        if objs:
-            return objs
+        return tuple(o for o in objs if isinstance(o, rtype) and o.parse_match(name, *adj))
     return tuple()
 
 
