@@ -63,6 +63,12 @@ def do(cmd):
 ;hilite preprocess_tokens 1 32
 ;hilite WTF               1 33 44
 
-;do open door; sSW6s3w; get bauble; 3e4n
-;do move nsew nsew
-;do look
+def go(x=1):
+    if x == 1:
+        ;do open door; sSW6s3w; get bauble; 3e4n
+        ;do move nsew nsew
+        ;do look
+    else:
+        ;do look
+
+/go 2
