@@ -56,7 +56,9 @@ HARD CONSTRAINTS
 ## Always
 - when creating tests, always work with what you have. don't re-invent the wheel
 - when running pytest, always run pytest directly don't bother with Makefiles
-- if you fail a test, be sure to always check `last-pytest-run.log` for hints about the failure
+- if you fail a test, be sure to always check `last-test-run.log` for hints
+  about the failure.
+- Do not try to append the `last-test-run.log` on your own, pytest itself sets up the logfile for you by default.
 - always stop and ask for permission when you start re-scoping your edits. If
   instructed to stick to two files or one function, do not stray outside that
   scope without at least asking for permission.
