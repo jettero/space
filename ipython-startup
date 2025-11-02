@@ -71,4 +71,4 @@ def go(x=1):
     else:
         ;do look
 
-/go 2
+/go 1
