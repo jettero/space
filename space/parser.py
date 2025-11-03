@@ -31,6 +31,8 @@ def parse(actor, input_text, parse_only=False):
 
     pop_to_args = None
 
+    set_this_body(actor)
+
     errors = list()
     for route in find_routes(actor, verbs):
         if len(tokens) < len(route.can.ihint):
@@ -141,7 +143,6 @@ def parse(actor, input_text, parse_only=False):
             log.debug("rejecting %s: unable to fill args with available tokens", repr(route))
             continue
 
-        set_this_body(actor)
         kw = route.verb.preprocess_tokens(actor, **kw)
         args = kw.pop(pop_to_args) if pop_to_args in kw else tuple()
         log.debug("running %s.can.fn(%s, %s)", repr(route), repr(args), repr(kw))
