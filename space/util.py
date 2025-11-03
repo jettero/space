@@ -18,7 +18,7 @@ def weakify(v):
         return v
     if v.__class__.__module__.startswith("space."):
         return weakref.proxy(v)
-    raise ValueError(f'weakify is for space objects')
+    raise ValueError(f"weakify is for space objects")
 
 
 def deep_eq(a, b):

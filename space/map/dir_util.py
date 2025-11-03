@@ -192,7 +192,7 @@ def positional_adjectives(obj):
     except ReferenceError as e:
         log.error("WTF obj=%s tb=%s -- this should be more rare than it is: %s", repr(obj), repr(this_body()), e)
         raise e
-    #return ret
+    # return ret
 
     if dx == 0 and dy == 0:
         ret.update(("here", "close", "near"))

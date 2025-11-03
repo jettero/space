@@ -1,6 +1,6 @@
 # coding: utf-8
 
-import weakref
+from ...util import weakify
 from ...named import Tags
 from ..dir_util import translate_dir, DDIRS, reverse_dir, orthoganal_dirs
 import space.exceptions as E
@@ -122,9 +122,7 @@ class MapObj:
 
     @map.setter
     def map(self, v):
-        if v is not None and not isinstance(v, weakref.ProxyTypes):
-            v = weakref.proxy(v)
-        self._map = v
+        self._map = weakify(v)
 
     def iter_neighbors(self, dirs="nsew", of_type=None):
         if of_type is None:

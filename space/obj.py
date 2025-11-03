@@ -2,7 +2,7 @@
 
 import re
 import logging
-import weakref
+from .util import weakify
 
 log = logging.getLogger(__name__)
 
@@ -21,8 +21,7 @@ class baseobj:  # pylint: disable=invalid-name
 
     @location.setter
     def location(self, v):
-        if v is not None and not isinstance(v, weakref.ProxyTypes):
-            v = weakref.proxy(v)
+        v = weakify(v)
         self._location = v
 
     @property

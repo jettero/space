@@ -1,7 +1,7 @@
 # coding: utf-8
 
 import logging
-import weakref
+from .util import weakify
 
 log = logging.getLogger(__name__)
 
@@ -10,8 +10,8 @@ class Signal:
     class Emission:
         def __init__(self, signal, emitter):
             log.debug("emitting signal[%s]", signal.name)
-            self.emitter = weakref.proxy(emitter)
-            self.signal = weakref.proxy(signal)
+            self.emitter = weakify(emitter)
+            self.signal = weakify(signal)
 
     def __init__(self, name, cb=None):
         log.debug("creating signal[%s]", name)

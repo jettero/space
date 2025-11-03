@@ -2,7 +2,7 @@
 
 import re
 import logging
-import weakref
+from ..util import weakify
 
 # note: shell.owner is weakref
 # owner.shell is not weakref
@@ -39,8 +39,7 @@ class BaseShell:
         if not hasattr(v, "tell") or not callable(v.tell):
             raise TypeError(f"{v} cannot be a shell owner")
         if self._owner != v:
-            if v is not None and not isinstance(v, weakref.ProxyTypes):
-                v = weakref.proxy(v)
+            v = weakify(v)
             self._owner = v
             self._owner.shell = self
 

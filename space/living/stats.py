@@ -1,7 +1,7 @@
 # coding: utf-8
 
 import math
-import weakref
+
 
 from ..dn import DN
 from ..roll import Roll, roll
@@ -114,9 +114,9 @@ class ExperiencePoints(DN):
 
 class Initiative(BaseBonus):
     def __init__(self, mar, mor, mass):
-        self.mar = weakref.proxy(mar)
-        self.mor = weakref.proxy(mor)
-        self.mass = weakref.proxy(mass)
+        self.mar = mar
+        self.mor = mor
+        self.mass = mass
 
     @property
     def pfactor(self):
