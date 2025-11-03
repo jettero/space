@@ -308,3 +308,19 @@ class Living(ReceivesMessages, CanMove, StdObj):
         return True, {}
 
     do_sheet = lazy_find_verb_method("sheet", "do_sheet")
+
+    @property
+    def vmap(self):
+        return self.location.map.visicalc_submap(self)
+
+    @property
+    def nearby_objects(self):
+        return list(x for x in self.nearby_things if not isinstance(x, Living))
+
+    @property
+    def nearby_livings(self):
+        return list(x for x in self.vmap.objects if isinstance(x, Living))
+
+    @property
+    def nearby_things(self):
+        return list(x for x in self.vmap.objects if isinstance(x, StdObj)) + list(self.inventory)
