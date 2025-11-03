@@ -15,6 +15,9 @@ positional_adjectives = None
 class baseobj:  # pylint: disable=invalid-name
     _tokens = _location = None
 
+    def strongify(self):
+        return  self
+
     @property
     def location(self):
         return self._location
