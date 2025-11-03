@@ -197,8 +197,26 @@ class Shell(BaseShell):
                 buf.insert_text(common[len(frag) :])
                 buf.complete_state = None
                 return
-            # No unambiguous expansion left: open the menu
-            buf.start_completion(select_first=False)
+            # No unambiguous expansion left: render a floating list above prompt
+            lines = []
+            shown = comps[:8]
+            maxw = max(len(c.display_text) for c in shown)
+            for c in shown:
+                t = c.display_text
+                lines.append(f"  {t}{' ' * (maxw - len(t))}")
+
+            def _show():
+                # Move cursor up for each line we will draw, print bottom-up
+                for i in range(len(lines)):
+                    print("\x1b[1A", end="")
+                for ln in lines[::-1]:
+                    print(f"\x1b[0G{ln}")
+            try:
+                event.app.run_in_terminal(_show)
+            except Exception:
+                _show()
+
+        
 
         @kb.add("s-tab")
         def _(event):
@@ -243,8 +261,9 @@ class Shell(BaseShell):
         def _(event):
             event.app.exit(exception=EOFError)
 
-        # Use simple PromptSession; keep prompt on last line without reserving space
-        self._session = PromptSession()
+        # Fallback: use default PromptSession; we will rely on internal menu
+        # placement by prompt_toolkit and our Tab handler to show it.
+        self._session = PromptSession(completer=self._completer, key_bindings=self._key_bindings, reserve_space_for_menu=False)
 
         # Install stdout patching so prints during prompts render cleanly
         self._patch_cm = patch_stdout(raw=True)
@@ -352,9 +371,7 @@ class Shell(BaseShell):
         try:
             if self._session and self._session.app._is_running:
                 return
-            line = self._session.prompt(
-                "/space/ ", completer=self._completer, reserve_space_for_menu=False, key_bindings=self._key_bindings
-            ).strip()
+            line = self._session.prompt("/space/ ", reserve_space_for_menu=False).strip()
             self.do_step(line)
         except (EOFError, KeyboardInterrupt):
             self.stop()
