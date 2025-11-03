@@ -21,8 +21,7 @@ class baseobj:  # pylint: disable=invalid-name
 
     @location.setter
     def location(self, v):
-        v = weakify(v)
-        self._location = v
+        self._location = weakify(v)
 
     @property
     def owner(self):

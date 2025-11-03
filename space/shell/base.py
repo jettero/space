@@ -12,6 +12,7 @@ from ..parser import parse
 from .message import TextMessage, MapMessage, Message
 
 from ..map.dir_util import is_direction_string
+from ..map import Map
 
 log = logging.getLogger(__name__)
 
@@ -34,22 +35,21 @@ class BaseShell:
 
     @owner.setter
     def owner(self, v):
+        from ..msg import HasShell
+
         if v is None:
             self._owner = None
-        if not hasattr(v, "tell") or not callable(v.tell):
-            raise TypeError(f"{v} cannot be a shell owner")
+        elif not isinstance(v, HasShell):
+            raise TypeError(f"{v!r} cannot be a shell owner")
         if self._owner != v:
-            v = weakify(v)
-            self._owner = v
-            self._owner.shell = self
+            v.shell = self
+            self._owner = weakify(v)
 
     def receive(self, something):
         if isinstance(something, Message):
             return self.receive_message(something)
         if isinstance(something, str):
             return self.receive_text(something)
-        from ..map import Map
-
         if isinstance(something, Map):
             return self.receive_map(something)
         raise TypeError(f"unable to receive({something})")
