@@ -6,8 +6,17 @@ from collections import namedtuple
 from typing import Any, get_args, get_origin, Literal, Annotated, Union, get_type_hints
 import inspect
 import logging
+import weakref
 
 log = logging.getLogger(__name__)
+
+
+def weakify(v):
+    if v is None:
+        return v
+    if isinstance(v, weakref.ProxyTypes):
+        return v
+    return weakref.proxy(v)
 
 
 def deep_eq(a, b):
