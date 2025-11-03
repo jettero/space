@@ -19,10 +19,14 @@ def parse(actor, input_text, parse_only=False):
     parts = shlex.split(input_text)
     if not parts:
         return
+
+    actor = actor.strongify()
+    a_map = actor.location.map.strongify()
+
     vtok, *tokens = parts
-    verbs = find_verb(vtok)  #    ↓ often a weakproxy, so we call __repr__()
-    log.debug("-=: parse(%s, %s) verbs=%s", actor.__repr__(), repr(input_text), repr(verbs))
-    vmap = actor.location.map.visicalc_submap(actor)
+    verbs = find_verb(vtok)
+    log.debug("-=: parse(%s, %s) verbs=%s", actor, repr(input_text), repr(verbs))
+    vmap = a_map.visicalc_submap(actor)
     objs = [o for o in vmap.objects] + actor.inventory
 
     pop_to_args = None
