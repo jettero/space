@@ -1,5 +1,35 @@
 # coding: utf-8
 
+# This is almost entirely written by AI, but following my framework for a
+# readline shell.
+#
+# This stuff is particularly baffling to the AI cuz it can't see or use a
+# shell, so it's hard to even describe what should or shouldn't happen and why.
+#
+# But we can go over some basics:
+#
+# 1. ^D and a literall EOF should exit the shell automatically, this allows
+#    `./lrun-shell.py < /dev/null` to work, but also, if the user types a
+#    literall ^D, the shell should also immediately exit.
+# 2. readline was good about trying to use the whole screen. prompt-toolkit
+#    seems to want to reserve lines at the bottom of the screen. I find this
+#    unacceptable, but forcing the prompt to the bottom of the terminal window
+#    has some annoying side effects. namely: if we pop up a floating menu
+#    directly above the prompt, we can only see one line of the choices cuz
+#    we're likely already at the last line of the terminal window
+# 3. '$do<tab>' should complete to 'door', by looping the tokens for each
+#    owner.nearby_objects
+# 4. '@stu<tab>' should complete to 'stupid', by looping the tokens for each
+#    owner.nearby_livings
+# 5. whatever completions we do, we have to make sure they're formatted for the
+#    parse(), so we can't leave stray leader-symbols in the text we try to
+#    parse. iff @stupid is complete, the @ should evaporate automagically
+# 6. never add ambiguous characters to a completion. If our choices are
+#    'thingus' and 'thingamabob' and we try to complete 'th<tab>'
+#    a. we can complete to 'thing' unambiguously and should do so
+#    b. we can't really complete aything further until the user types a 'u' or
+#       an 'a'. 'thingu<tab>' should give use "thingus" and move on.
+
 import logging
 import re
 import threading
