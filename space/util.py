@@ -16,7 +16,9 @@ def weakify(v):
         return v
     if isinstance(v, weakref.ProxyTypes):
         return v
-    return weakref.proxy(v)
+    if o.me.__class__.__module__.startsiwth("space."):
+        return weakref.proxy(v)
+    raise ValueError(f'weakify is for space objects')
 
 
 def deep_eq(a, b):
