@@ -8,6 +8,7 @@ log = logging.getLogger(__name__)
 
 positional_adjectives = None
 
+
 # all mud objects get this ancestor
 # most objects you can pick up or put in a room should also get Containable
 # you're probably looking for space/stdobj.py
@@ -20,7 +21,7 @@ class baseobj:  # pylint: disable=invalid-name
 
     @location.setter
     def location(self, v):
-        if v is not None:
+        if v is not None and not isinstance(v, weakref.ProxyTypes):
             v = weakref.proxy(v)
         self._location = v
 
@@ -121,7 +122,7 @@ class baseobj:  # pylint: disable=invalid-name
                 from space.map.dir_util import positional_adjectives
             tok.update(positional_adjectives(self))
 
-        log.debug(f'WTF names+adjectives: {tok}')
+        log.debug(f"WTF names+adjectives: {tok}")
         for n in names:
             matched = False
             for t in tok:

@@ -39,8 +39,10 @@ class BaseShell:
         if not hasattr(v, "tell") or not callable(v.tell):
             raise TypeError(f"{v} cannot be a shell owner")
         if self._owner != v:
-            self._owner = weakref.proxy(v)
-            v.shell = self
+            if v is not None and not isinstance(v, weakref.ProxyTypes):
+                v = weakref.proxy(v)
+            self._owner = v
+            self._owner.shell = self
 
     def receive(self, something):
         if isinstance(something, Message):

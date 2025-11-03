@@ -122,7 +122,7 @@ class MapObj:
 
     @map.setter
     def map(self, v):
-        if v is not None:
+        if v is not None and not isinstance(v, weakref.ProxyTypes):
             v = weakref.proxy(v)
         self._map = v
 
