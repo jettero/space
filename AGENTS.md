@@ -73,8 +73,18 @@ HARD CONSTRAINTS
 - Artifacts: `build/`, `dist/`, `space.egg-info/`.
 - Reqs: `requirements.txt` (run), `test-requirements.txt` (dev/test).
 
+## gotchas
+- space.obj.strongify() exists to look-for and eliminate a Heisenbug. It shouldn't really ever be necessary to use it.
+
 ## Single-use Variables (Agent Only)
 - You (the agent) must not introduce single-use temporary variables.
+  This is a horrible pattern. 'v' has literally no purpose. stop doing this.
+  ```
+  @goom.setter
+  def goom(self, v):
+    v = something_dumb(v)
+    self._goom = v
+  ```
 - You must inline values that are used exactly once.
 - You must not create an intermediate solely to pass to one call.
 - You must not add throwaway names like `tmp`, `code`, or `filename` used once.
