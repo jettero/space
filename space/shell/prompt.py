@@ -10,21 +10,27 @@ from .base import BaseShell, IntentionalQuit
 log = logging.getLogger(__name__)
 
 from prompt_toolkit import PromptSession
+from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.completion import Completer, Completion
+import space.verb as _verbs
 
 
 class _WordCompleter(Completer):
     """Top-level and internal command completer.
 
-    Mirrors readline.py's minimal completion behavior:
-      - At start of line, complete from parser.words
-      - If first char is '/', complete internal commands
+    Minimal completion behavior with sigils:
+      - First word: complete from verb names
+      - If line starts with '/': complete internal commands
+      - After first word: use sigils
+        - '$' tokens from StdObj in view
+        - '@' tokens from Living in view
     """
 
-    def __init__(self, get_words, get_line_start: callable):
-        self.get_words = get_words
+    def __init__(self, get_line_start: callable, get_std_tokens: callable, get_living_tokens: callable):
         self.get_line_start = get_line_start
+        self.get_std_tokens = get_std_tokens
+        self.get_living_tokens = get_living_tokens
 
     def get_completions(self, document, complete_event):  # noqa: D401
         # prompt_toolkit calls this during completion; yield Completion
@@ -42,10 +48,33 @@ class _WordCompleter(Completer):
                     yield Completion(w, start_position=-len(frag))
             return
 
-        # Top-level words come from the parser words generator
-        for w in self.get_words():
-            if w.startswith(frag):
-                yield Completion(w + " ", start_position=-len(frag))
+        # Split words to determine position (first word vs args)
+        tokens = [p for p in parts if p]
+
+        # First word: verbs
+        if len(tokens) <= 1:
+            exact = [w for w in _verbs.VERBS if w == frag]
+            if exact:
+                yield Completion(exact[0] + " ", start_position=-len(frag))
+                return
+            for w in _verbs.VERBS:
+                if w.startswith(frag):
+                    yield Completion(w + " ", start_position=-len(frag))
+            return
+
+        # Argument position: sigil-based completion
+        if frag.startswith("$"):
+            base = frag[1:]
+            for t in self.get_std_tokens():
+                if t.startswith(base):
+                    yield Completion(t + " ", start_position=-len(frag))
+            return
+        if frag.startswith("@"):
+            base = frag[1:]
+            for t in self.get_living_tokens():
+                if t.startswith(base):
+                    yield Completion(t + " ", start_position=-len(frag))
+            return
 
 
 class KeywordFilter(logging.Filter):
@@ -68,22 +97,124 @@ class Shell(BaseShell):
     """
 
     _session = None
+    _app = None
     _patch_cm = None
     _printing_lock = threading.Lock()
     color = True
     _logging_opts = None
 
     def startup(self, init=None):
-        def get_words():
-            return self.parser.words
-
         def get_line_start(txt):
             txt = txt.lstrip()
             return txt[:1] if txt else ""
 
-        completer = _WordCompleter(get_words, get_line_start)
+        def get_std_tokens():
+            return sorted({t for o in self.owner.nearby_objects for t in o.tokens})
+
+        def get_living_tokens():
+            return sorted({t for o in self.owner.nearby_livings for t in o.tokens})
+
+        kb = KeyBindings()
+        self._key_bindings = kb
+        self._completer = _WordCompleter(get_line_start, get_std_tokens, get_living_tokens)
+
+        @kb.add("tab")
+        def _(event):
+            buf = event.app.current_buffer
+            # Probe completions without opening menu
+            comps = list(self._completer.get_completions(buf.document, None))
+            if not comps:
+                buf.complete_state = None
+                return
+            # First-word special handling: work with verb names (no trailing space)
+            text = buf.document.text_before_cursor
+            parts = re.split(r"\s+", text)
+            frag = parts[-1] if parts else ""
+            is_first_word = len([p for p in parts if p]) <= 1 and (not text or not text.startswith("/"))
+
+            if len(comps) == 1:
+                if is_first_word:
+                    # Insert verb + single trailing space
+                    name = comps[0].text.strip()
+                    buf.delete_before_cursor(len(frag))
+                    buf.insert_text(name + " ")
+                else:
+                    buf.apply_completion(comps[0])
+                buf.complete_state = None
+                return
+            # Multiple matches: attempt longest common prefix expansion
+            # Compute insertion texts normalized
+            if is_first_word:
+                inserts = [c.text.strip() for c in comps]
+            else:
+                inserts = [c.text for c in comps]
+
+            # Find longest common prefix among inserts
+            def lcp(strs):
+                if not strs:
+                    return ""
+                s1 = min(strs)
+                s2 = max(strs)
+                i = 0
+                n = min(len(s1), len(s2))
+                while i < n and s1[i] == s2[i]:
+                    i += 1
+                return s1[:i]
+
+            common = lcp(inserts)
+            # Only expand beyond current fragment; avoid inserting trailing space here
+            if common and common.startswith(frag) and len(common) > len(frag):
+                buf.insert_text(common[len(frag) :])
+                buf.complete_state = None
+                return
+            # No unambiguous expansion left: open the menu
+            buf.start_completion(select_first=False)
+
+        @kb.add("s-tab")
+        def _(event):
+            st = event.app.current_buffer.complete_state
+            if st is not None and st.completions:
+                i = (st._selected_completion_index or 0) - 1
+                if i >= 0:
+                    st._selected_completion_index = i
+
+        @kb.add("down")
+        def _(event):
+            st = event.app.current_buffer.complete_state
+            if st is not None and st.completions:
+                i = (st._selected_completion_index or -1) + 1
+                if i < len(st.completions):
+                    st._selected_completion_index = i
+
+        @kb.add("up")
+        def _(event):
+            st = event.app.current_buffer.complete_state
+            if st is not None and st.completions:
+                i = (st._selected_completion_index or 0) - 1
+                if i >= 0:
+                    st._selected_completion_index = i
+
+        @kb.add("enter")
+        def _(event):
+            buf = event.app.current_buffer
+            st = buf.complete_state
+            if st is not None and st.completions:
+                if len(st.completions) == 1:
+                    buf.apply_completion(st.completions[0])
+                    st = None
+            text = buf.text
+            if text.strip():
+                event.app.exit(result=text)
+            else:
+                # Blank line submits nothing; redraw prompt
+                buf.reset()
+
+        @kb.add("c-d")
+        def _(event):
+            event.app.exit(exception=EOFError)
+
+        # Use simple PromptSession; keep prompt on last line without reserving space
         self._session = PromptSession()
-        self._completer = completer
 
         # Install stdout patching so prints during prompts render cleanly
         self._patch_cm = patch_stdout(raw=True)
@@ -132,7 +263,6 @@ class Shell(BaseShell):
 
             try:
                 app.run_in_terminal(_flush)
-                app.invalidate()
             except Exception:  # pylint: disable=broad-except
                 # As a last resort, fall back to stdout (still under patch_stdout).
                 with self._printing_lock:
@@ -190,12 +320,11 @@ class Shell(BaseShell):
 
     def step(self):
         try:
-            # Avoid re-entrant prompts (e.g., MCP stepping other shells)
-            if self._session.app._is_running:
+            if self._session and self._session.app._is_running:
                 return
-            # Provide completer each prompt to honor dynamic parser.words
-            # Reserve no extra space below the prompt for menus to keep it at bottom.
-            line = self._session.prompt("/space/ ", completer=self._completer, reserve_space_for_menu=False).strip()
+            line = self._session.prompt(
+                "/space/ ", completer=self._completer, reserve_space_for_menu=False, key_bindings=self._key_bindings
+            ).strip()
             self.do_step(line)
         except (EOFError, KeyboardInterrupt):
             self.stop()
