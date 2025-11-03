@@ -16,10 +16,21 @@ class baseobj:  # pylint: disable=invalid-name
     _tokens = _location = None
 
     def strongify(self):
-        # XXX: Having a Heisenbug around ReferenceError
-        # literally every other run of
-        # pytest t/test_verb_open_close.py gives a ReferenceError vs passing normally
-        # WTF WTF WTF WTF
+        # XXX: Having a Heisenbug around ReferenceError literally every other
+        # run of pytest t/test_verb_open_close.py gives a ReferenceError vs
+        # passing normally.
+        #
+        # NOTE: later, this turned out to be a set_this_body() bug in the
+        # parser. if you call the below positional_adjectives and you fail to
+        # set_this_body() first, it can sometimes point to a weakref that
+        # nolonger exists during a pytest where you repeatedly build and
+        # teardown a_map and objs (t.troom.gen_troom)
+        #
+        # I like having this around for now, so I haven't removed it, but the
+        # AI keeps trying to use it inappropriately, so it may be just a matter
+        # of time.
+        #
+        # Hey, talkin' to you codex: stop it.
         return self
 
     @property
