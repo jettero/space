@@ -18,6 +18,7 @@ def set_this_body(b=None):
         _this_body.active = False
     _this_body = b
     if b is not None:
+        _this_body = _this_body.strongify()
         _this_body.active = True
 
 
