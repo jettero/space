@@ -75,6 +75,7 @@ HARD CONSTRAINTS
 
 ## gotchas
 - space.obj.strongify() exists to look-for and eliminate a Heisenbug. It shouldn't really ever be necessary to use it.
+- if I type a vim command by accdident, ignore it. Examples: `ZZy`, `:q`, `:q!`, `:wq`, `:wq!`; sometimes I'm just in the wrong window
 
 ## Single-use Variables (Agent Only)
 - You (the agent) must not introduce single-use temporary variables.
