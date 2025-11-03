@@ -6,12 +6,13 @@ import weakref
 
 log = logging.getLogger(__name__)
 
+positional_adjectives = None
 
 # all mud objects get this ancestor
 # most objects you can pick up or put in a room should also get Containable
 # you're probably looking for space/stdobj.py
 class baseobj:  # pylint: disable=invalid-name
-    _location = None
+    _tokens = _location = None
 
     @property
     def location(self):
@@ -84,13 +85,23 @@ class baseobj:  # pylint: disable=invalid-name
             r.add(a)
         return r - set([None, ""])
 
+    @property
+    def tokens(self):
+        if self._tokens is None:
+            self.tokens = self._tokenize()
+        return set(self._tokens)
+
+    @tokens.setter
+    def tokens(self, v):
+        self._tokens = set(v)
+
     def parse_can(self, method, **kw):
         return MethodNameRouter(self, f"can_{method}")(**kw)
 
     def parse_do(self, method, **kw):
         MethodNameRouter(self, f"do_{method}")(**kw)
 
-    def parse_match(self, *names):
+    def parse_match(self, *names, pos_adj=True):
         log.debug("%s.parse_match(%s)", self, names)
 
         if len(names) == 1 and isinstance(names[0], (list, tuple)):
@@ -103,11 +114,14 @@ class baseobj:  # pylint: disable=invalid-name
             if not (id2.startswith(id1) or id2.endswith(id1)):
                 return False
 
-        try:
-            tok = self.tokens
-        except AttributeError:
-            tok = self._tokenize()
+        tok = self.tokens
+        if pos_adj:
+            global positional_adjectives
+            if positional_adjectives is None:
+                from space.map.dir_util import positional_adjectives
+            tok.update(positional_adjectives(self))
 
+        log.debug(f'WTF names+adjectives: {tok}')
         for n in names:
             matched = False
             for t in tok:
