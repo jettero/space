@@ -1,5 +1,4 @@
-HARD CONSTRAINTS
-
+# HARD CONSTRAINTS
 - Do not add comments to the code unless explicitly told to do so
   - don't remove comments I put there unless they're nolonger true because of
     the code changes
@@ -98,3 +97,6 @@ HARD CONSTRAINTS
 - You must keep scope clean by not adding one-shot names.
 - You must not remove single-use variables written by humans.
 - You must only remove single-use temps that you introduced.
+
+# TRICKS
+- you can use `./lrun-shell.py < /dev/null` to do a kind of trivial space.shell.prompt test
