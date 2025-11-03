@@ -1,4 +1,9 @@
+# TRICKS
+- you can use `./lrun-shell.py < /dev/null` to do a kind of trivial space.shell.prompt test
+
 # HARD CONSTRAINTS
+- always be very brief with your words. If you resort to bullet points, make sure they don't repeat the same thing over and over.
+- Don't resort to words when code would explain better. The most concise language we have for talking about code is the code itself. I can read it.
 - Do not add comments to the code unless explicitly told to do so
   - don't remove comments I put there unless they're nolonger true because of
     the code changes
@@ -97,6 +102,3 @@
 - You must keep scope clean by not adding one-shot names.
 - You must not remove single-use variables written by humans.
 - You must only remove single-use temps that you introduced.
-
-# TRICKS
-- you can use `./lrun-shell.py < /dev/null` to do a kind of trivial space.shell.prompt test
