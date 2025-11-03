@@ -16,7 +16,11 @@ class baseobj:  # pylint: disable=invalid-name
     _tokens = _location = None
 
     def strongify(self):
-        return  self
+        # XXX: Having a Heisenbug around ReferenceError
+        # literally every other run of
+        # pytest t/test_verb_open_close.py gives a ReferenceError vs passing normally
+        # WTF WTF WTF WTF
+        return self
 
     @property
     def location(self):
