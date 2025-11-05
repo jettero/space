@@ -202,9 +202,9 @@ TABLE = [
         ("do_itsatest_obj", "obj", "objs.ubi"),
     ),
     (
-        "itsatest ubi north",
-        ("can_itsatest_obj_words", "obj", "objs.ubi", "words", ("north",)),
-        ("do_itsatest_obj_words", "obj", "objs.ubi", "words", ("north",)),
+        "itsatest ubi booooing",
+        ("can_itsatest_obj_words", "obj", "objs.ubi", "words", ("booooing",)),
+        ("do_itsatest_obj_words", "obj", "objs.ubi", "words", ("booooing",)),
     ),
     (
         "itsatest stupid",
