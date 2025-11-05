@@ -2,6 +2,10 @@
 - you can use `./lrun-shell.py < /dev/null` to do a kind of trivial space.shell.prompt test
 - always: if you write new tests, run those before running the full test suite
 - always: if you know certain tests are relevant to the code you modified, always run those tests before the full test suite
+- use your tools:
+    - use `kagi_fastgpt` if you need to search for examples or docs
+    - use `kagi_summarize` if you want to check the contents of a specific URL
+    - use `kagi_search` if you just want to quickly search for something
 
 # HARD CONSTRAINTS
 - always be very brief with your words. If you resort to bullet points, make sure they don't repeat the same thing over and over.
