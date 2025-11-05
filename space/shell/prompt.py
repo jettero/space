@@ -13,6 +13,8 @@ from .base import BaseShell, IntentionalQuit
 # before hand-rolling our own stupid shitware.
 #
 # However, we want to make sure of the following things:
+#
+#########  Shell Behavior
 # 0. EOF and ^D, should exit the shell cleanly.
 # 1. SIGINT and SIGTERM should exit the shell cleanly and tell the user
 #    "received interrupt signal. see ya" or some such
@@ -20,28 +22,52 @@ from .base import BaseShell, IntentionalQuit
 #    This is worth mentioning in prompt-toolkit because by default it tries to
 #    reserve room for a floating menu and we end up with 3-5 blank lines at the
 #    bottom of the terminal window that are never used for anything. ick.
+# 3. the main exception to the prompt at the end of the window would be if the
+#    user input wraps at the right edge of the terminal; in which case we,
+#    should certainly let the prompt move up a line so we can see all the
+#    input.
 #
+#########  Tab Completion
 # With respect to completion, the following should also always be true. Assume
-# all available tokens for the below assertio are `['override', 'overflow',
+# all available tokens for the below assertion are `['override', 'overflow',
 # 'overwhelm', 'open', 'smile', 'smirk', 'grin']`
 #
 # 0. we should be trying to mimic the default completion modes of
 #    readline/bash, prompt toolkit wants to do the cycle-through-choices thing
 #    by default and it's awful and horrible and we don't want that by default
-#    -- although we may add it as a configuarble option later
-# 0. tab completion should never add characters the user didn't type (besides
+#    -- although we may add it as a configurable option later
+# 1. tab completion should never add characters the user didn't type (besides
 #    possibly a space after a full completion)
-# 0. never guess for the user if the choice is ambiguous
-# 0. if the input is empty and the user issues a '<tab>', nothing should happen
+# 2. never guess for the user if the choice is ambiguous
+# 3. if the input is empty and the user issues a '<tab>', nothing should happen
 #    since the choice is totally ambiguous and the user typed 'o<tab>'
-# 0. if the input is empty (called e-in from now on), 'o<tab>' should still not
+# 4. if the input is empty (called e-in from now on), 'o<tab>' should still not
 #    do anything since we can't guess if the user wants a 'v' or a 'p' or an
 #    'm' next.
-# 0. however, if we add a 'v' so we're at 'ov' and type a '<tab>' it can and
+# 5. however, if we add a 'v' so we're at 'ov' and type a '<tab>' it can and
 #    should complete to 'over'
-# 0. at e-in if we type 'over<tab>' or if we simply type a '<tab>' after it
+# 6. at e-in if we type 'over<tab>' or if we simply type a '<tab>' after it
 #    completes to 'over', nothing should happen since we can't know if they
 #    (the user) mean to go with 'w' or 'r' or 'f' next.
+#
+#########  Choice Display
+# 0. in the above scenarios if we ever type '<tab><tab>' without any edits
+#    between them -- and to be clear, that's a single '<tab>' followed by
+#    another '<tab>' without typing any letters, spaces, arrows, backspaces or
+#    any other characters/codes in between; we should (only in this case)
+#    display a list of available completions.
+# 1. ideally, the list of choices should be some kind of pop-up menu we can use
+#    the arrow keys to navigate, but it should update when we type something.
+# 2. if it pops up above the prompt, the lower left corner should align with
+#    the typed text
+# 3. and if it obscures any text, that text should be restored when the menu
+#    goes away or shrinks in size
+# 4. we would prefer said menu to pop up above the prompt line so we don't have
+#    to move the pump up from the bottom of the terminal window
+# 5. prompt-toolkit does have built in mechanisms for floating-menu popups
+#    relating to tab completion, but by default the spawn below the prompt,
+#    which messes up our goal of keeping the prompt as close to the bottom of
+#    the screen as possible.
 
 
 class Shell(BaseShell):
