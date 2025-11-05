@@ -2,7 +2,9 @@
 # coding: utf-8
 # pylint: disable=invalid-name,unused-import,no-member
 
-import sys
+import os, sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from t.troom import a_map, o
 from space.master import MasterControlProgram as MCP
