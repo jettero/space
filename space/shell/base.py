@@ -109,7 +109,7 @@ class BaseShell:
                     log.exception("during input: %s", input_text)
                     self.receive_text(f"error: {e}")
                     if reraise:
-                        raise e
+                        raise
         if self.owner.location.pos != p0:
             self.owner.do("look")
         return ok
