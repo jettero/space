@@ -1,9 +1,9 @@
 # coding: utf-8
 
-import os
-import sys
-import signal
 import logging
+import os
+import signal
+import sys
 from contextlib import contextmanager
 import pytest
 import pexpect
@@ -33,18 +33,23 @@ class ExpectProc:
     def sendline(self, s):
         self.child.sendline(s)
 
-    def drain(self, max_bytes=65536):
+    def drain(self, timeout=0.05):
         if self.child is None:
             return ""
         chunks = []
+        timeout = timeout or self.timeout
         while True:
             try:
-                chunk = self.child.read_nonblocking(max_bytes, 0)
+                self.child.expect(r".+", timeout=timeout)
             except (pexpect.TIMEOUT, pexpect.EOF, OSError):
+                chunk = self.child.before
+                if chunk:
+                    chunks.append(chunk)
                 break
-            if not chunk:
-                break
-            chunks.append(chunk)
+            else:
+                chunk = self.child.before + self.child.after
+                if chunk:
+                    chunks.append(chunk)
         if not chunks:
             return ""
         data = "".join(chunks)

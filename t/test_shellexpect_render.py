@@ -29,13 +29,10 @@ def test_prompt_bottom(shell_proc):
     shell_proc.expect(r"/space/ ", timeout=1)
     for _ in range(10):
         shell_proc.sendline("look")
-    while True:
-        ok, _ = shell_proc.expect(r"/space/ ", timeout=1)
-        if not ok:
-            break
+        shell_proc.expect(r"/space/ ", timeout=1)
     shell_proc.drain()
     lines, row, col = shell_proc.terminal_state(width=80, height=25)
     assert row == 24
     assert lines[-1] == "/space/ "
-    assert row == len(lines)-1
+    assert row == len(lines) - 1
     assert col == len(lines[-1])
