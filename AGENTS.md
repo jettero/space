@@ -6,6 +6,8 @@
     - use `kagi_fastgpt` if you need to search for examples or docs
     - use `kagi_summarize` if you want to check the contents of a specific URL
     - use `kagi_search` if you just want to quickly search for something
+    - if you cannot run a test because of a sandboxing issue, use `pytest_run`;
+      typical sandbox issues involve socket files and ptys and things.
 
 # HARD CONSTRAINTS
 - always be very brief with your words. If you resort to bullet points, make sure they don't repeat the same thing over and over.
