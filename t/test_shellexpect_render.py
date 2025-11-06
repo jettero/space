@@ -25,6 +25,62 @@ def test_render_colors_and_clear():
     assert col == 0
 
 
+def test_render_backspace_overwrite():
+    lines, row, col = render_terminal("ab\bC")
+    assert lines == ["aC"]
+    assert row == 0
+    assert col == 2
+
+
+def test_render_cursor_navigation():
+    lines, row, col = render_terminal("line1\nline2\x1b[A\x1b[3GX\x1b[B\x1b[2DY")
+    assert lines == ["liXe1", "lYne2"]
+    assert row == 1
+    assert col == 2
+
+
+def test_render_clear_screen():
+    lines, row, col = render_terminal("old\nstuff\x1b[2Jnew")
+    assert lines == ["new"]
+    assert row == 0
+    assert col == 3
+
+
+def test_render_height_scroll():
+    lines, row, col = render_terminal("one\ntwo\nthree\nfour", height=2)
+    assert lines == ["three", "four"]
+    assert row == 1
+    assert col == 4
+
+
+def test_render_osc_ignored():
+    lines, row, col = render_terminal("\x1b]0;title\x07abc")
+    assert lines == ["abc"]
+    assert row == 0
+    assert col == 3
+
+
+def test_render_width_wraps():
+    lines, row, col = render_terminal("abcd", width=3)
+    assert lines == ["abc", "d"]
+    assert row == 1
+    assert col == 1
+
+
+def test_render_prompt_toolkit_reprompt():
+    lines, row, col = render_terminal("/space/ \r\x1b[2K\x1b[1G/space/ \x1b[9GOK")
+    assert lines == ["/space/ OK"]
+    assert row == 0
+    assert col == 10
+
+
+def test_render_prompt_toolkit_output_then_prompt():
+    lines, row, col = render_terminal("/space/ cmd\r\nresult\r\n\x1b[2K\r\x1b[1G/space/ ")
+    assert lines == ["/space/ cmd", "result", "/space/ "]
+    assert row == 2
+    assert col == 8
+
+
 def test_prompt_bottom(shell_proc):
     shell_proc.expect(r"/space/ ", timeout=1)
     for _ in range(10):
@@ -32,7 +88,9 @@ def test_prompt_bottom(shell_proc):
         shell_proc.expect(r"/space/ ", timeout=1)
     shell_proc.drain()
     lines, row, col = shell_proc.terminal_state(width=80, height=25)
-    assert row == 24
-    assert lines[-1] == "/space/ "
-    assert row == len(lines) - 1
-    assert col == len(lines[-1])
+    captured = shell_proc.capture()
+    message = repr(captured[-200:])
+    assert row == 24, message
+    assert lines[-1] == "/space/ ", message
+    assert row == len(lines) - 1, message
+    assert col == len(lines[-1]), message
