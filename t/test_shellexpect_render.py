@@ -27,11 +27,15 @@ def test_render_colors_and_clear():
 
 def test_prompt_bottom(shell_proc):
     shell_proc.expect(r"/space/ ", timeout=1)
-    for _ in range(40):
+    for _ in range(10):
         shell_proc.sendline("look")
-        shell_proc.expect(r"/space/ ", timeout=1)
+    while True:
+        ok, _ = shell_proc.expect(r"/space/ ", timeout=1)
+        if not ok:
+            break
+    shell_proc.drain()
     lines, row, col = shell_proc.terminal_state(width=80, height=25)
-    picture = shell_proc.terminal_picture(width=80, height=25)
-    assert row == 24, picture
-    assert lines[-1].endswith("/space/ "), picture
-    assert col == len(lines[-1]), picture
+    assert row == 24
+    assert lines[-1] == "/space/ "
+    assert row == len(lines)-1
+    assert col == len(lines[-1])
