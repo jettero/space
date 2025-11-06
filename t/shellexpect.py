@@ -87,9 +87,6 @@ class ExpectProc:
             except Exception:
                 pass
 
-    def capture(self):
-        return self.captured
-
     def terminal_state(self, width=80, height=25):
         self.drain()
         return render_terminal(self.captured, width, height)
@@ -103,7 +100,7 @@ class ExpectProc:
 @contextmanager
 def ShellExpect(module, cwd=None, env=None):
     argv = [sys.executable, "-u", "-m", module]
-    proc = ExpectProc(argv, cwd=cwd, env=env).spawn()
+    proc = ExpectProc(argv, cwd=cwd or os.path.dirname(os.path.dirname(__file__)), env=env).spawn()
     try:
         yield proc
     finally:
@@ -200,6 +197,8 @@ def _consume_csi(text, index, row, col, lines, width, height):
         row = _ensure_row(lines, row, height)
     elif final == "C":
         col += _parse_param(parts, 0, 1)
+        if row < len(lines) and col > len(lines[row]):
+            lines[row] += " " * (col - len(lines[row]))
     elif final == "D":
         delta = _parse_param(parts, 0, 1)
         col -= delta

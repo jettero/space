@@ -3,6 +3,20 @@
 from t.shellexpect import render_terminal
 
 
+def test_prompt_bottom(shell_proc):
+    shell_proc.expect(r"/space/ ", timeout=1)
+    for _ in range(10):
+        shell_proc.sendline("look")
+        shell_proc.expect(r"/space/ ", timeout=1)
+    shell_proc.drain()
+    lines, row, col = shell_proc.terminal_state(width=80, height=25)
+    message = repr(shell_proc.captured[-200:])
+    assert row == 24, message
+    assert lines[-1] == "/space/ ", message
+    assert row == len(lines) - 1, message
+    assert col == len(lines[-1]), message
+
+
 def test_render_basic():
     lines, row, col = render_terminal("abc")
     assert lines == ["abc"]
@@ -79,18 +93,3 @@ def test_render_prompt_toolkit_output_then_prompt():
     assert lines == ["/space/ cmd", "result", "/space/ "]
     assert row == 2
     assert col == 8
-
-
-def test_prompt_bottom(shell_proc):
-    shell_proc.expect(r"/space/ ", timeout=1)
-    for _ in range(10):
-        shell_proc.sendline("look")
-        shell_proc.expect(r"/space/ ", timeout=1)
-    shell_proc.drain()
-    lines, row, col = shell_proc.terminal_state(width=80, height=25)
-    captured = shell_proc.capture()
-    message = repr(captured[-200:])
-    assert row == 24, message
-    assert lines[-1] == "/space/ ", message
-    assert row == len(lines) - 1, message
-    assert col == len(lines[-1]), message
