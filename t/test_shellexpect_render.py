@@ -1,0 +1,37 @@
+# coding: utf-8
+
+from t.shellexpect import render_terminal
+
+
+def test_render_basic():
+    lines, row, col = render_terminal("abc")
+    assert lines == ["abc"]
+    assert row == 0
+    assert col == 3
+
+
+def test_render_carriage_return_overwrite():
+    lines, row, col = render_terminal("abc\rA")
+    assert lines == ["Abc"]
+    assert row == 0
+    assert col == 1
+
+
+def test_render_colors_and_clear():
+    lines, row, col = render_terminal("\x1b[32mhi\x1b[0m\nmore\r\x1b[K")
+    assert lines[0] == "hi"
+    assert lines[1] == ""
+    assert row == 1
+    assert col == 0
+
+
+def test_prompt_bottom(shell_proc):
+    shell_proc.expect(r"/space/ ", timeout=1)
+    for _ in range(40):
+        shell_proc.sendline("look")
+        shell_proc.expect(r"/space/ ", timeout=1)
+    lines, row, col = shell_proc.terminal_state(width=80, height=25)
+    picture = shell_proc.terminal_picture(width=80, height=25)
+    assert row == 24, picture
+    assert lines[-1].endswith("/space/ "), picture
+    assert col == len(lines[-1]), picture
