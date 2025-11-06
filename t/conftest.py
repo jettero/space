@@ -77,7 +77,7 @@ def ss(me_dd_ss):
 @pytest.fixture
 def shell_proc():
     try:
-        with ShellExpect("t.testshell1") as p:
+        with ShellExpect("t.shell1") as p:
             yield p
         p.sendline("/quit")
     except OSError as e:
