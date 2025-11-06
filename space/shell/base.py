@@ -67,11 +67,7 @@ class BaseShell:
         raise NotImplementedError()
 
     def loop(self):
-        try:
-            while not self._stop:
-                self.step()
-        except IntentionalQuit:
-            pass
+        raise NotImplementedError()
 
     def stop(self, val=True, msg="see ya."):
         self._stop = val

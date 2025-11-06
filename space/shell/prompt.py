@@ -95,14 +95,19 @@ class Shell(BaseShell):
         if line.startswith("/"):
             if line.strip() in ("/quit", "/exit"):
                 self.stop()
-            # XXX: needs a /command unknown error
+                return
+            self.owner.tell(f"unknown shell command: {line}")
             return True
 
     def step(self):
+        pass
+
+    def loop(self):
         try:
-            line = self._session.prompt("/space/ ").strip()
-            self.do_step(line)
-        except (EOFError, KeyboardInterrupt):
+            while not self._stop:
+                line = self._session.prompt("/space/ ", reserve_space_for_menu=False).strip()
+                self.do_step(line)
+        except (EOFError, KeyboardInterrupt, IntentionalQuit):
             self.stop()
 
     def get_std_tokens():
