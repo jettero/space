@@ -95,6 +95,7 @@ class Shell(BaseShell):
         if line.startswith("/"):
             if line.strip() in ("/quit", "/exit"):
                 self.stop()
+            # XXX: needs a /command unknown error
             return True
 
     def step(self):
