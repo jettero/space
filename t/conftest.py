@@ -76,12 +76,9 @@ def ss(me_dd_ss):
 
 @pytest.fixture
 def shell_proc():
-    try:
-        with ShellExpect("t.shell1") as p:
-            yield p
+    with ShellExpect("t.shell1") as p:
+        yield p
         p.sendline("/quit")
-    except OSError as e:
-        pytest.skip(f"pty unavailable: {e}")
 
 
 def pytest_sessionfinish(session, exitstatus):
