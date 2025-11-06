@@ -1,10 +1,5 @@
 # coding: utf-8
 
-from prompt_toolkit import PromptSession
-from prompt_toolkit.patch_stdout import patch_stdout
-
-from .base import BaseShell, IntentionalQuit
-
 # This is supposed to behave more or less like a readline shell, but with async
 # events streaming in and better tab completion.
 #
@@ -68,13 +63,87 @@ from .base import BaseShell, IntentionalQuit
 #    relating to tab completion, but by default the spawn below the prompt,
 #    which messes up our goal of keeping the prompt as close to the bottom of
 #    the screen as possible.
+# 6. the CompleteStyle.READLINE sucks and CompleteStyle.MULTI_COLUMN is better,
+#    despite the above.
+
+from prompt_toolkit import PromptSession
+from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit.application.current import get_app_or_none
+from prompt_toolkit.filters import has_completions
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.patch_stdout import patch_stdout
+from prompt_toolkit.shortcuts import CompleteStyle
+from prompt_toolkit.layout.containers import FloatContainer, Float
+from prompt_toolkit.layout.menus import CompletionsMenu
+
+from .base import BaseShell, IntentionalQuit
+from space.verb import VERBS
+
+
+class ShellCompleter(Completer):
+    def __init__(self, shell):
+        self.shell = shell
+
+    def get_completions(self, document, complete_event):
+        app = get_app_or_none()
+        actual_before = document.text_before_cursor if app is None else app.current_buffer.document.text_before_cursor
+        if not actual_before.strip():
+            return
+        fragment = actual_before.split()[-1] if actual_before and not actual_before[-1].isspace() else ""
+        if fragment.startswith("/"):
+            for name in [x[6:] for x in dir(ps) if x.startswith("slash_")]:
+                if name.startswith(fragment[1:]):
+                    yield Completion(f"/{name} ", start_position=-len(fragment), display=f"/{name}")
+            return
+        if fragment and len(actual_before.strip().split()) <= 1:
+            for name in sorted(VERBS):
+                if name.startswith(fragment):
+                    yield Completion(f"{name} ", start_position=-len(fragment), display=f"{name} - {VERBS[name]!r}")
+            return
+        if fragment.startswith("$"):
+            prefix = fragment[1:]
+            for token in self.shell.get_std_tokens():
+                if not prefix or token.startswith(prefix):
+                    yield Completion(f"{token} ", start_position=-len(fragment), display=token)
+            return
+        if fragment.startswith("@"):
+            prefix = fragment[1:]
+            for token in self.shell.get_living_tokens():
+                if not prefix or token.startswith(prefix):
+                    yield Completion(f"{token} ", start_position=-len(fragment), display=token)
+            return
+        return
 
 
 class Shell(BaseShell):
     color = True
 
     def startup(self, init=None):
-        self._session = PromptSession()
+        completer = ShellCompleter(self)
+        bindings = KeyBindings()
+
+        @bindings.add("tab", filter=has_completions)
+        def _(event):
+            return
+
+        self.session = PromptSession(
+            completer=completer,
+            key_bindings=bindings,
+            complete_style=CompleteStyle.MULTI_COLUMN,
+            complete_while_typing=False,
+            vi_mode=True,
+            # reserve_space_for_menu=0
+        )
+        self.session.app.layout.container = FloatContainer(
+            content=self.session.app.layout.container,
+            floats=[
+                Float(
+                    top=5,
+                    left=5,
+                    content=CompletionsMenu(max_height=8, scroll_offset=1),
+                )
+            ],
+        )
         self._patch = patch_stdout(raw=True)
         self._patch.__enter__()
         if isinstance(init, (tuple, list)):
@@ -91,10 +160,15 @@ class Shell(BaseShell):
             except IntentionalQuit:
                 self.stop()
 
+    def slash_quit(self):
+        self.stop()
+
+    slash_exit = slash_quit
+
     def internal_command(self, line):
         if line.startswith("/"):
-            if line.strip() in ("/quit", "/exit"):
-                self.stop()
+            if f := getattr(self, f"slash_{line[1:]}", None):
+                f()
                 return
             self.owner.tell(f"unknown shell command: {line}")
             return True
@@ -105,21 +179,27 @@ class Shell(BaseShell):
     def loop(self):
         try:
             while not self._stop:
-                line = self._session.prompt("/space/ ", reserve_space_for_menu=False, vi_mode=True).strip()
+                line = self.session.prompt("/space/ ").strip()
                 self.do_step(line)
         except (EOFError, KeyboardInterrupt, IntentionalQuit):
             self.stop()
 
-    def get_std_tokens():
+    def get_std_tokens(self):
         """
         tokens to complete words prefixed with '$'
         if the tokens are (e.g.) `["useless", "bauble"]`, `"$us"` could complete to `"useless"`
         """
-        return sorted({t for o in self.owner.nearby_objects for t in o.tokens})
+        owner = self.owner
+        if owner is None:
+            return []
+        return sorted({t for o in owner.nearby_objects for t in o.tokens})
 
-    def get_living_tokens():
+    def get_living_tokens(self):
         """
         tokens to complete words prefixed with '@'
         if the tokens are (e.g.) `["stupid", "skellyman"]`, `"@st"` could complete to `"stupid"`
         """
-        return sorted({t for o in self.owner.nearby_livings for t in o.tokens})
+        owner = self.owner
+        if owner is None:
+            return []
+        return sorted({t for l in owner.nearby_livings for t in l.tokens})

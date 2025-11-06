@@ -1,6 +1,8 @@
 # vi:ft=python:
 # coding: utf-8
 
+overhead = overheard = overstate = overwhelm = 1
+
 import logging
 import re
 
