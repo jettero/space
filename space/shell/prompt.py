@@ -105,7 +105,7 @@ class Shell(BaseShell):
     def loop(self):
         try:
             while not self._stop:
-                line = self._session.prompt("/space/ ", reserve_space_for_menu=False).strip()
+                line = self._session.prompt("/space/ ", reserve_space_for_menu=False, vi_mode=True).strip()
                 self.do_step(line)
         except (EOFError, KeyboardInterrupt, IntentionalQuit):
             self.stop()
