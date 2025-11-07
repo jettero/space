@@ -69,13 +69,10 @@
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.application.current import get_app_or_none
-from prompt_toolkit.filters import has_completions, has_focus
+from prompt_toolkit.filters import has_completions, completion_is_selected
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import CompleteStyle
-from prompt_toolkit.layout.containers import FloatContainer, Float, HSplit, Window
-from prompt_toolkit.layout.menus import CompletionsMenu, MultiColumnCompletionsMenu
-from prompt_toolkit.layout.dimension import Dimension
 
 from .base import BaseShell, IntentionalQuit
 from space.verb import VERBS
@@ -123,9 +120,16 @@ class Shell(BaseShell):
         completer = ShellCompleter(self)
         bindings = KeyBindings()
 
-        @bindings.add("tab", filter=has_completions)
+        @bindings.add("tab", filter=has_completions & ~completion_is_selected)
         def _(event):
-            return
+            b = event.current_buffer
+            word = b.document.get_word_before_cursor()
+            comps = [c.text for c in b.complete_state.completions]
+
+            # only if every completion still starts with the current word
+            if all(c.startswith(word) for c in comps):
+                prefix = os.path.commonprefix([c[len(word) :] for c in comps])
+                b.insert_text(prefix)
 
         self.session = PromptSession(
             completer=completer,
@@ -133,11 +137,12 @@ class Shell(BaseShell):
             complete_style=CompleteStyle.MULTI_COLUMN,
             complete_while_typing=False,
             vi_mode=True,
-            reserve_space_for_menu=0,
         )
-        self._install_completion_float()
+
+        # wtf is this for?
         self._patch = patch_stdout(raw=True)
         self._patch.__enter__()
+
         if isinstance(init, (tuple, list)):
             for cmd in init:
                 self.do_step(cmd)
@@ -167,45 +172,6 @@ class Shell(BaseShell):
 
     def step(self):
         pass
-
-    def _install_completion_float(self):
-        app = self.session.app
-        if getattr(app.layout, "_space_completion_wrapped", False):
-            return
-        original = app.layout.container
-        if isinstance(original, FloatContainer):
-            floats = [
-                f
-                for f in original.floats
-                if not isinstance(
-                    f.content, (CompletionsMenu, MultiColumnCompletionsMenu)
-                )
-            ]
-            content = original.content
-        else:
-            floats = []
-            content = original
-        if self.session.complete_style == CompleteStyle.MULTI_COLUMN:
-            menu_container = MultiColumnCompletionsMenu(
-                extra_filter=has_focus(self.session.default_buffer),
-            )
-        else:
-            menu_container = CompletionsMenu(
-                max_height=16,
-                scroll_offset=1,
-                extra_filter=has_focus(self.session.default_buffer),
-            )
-        app.layout.container = FloatContainer(
-            content=HSplit(
-                [
-                    Window(height=Dimension(weight=1)),
-                    menu_container,
-                    content,
-                ]
-            ),
-            floats=floats,
-        )
-        app.layout._space_completion_wrapped = True
 
     def loop(self):
         try:
