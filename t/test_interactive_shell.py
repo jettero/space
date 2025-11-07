@@ -31,12 +31,12 @@ def test_shell_completion_float_position(shell_proc):
     message = f"row={row} col={col} capbuf=<<{shell_proc.captured[-200:]!r}>>"
 
     # verify the completion menu is above lines[23]
-    menu_lines = list()
-    for i, line in enumerate(lines):
-        if "Emote" in line or "Verb" in line:
-            menu_lines.append(i)
-
-    assert len(menu_lines) > 0, message
+    menu_lines = [
+        i
+        for i, line in enumerate(lines)
+        if "Emote" in line or "Verb" in line
+    ]
+    assert menu_lines, message
     assert all(x < 23 for x in menu_lines), message
 
     # but now also verify the prompt is still on the last line of the terminal
