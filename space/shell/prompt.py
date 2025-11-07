@@ -69,12 +69,13 @@
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.application.current import get_app_or_none
-from prompt_toolkit.filters import has_completions
+from prompt_toolkit.filters import has_completions, has_focus
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import CompleteStyle
-from prompt_toolkit.layout.containers import FloatContainer, Float
-from prompt_toolkit.layout.menus import CompletionsMenu
+from prompt_toolkit.layout.containers import FloatContainer, Float, HSplit, Window
+from prompt_toolkit.layout.menus import CompletionsMenu, MultiColumnCompletionsMenu
+from prompt_toolkit.layout.dimension import Dimension
 
 from .base import BaseShell, IntentionalQuit
 from space.verb import VERBS
@@ -132,18 +133,9 @@ class Shell(BaseShell):
             complete_style=CompleteStyle.MULTI_COLUMN,
             complete_while_typing=False,
             vi_mode=True,
-            # reserve_space_for_menu=0
+            reserve_space_for_menu=0,
         )
-        self.session.app.layout.container = FloatContainer(
-            content=self.session.app.layout.container,
-            floats=[
-                Float(
-                    top=5,
-                    left=5,
-                    content=CompletionsMenu(max_height=8, scroll_offset=1),
-                )
-            ],
-        )
+        self._install_completion_float()
         self._patch = patch_stdout(raw=True)
         self._patch.__enter__()
         if isinstance(init, (tuple, list)):
@@ -175,6 +167,45 @@ class Shell(BaseShell):
 
     def step(self):
         pass
+
+    def _install_completion_float(self):
+        app = self.session.app
+        if getattr(app.layout, "_space_completion_wrapped", False):
+            return
+        original = app.layout.container
+        if isinstance(original, FloatContainer):
+            floats = [
+                f
+                for f in original.floats
+                if not isinstance(
+                    f.content, (CompletionsMenu, MultiColumnCompletionsMenu)
+                )
+            ]
+            content = original.content
+        else:
+            floats = []
+            content = original
+        if self.session.complete_style == CompleteStyle.MULTI_COLUMN:
+            menu_container = MultiColumnCompletionsMenu(
+                extra_filter=has_focus(self.session.default_buffer),
+            )
+        else:
+            menu_container = CompletionsMenu(
+                max_height=16,
+                scroll_offset=1,
+                extra_filter=has_focus(self.session.default_buffer),
+            )
+        app.layout.container = FloatContainer(
+            content=HSplit(
+                [
+                    Window(height=Dimension(weight=1)),
+                    menu_container,
+                    content,
+                ]
+            ),
+            floats=floats,
+        )
+        app.layout._space_completion_wrapped = True
 
     def loop(self):
         try:
