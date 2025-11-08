@@ -259,7 +259,9 @@ class Shell(BaseShell):
             handler.addFilter(kwf)
 
     def receive_message(self, msg):
-        self._append_message(msg.render_text(color=self.color))
+        txt = msg.render_text(color=self.color)
+        log.debug("receive_message(%s)", txt)
+        self._append_message(txt)
 
     def do_step(self, cmd):
         if cmd and not self.internal_command(cmd):
