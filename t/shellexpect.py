@@ -2,8 +2,10 @@
 
 import logging
 import os
+import re
 import signal
 import sys
+import time
 from contextlib import contextmanager
 import pytest
 import pexpect
@@ -67,16 +69,28 @@ class ExpectProc:
         return data
 
     def expect(self, needle, timeout=1.0):
-        timeout = timeout or self.timeout
-        try:
-            self.child.expect(needle, timeout=timeout)
-            data = self.child.before + self.child.after
-            self.captured += data
-            return True, data
-        except Exception:
-            data = self.child.before
-            self.captured += data
-            return False, data
+        duration = self.timeout if timeout is None else timeout
+        deadline = time.monotonic() + (duration or self.timeout)
+        data = ""
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            step = remaining if remaining < 0.05 else 0.05
+            try:
+                self.child.expect(needle, timeout=step)
+            except Exception:
+                chunk = self.child.before
+                if chunk:
+                    data += chunk
+                    self.captured += chunk
+                    if isinstance(needle, str) and re.search(needle, "\n".join(render_terminal(self.captured, 0, 0)[0])):
+                        return True, data
+            else:
+                chunk = self.child.before + self.child.after
+                self.captured += chunk
+                return True, chunk
+        return False, data
 
     def close(self, sig=signal.SIGTERM):
         if self.child is not None:
