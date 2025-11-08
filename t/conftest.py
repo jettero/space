@@ -80,11 +80,13 @@ def shell_proc():
         yield p
         p.sendline("/quit")
 
+
 def pytest_sessionstart(session):
     log.debug("pytest_sessionfinish(DEBUG)")
     log.info("pytest_sessionfinish(INFO)")
     log.warning("pytest_sessionfinish(WARNING)")
     log.error("pytest_sessionfinish(ERROR)")
+
 
 def pytest_sessionfinish(session, exitstatus):
     log.info("pytest_sessionfinish(..., %d)", exitstatus)

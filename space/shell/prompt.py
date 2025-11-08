@@ -221,7 +221,7 @@ class Shell(BaseShell):
                 self.do_step(cmd)
 
     def receive_message(self, msg):
-        self._append_message( msg.render_text(color=self.color) )
+        self._append_message(msg.render_text(color=self.color))
 
     def do_step(self, cmd):
         if cmd and not self.internal_command(cmd):
