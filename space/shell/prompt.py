@@ -277,7 +277,7 @@ class Shell(BaseShell):
         if line.startswith("/"):
             if f := getattr(self, f"slash_{line[1:]}", None):
                 f()
-                return
+                return True
             self.owner.tell(f"unknown shell command: {line}")
             return True
 
