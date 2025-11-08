@@ -5,11 +5,17 @@ import pytest, os
 
 def test_shell_basic(shell_proc):
     shell_proc.sendline("look")
-    ok, _ = shell_proc.expect(r"/space/ ", timeout=1)
+    ok, _ = shell_proc.expect(r"/space/", timeout=1)
     lines, row, col = shell_proc.terminal_state(width=80, height=25)
     message = f"row={row} col={col} capbuf=<<{shell_proc.captured[-200:]!r}>>"
     assert ok, message
 
+def test_say_a_lot(shell_proc):
+    for x in range(30):
+        shell_proc.sendline(f"say hiya{x}")
+        lines, row, col = shell_proc.terminal_state(width=80, height=25)
+        message = f"row={row} col={col} capbuf=<<{shell_proc.captured[-200:]!r}>>"
+        assert ok, message
 
 # the AI managed to get this test to pass by drawing the CompletionMenu above the prompt
 # but it had other quirky behaviors... not worth it for today
