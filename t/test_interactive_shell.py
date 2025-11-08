@@ -11,8 +11,9 @@ def test_shell_basic(shell_proc):
     assert ok, message
 
 def test_say_a_lot(shell_proc):
-    for x in range(30):
+    for x in range(80):
         shell_proc.sendline(f"say hiya{x}")
+        ok, _ = shell_proc.expect(r"Hiya{x}", timeout=1)
         lines, row, col = shell_proc.terminal_state(width=80, height=25)
         message = f"row={row} col={col} capbuf=<<{shell_proc.captured[-200:]!r}>>"
         assert ok, message
