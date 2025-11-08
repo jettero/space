@@ -66,13 +66,26 @@
 # 6. the CompleteStyle.READLINE sucks and CompleteStyle.MULTI_COLUMN is better,
 #    despite the above.
 
-from prompt_toolkit import PromptSession
+import os
+from collections import deque
+
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.application.current import get_app_or_none
 from prompt_toolkit.filters import has_completions, completion_is_selected
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.patch_stdout import patch_stdout
-from prompt_toolkit.shortcuts import CompleteStyle
+from prompt_toolkit.application import Application
+from prompt_toolkit.buffer import Buffer
+from prompt_toolkit.document import Document
+from prompt_toolkit.enums import EditingMode
+from prompt_toolkit.formatted_text import ANSI
+from prompt_toolkit.layout import Layout, HSplit, VSplit
+from prompt_toolkit.layout.containers import Window, FloatContainer, Float
+from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl
+from prompt_toolkit.layout.dimension import Dimension
+from prompt_toolkit.layout.menus import MultiColumnCompletionsMenu
+from prompt_toolkit.key_binding.defaults import load_key_bindings
+from prompt_toolkit.key_binding.key_bindings import merge_key_bindings
 
 from .base import BaseShell, IntentionalQuit
 from space.verb import VERBS
@@ -118,9 +131,9 @@ class Shell(BaseShell):
 
     def startup(self, init=None):
         completer = ShellCompleter(self)
-        bindings = KeyBindings()
+        custom_bindings = KeyBindings()
 
-        @bindings.add("tab", filter=has_completions & ~completion_is_selected)
+        @custom_bindings.add("tab", filter=has_completions & ~completion_is_selected)
         def _(event):
             b = event.current_buffer
             word = b.document.get_word_before_cursor()
@@ -131,12 +144,71 @@ class Shell(BaseShell):
                 prefix = os.path.commonprefix([c[len(word) :] for c in comps])
                 b.insert_text(prefix)
 
-        self.session = PromptSession(
+        bindings = merge_key_bindings([load_key_bindings(), custom_bindings])
+
+        self._prompt_text = "/space/ "
+        self._message_chunks = deque(maxlen=800)
+        self._message_formatted = ""
+
+        self.message_control = FormattedTextControl(lambda: self._message_formatted or "")
+        self._message_window = Window(
+            content=self.message_control,
+            wrap_lines=True,
+            always_hide_cursor=True,
+        )
+
+        self.input_buffer = Buffer(
             completer=completer,
-            key_bindings=bindings,
-            complete_style=CompleteStyle.MULTI_COLUMN,
             complete_while_typing=False,
-            vi_mode=True,
+            multiline=False,
+            accept_handler=self._accept_input,
+        )
+        self.input_control = BufferControl(buffer=self.input_buffer, focus_on_click=True)
+        prompt_window = Window(
+            content=FormattedTextControl(lambda: self._prompt_text),
+            dont_extend_height=True,
+            width=len(self._prompt_text),
+            always_hide_cursor=True,
+        )
+        self._input_window = Window(
+            content=self.input_control,
+            dont_extend_height=True,
+        )
+
+        bottom = VSplit(
+            [
+                prompt_window,
+                self._input_window,
+            ],
+            height=Dimension.exact(1),
+        )
+
+        body = HSplit(
+            [
+                self._message_window,
+                Window(height=Dimension.exact(1), char="─"),
+                bottom,
+            ],
+            padding=0,
+        )
+
+        root = FloatContainer(
+            content=body,
+            floats=[
+                Float(
+                    content=MultiColumnCompletionsMenu(),
+                    attach_to_window=self._input_window,
+                    xcursor=True,
+                    ycursor=True,
+                )
+            ],
+        )
+
+        self.application = Application(
+            layout=Layout(root, focused_element=self._input_window),
+            key_bindings=bindings,
+            full_screen=True,
+            editing_mode=EditingMode.VI,
         )
 
         # wtf is this for?
@@ -148,7 +220,7 @@ class Shell(BaseShell):
                 self.do_step(cmd)
 
     def receive_message(self, msg):
-        print(msg.render_text(color=self.color))
+        self._append_message( msg.render_text(color=self.color) )
 
     def do_step(self, cmd):
         if cmd and not self.internal_command(cmd):
@@ -175,9 +247,7 @@ class Shell(BaseShell):
 
     def loop(self):
         try:
-            while not self._stop:
-                line = self.session.prompt("/space/ ").strip()
-                self.do_step(line)
+            self.application.run()
         except (EOFError, KeyboardInterrupt, IntentionalQuit):
             self.stop()
 
@@ -200,3 +270,32 @@ class Shell(BaseShell):
         if owner is None:
             return []
         return sorted({t for l in owner.nearby_livings for t in l.tokens})
+
+    def stop(self, val=True, msg="see ya."):
+        if not self._stop:
+            super().stop(val, msg)
+        if hasattr(self, "application") and self.application is not None:
+            self.application.exit()
+
+    def _append_message(self, text):
+        if self._message_chunks:
+            self._message_chunks.append("")
+        self._message_chunks.append("" if text is None else text)
+        joined = "\n".join(self._message_chunks)
+        self._message_formatted = ANSI(joined) if self.color else joined
+        self._scroll_messages_to_bottom()
+        self._invalidate()
+
+    def _accept_input(self, buff):
+        line = buff.text.strip()
+        buff.set_document(Document("", 0))
+        if line:
+            self.do_step(line)
+        return True
+
+    def _invalidate(self):
+        if hasattr(self, "application") and self.application is not None:
+            self.application.invalidate()
+
+    def _scroll_messages_to_bottom(self):
+        self._message_window.vertical_scroll = 10**6
