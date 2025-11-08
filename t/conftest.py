@@ -80,17 +80,11 @@ def shell_proc():
         yield p
         p.sendline("/quit")
 
+def pytest_sessionstart(session):
+    log.debug("pytest_sessionfinish(DEBUG)")
+    log.info("pytest_sessionfinish(INFO)")
+    log.warning("pytest_sessionfinish(WARNING)")
+    log.error("pytest_sessionfinish(ERROR)")
 
 def pytest_sessionfinish(session, exitstatus):
     log.info("pytest_sessionfinish(..., %d)", exitstatus)
-    # The below is not in any way necessary. sometimes it feels like
-    # last-pytest-run.log truncates on a pytest crash.  It doesn't, but the
-    # below makes me fell better about it.
-    for h in logging.getLogger().handlers:
-        if getattr(h, "stream", None) and not getattr(h.stream, "closed", False):
-            h.flush()
-    for lg in logging.Logger.manager.loggerDict.values():
-        if isinstance(lg, logging.Logger):
-            for h in lg.handlers:
-                if getattr(h, "stream", None) and not getattr(h.stream, "closed", False):
-                    h.flush()
