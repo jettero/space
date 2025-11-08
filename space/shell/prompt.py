@@ -87,8 +87,23 @@ from prompt_toolkit.layout.menus import MultiColumnCompletionsMenu
 from prompt_toolkit.key_binding.defaults import load_key_bindings
 from prompt_toolkit.key_binding.key_bindings import merge_key_bindings
 
+import logging, re
+
 from .base import BaseShell, IntentionalQuit
 from space.verb import VERBS
+
+log = logging.getLogger(__name__)
+
+
+class KeywordFilter(logging.Filter):
+    def __init__(self, *name_filters):
+        self.name_filters = [re.compile(x) for x in name_filters]
+
+    def filter(self, record):
+        for nf in self.name_filters:
+            if nf.search(record.name):
+                return False
+        return True
 
 
 class ShellCompleter(Completer):
@@ -128,10 +143,15 @@ class ShellCompleter(Completer):
 
 class Shell(BaseShell):
     color = True
+    _logging_opts = None
 
     def startup(self, init=None):
         completer = ShellCompleter(self)
         custom_bindings = KeyBindings()
+
+        self.reconfigure_logging(
+            filename="shell.log", format="%(asctime)s %(name)17s %(levelname)5s %(message)s", level=logging.DEBUG
+        )
 
         @custom_bindings.add("tab", filter=has_completions & ~completion_is_selected)
         def _(event):
@@ -219,6 +239,24 @@ class Shell(BaseShell):
         if isinstance(init, (tuple, list)):
             for cmd in init:
                 self.do_step(cmd)
+
+    def reconfigure_logging(self, **kw):
+        def mydl(*dl):
+            norepeat = set()
+            for d in dl:
+                if isinstance(d, dict):
+                    for k, v in d.items():
+                        if k not in norepeat:
+                            if v is not None:
+                                yield k, v
+                        norepeat.add(k)
+
+        self._logging_opts = {k: v for k, v in mydl(kw, self._logging_opts)}
+        logging.root.handlers = []
+        logging.basicConfig(**self._logging_opts)
+        kwf = KeywordFilter("space.args")  # XXX: should be configurable
+        for handler in logging.root.handlers:
+            handler.addFilter(kwf)
 
     def receive_message(self, msg):
         self._append_message(msg.render_text(color=self.color))
