@@ -79,7 +79,7 @@ from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.document import Document
 from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.formatted_text import ANSI
-from prompt_toolkit.layout import Layout, HSplit, VSplit
+from prompt_toolkit.layout import Layout, HSplit, VSplit, ScrollablePane
 from prompt_toolkit.layout.containers import Window, FloatContainer, Float
 from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl
 from prompt_toolkit.layout.dimension import Dimension
@@ -156,6 +156,7 @@ class Shell(BaseShell):
             wrap_lines=True,
             always_hide_cursor=True,
         )
+        self._message_pane = ScrollablePane(self._message_window, show_scrollbar=False)
 
         self.input_buffer = Buffer(
             completer=completer,
@@ -185,7 +186,7 @@ class Shell(BaseShell):
 
         body = HSplit(
             [
-                self._message_window,
+                self._message_pane,
                 Window(height=Dimension.exact(1), char="─"),
                 bottom,
             ],
@@ -299,3 +300,4 @@ class Shell(BaseShell):
 
     def _scroll_messages_to_bottom(self):
         self._message_window.vertical_scroll = 10**6
+        self._message_pane.vertical_scroll = 10**6
