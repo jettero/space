@@ -6,7 +6,9 @@ import pytest, os
 def test_shell_basic(shell_proc):
     shell_proc.sendline("look")
     ok, _ = shell_proc.expect(r"/space/ ", timeout=1)
-    assert ok
+    lines, row, col = shell_proc.terminal_state(width=80, height=25)
+    message = f"row={row} col={col} capbuf=<<{shell_proc.captured[-200:]!r}>>"
+    assert ok, message
 
 
 # the AI managed to get this test to pass by drawing the CompletionMenu above the prompt
