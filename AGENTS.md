@@ -8,6 +8,8 @@
     - use `kagi_search` if you just want to quickly search for something
     - if you cannot run a test because of a sandboxing issue, use `pytest_run`;
       typical sandbox issues involve socket files and ptys and things.
+- you can't run any part of t/shellexpect.py or the tests that use it because you can't allocate a pty due to your sandboxing. use the `pytest_run` mcp you have available to run those tests.
+- you can't run `lrun-shell.py` in any way due to the above pty allocation issue, stop trying
 
 # HARD CONSTRAINTS
 - always be very brief with your words. If you resort to bullet points, make sure they don't repeat the same thing over and over.
