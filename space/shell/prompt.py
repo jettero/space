@@ -352,21 +352,21 @@ class Shell(BaseShell):
             self.application.invalidate()
 
     def _scroll_messages_half(self, direction):
-        info = self._message_window.render_info
-        if info is None:
-            return
-        self._scroll_messages_by(direction * max(1, info.window_height // 2), info)
+        log.debug("_scroll_messages_half(direction=%d)", direction)
+        if info := self._message_window.render_info:
+            self._scroll_messages_by(direction * max(1, info.window_height // 2), info)
 
     def _scroll_messages_by(self, delta, info=None):
-        info = info or self._message_window.render_info
-        if info is None:
-            return
-        max_scroll = max(0, info.content_height - info.window_height)
-        target = self._message_pane.vertical_scroll + delta
-        if target < 0:
-            target = 0
-        if target > max_scroll:
-            target = max_scroll
-        self._message_pane.vertical_scroll = target
-        self._message_window.vertical_scroll = target
-        self._invalidate()
+        log.debug("_scroll_messages_by(delta=%d)", delta)
+        if info := (info or self._message_window.render_info):
+            max_scroll = max(0, info.content_height - info.window_height)
+            target = min(max_scroll, max(0, self._message_pane.vertical_scroll + delta))
+            log.debug(
+                "_scroll_messages_by vertical_scroll=%d max_scroll=%d target=%d",
+                self._message_pane.vertical_scroll,
+                max_scroll,
+                target,
+            )
+            self._message_pane.vertical_scroll = target
+            self._message_window.vertical_scroll = target
+            self._invalidate()
