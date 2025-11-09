@@ -166,10 +166,12 @@ class Shell(BaseShell):
 
         @custom_bindings.add("s-up")
         def _(event):
+            log.debug("scroll up by half")
             self._scroll_messages_half(-1)
 
         @custom_bindings.add("s-down")
         def _(event):
+            log.debug("scroll down by half")
             self._scroll_messages_half(1)
 
         bindings = merge_key_bindings([load_key_bindings(), custom_bindings])
