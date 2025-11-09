@@ -164,6 +164,14 @@ class Shell(BaseShell):
                 prefix = os.path.commonprefix([c[len(word) :] for c in comps])
                 b.insert_text(prefix)
 
+        @custom_bindings.add("s-up")
+        def _(event):
+            self._scroll_messages_half(-1)
+
+        @custom_bindings.add("s-down")
+        def _(event):
+            self._scroll_messages_half(1)
+
         bindings = merge_key_bindings([load_key_bindings(), custom_bindings])
 
         self._prompt_text = "/space/ "
@@ -176,7 +184,11 @@ class Shell(BaseShell):
             wrap_lines=True,
             always_hide_cursor=True,
         )
-        self._message_pane = ScrollablePane(self._message_window, show_scrollbar=False)
+        self._message_pane = ScrollablePane(
+            self._message_window,
+            show_scrollbar=False,
+            height=Dimension(weight=1),
+        )
 
         self.input_buffer = Buffer(
             completer=completer,
@@ -319,13 +331,12 @@ class Shell(BaseShell):
             self.application.exit()
 
     def _append_message(self, text):
-        if self._message_chunks:
-            self._message_chunks.append("")
-        self._message_chunks.append("" if text is None else text)
-        joined = "\n".join(self._message_chunks)
-        self._message_formatted = ANSI(joined) if self.color else joined
-        self._scroll_messages_to_bottom()
-        self._invalidate()
+        if isinstance(text, str):
+            self._message_chunks.append(text)
+            self._message_formatted = "\n".join(self._message_chunks)
+            if self.color:
+                self._message_formatted = ANSI(self._message_formatted)
+            self._invalidate()
 
     def _accept_input(self, buff):
         line = buff.text.strip()
@@ -338,6 +349,22 @@ class Shell(BaseShell):
         if hasattr(self, "application") and self.application is not None:
             self.application.invalidate()
 
-    def _scroll_messages_to_bottom(self):
-        self._message_window.vertical_scroll = 10**6
-        self._message_pane.vertical_scroll = 10**6
+    def _scroll_messages_half(self, direction):
+        info = self._message_window.render_info
+        if info is None:
+            return
+        self._scroll_messages_by(direction * max(1, info.window_height // 2), info)
+
+    def _scroll_messages_by(self, delta, info=None):
+        info = info or self._message_window.render_info
+        if info is None:
+            return
+        max_scroll = max(0, info.content_height - info.window_height)
+        target = self._message_pane.vertical_scroll + delta
+        if target < 0:
+            target = 0
+        if target > max_scroll:
+            target = max_scroll
+        self._message_pane.vertical_scroll = target
+        self._message_window.vertical_scroll = target
+        self._invalidate()
