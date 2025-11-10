@@ -13,3 +13,4 @@ __pycache__
 *.rej
 *.log
 /tmp
+/profile.txt
