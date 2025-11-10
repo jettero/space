@@ -1,13 +1,24 @@
 #!/usr/bin/env python
 """
-A simple example of a scrollable pane from the prompt_toolkit github examples dir
+This is a scrolly example from the prompt_toolkit repo:
+    https://github.com/prompt-toolkit/python-prompt-toolkit/tree/main/examples/full-screen/scrollable-panes
+
+(it's slightly modified though)
 """
 
 from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.key_binding.bindings.focus import focus_next, focus_previous
+from prompt_toolkit.key_binding.bindings.focus import (
+    focus_next,
+    focus_previous,
+)
+from prompt_toolkit.key_binding.bindings.scroll import (
+    scroll_half_page_down,
+    scroll_half_page_up,
+)
+
 from prompt_toolkit.layout import (
     CompletionsMenu,
     Float,
@@ -70,11 +81,11 @@ def main():
 
     kb.add("tab")(focus_next)
     kb.add("s-tab")(focus_previous)
+    kb.add("s-up")(scroll_half_page_up)
+    kb.add("s-down")(scroll_half_page_down)
 
     # Create and run application.
-    application = Application(
-        layout=layout, key_bindings=kb, full_screen=True, mouse_support=True
-    )
+    application = Application(layout=layout, key_bindings=kb, full_screen=True, mouse_support=True)
     application.run()
 
 
