@@ -204,6 +204,16 @@ class Shell(BaseShell):
         def _(event):
             self.stop()
 
+        @custom_bindings.add("c-a")
+        def _(event):
+            buffer = event.current_buffer
+            buffer.cursor_position += buffer.document.get_start_of_line_position()
+
+        @custom_bindings.add("c-e")
+        def _(event):
+            buffer = event.current_buffer
+            buffer.cursor_position += buffer.document.get_end_of_line_position()
+
         bindings = merge_key_bindings([load_key_bindings(), custom_bindings])
 
         self._prompt_text = "/space/ "
