@@ -28,12 +28,14 @@ def test_say_a_lot(shell_proc):
 def test_scroll_history(shell_proc):
     for x in range(200):
         shell_proc.sendline(f"say hiya{x}")
+
     def grab():
         return [
             int(m.group(1))
             for m in (re.search(r"Hiya(\d+)", line) for line in shell_proc.terminal_state(width=80, height=25)[0])
             if m
         ]
+
     base = grab()
     assert len(base) == 200
     assert base[-1] == 199

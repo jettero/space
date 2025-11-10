@@ -24,6 +24,14 @@ class Cell(MapObj, Container):
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
 
+    def add_item(self, item):
+        super().add_item(item)
+        self.map.invalidate()
+
+    def remove_item(self, item):
+        super().remove_item(item)
+        self.map.invalidate()
+
     def accept(self, item):
         if isinstance(item, Living):
             for other in self:

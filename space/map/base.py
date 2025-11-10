@@ -3,6 +3,7 @@
 import logging
 import random
 from collections import namedtuple
+from functools import lru_cache
 
 from ..obj import baseobj
 from ..container import Containable, Container
@@ -29,6 +30,7 @@ class Map(baseobj):
         x, y = self.atosz(a)
         self.cells = []
         self.set_min_size(x, y)
+        self.invalidate()
 
     @property
     def bounds(self):
@@ -225,15 +227,14 @@ class Map(baseobj):
 
     def insert_mapobj(self, x, y, mapobj):
         if mapobj is not None and not isinstance(mapobj, MapObj):
-            raise TypeError(
-                f"{repr(self)}.insert_mapobj(pos=({x},{y}), mapobj={mapobj}): " "mapobj is not a MapObj (or None)"
-            )
+            raise TypeError(f"{repr(self)}.insert_mapobj(pos=({x},{y}), mapobj={mapobj}): " "mapobj is not a MapObj (or None)")
 
         self.set_min_size(x + 1, y + 1)
         self.cells[y][x] = mapobj
         if mapobj is not None:
             mapobj.pos = (x, y)
             mapobj.map = self
+        self.invalidate()
 
     def insert_map(self, x, y, submap):
         if not isinstance(submap, Map):
@@ -449,6 +450,8 @@ class Map(baseobj):
                 return False
         return True
 
+    __hash__ = object.__hash__
+
     def identify_cliques(self):
         cliques = list()
 
@@ -585,6 +588,7 @@ class Map(baseobj):
         )
         return MapView(self, bounds=bnds)
 
+    @lru_cache(maxsize=None)
     def visicalc_submap(self, whom, maxdist=None):
         self.visicalc(whom, maxdist=maxdist)
         wlp = whom.location.pos
@@ -620,6 +624,9 @@ class Map(baseobj):
             tuple(bnds),
         )
         return MapView(self, bounds=bnds)
+
+    def invalidate(self):
+        self.visicalc_submap.cache_clear()
 
     # Hearing-like submap: attenuates through barriers instead of pruning LOS
     def hearicalc_submap(self, whom, maxdist=None, min_hearability=0.1):
@@ -716,8 +723,7 @@ class MapView(Map):
         vb = self.bounds
         ab = self.a_map.bounds
         return [
-            [self.a_map.cells[j][i] if ab.x <= i <= ab.X and ab.y <= j <= ab.Y else None for i in vb.x_iter]
-            for j in vb.y_iter
+            [self.a_map.cells[j][i] if ab.x <= i <= ab.X and ab.y <= j <= ab.Y else None for i in vb.x_iter] for j in vb.y_iter
         ]
 
         # note: we used to do the below, but we changed it 2023-06-19 to

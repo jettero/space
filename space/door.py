@@ -39,6 +39,8 @@ class Door(StdObj):
 
     def do_open(self):
         self.open = True
+        if self.attached and (cell := self.location) and (m := cell.map):
+            m.invalidate()
 
     def can_close(self):
         ok = self.open and not self.stuck
@@ -52,3 +54,5 @@ class Door(StdObj):
 
     def do_close(self):
         self.open = False
+        if self.attached and (cell := self.location) and (m := cell.map):
+            m.invalidate()
