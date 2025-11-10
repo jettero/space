@@ -72,10 +72,8 @@ import sys
 from collections import deque
 
 from prompt_toolkit.completion import Completer, Completion
-from prompt_toolkit.application.current import get_app_or_none
 from prompt_toolkit.filters import has_completions, completion_is_selected
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.application import Application
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.document import Document
@@ -87,7 +85,7 @@ from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl
 from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.menus import MultiColumnCompletionsMenu
 from prompt_toolkit.layout.processors import Processor, Transformation, TransformationInput
-from prompt_toolkit.formatted_text.utils import fragment_list_to_text
+from prompt_toolkit.formatted_text.utils import split_lines, to_formatted_text
 from prompt_toolkit.key_binding.bindings.scroll import (
     scroll_half_page_down,
     scroll_half_page_up,
@@ -132,17 +130,18 @@ class ShellCompleter(Completer):
         self.shell = shell
 
     def get_completions(self, document, complete_event):
-        app = get_app_or_none()
-        actual_before = document.text_before_cursor if app is None else app.current_buffer.document.text_before_cursor
-        if not actual_before.strip():
+        before = document.text_before_cursor
+        if not before.strip():
             return
-        fragment = actual_before.split()[-1] if actual_before and not actual_before[-1].isspace() else ""
+        fragment = before.split()[-1] if before and not before[-1].isspace() else ""
         if fragment.startswith("/"):
-            for name in [x[6:] for x in dir(ps) if x.startswith("slash_")]:
-                if name.startswith(fragment[1:]):
-                    yield Completion(f"/{name} ", start_position=-len(fragment), display=f"/{name}")
+            for attr in dir(self.shell):
+                if attr.startswith("slash_"):
+                    name = attr[6:]
+                    if name.startswith(fragment[1:]):
+                        yield Completion(f"/{name} ", start_position=-len(fragment), display=f"/{name}")
             return
-        if fragment and len(actual_before.strip().split()) <= 1:
+        if fragment and len(before.strip().split()) <= 1:
             for name in sorted(VERBS):
                 if name.startswith(fragment):
                     yield Completion(f"{name} ", start_position=-len(fragment), display=f"{name} - {VERBS[name]!r}")
@@ -204,7 +203,7 @@ class Shell(BaseShell):
         bindings = merge_key_bindings([load_key_bindings(), custom_bindings])
 
         self._prompt_text = "/space/ "
-        self._message_chunks = deque(maxlen=800)
+        self._messages = deque(maxlen=800)
         self._message_line_tokens = [[]]
         self._stderr_handler = None
 
@@ -277,26 +276,17 @@ class Shell(BaseShell):
             editing_mode=EditingMode.VI,
         )
 
-        # wtf is this for?
-        self._patch = patch_stdout(raw=True)
-        self._patch.__enter__()
-
         if isinstance(init, (tuple, list)):
             for cmd in init:
                 self.do_step(cmd)
 
     def reconfigure_logging(self, **kw):
-        def mydl(*dl):
-            norepeat = set()
-            for d in dl:
-                if isinstance(d, dict):
-                    for k, v in d.items():
-                        if k not in norepeat:
-                            if v is not None:
-                                yield k, v
-                        norepeat.add(k)
-
-        self._logging_opts = {k: v for k, v in mydl(kw, self._logging_opts)}
+        opts = {k: v for k, v in kw.items() if v is not None}
+        if isinstance(self._logging_opts, dict):
+            for key, value in self._logging_opts.items():
+                if key not in opts and value is not None:
+                    opts[key] = value
+        self._logging_opts = opts
         logging.root.handlers = []
         logging.basicConfig(**self._logging_opts)
         kwf = KeywordFilter("space.args")  # XXX: should be configurable
@@ -304,9 +294,10 @@ class Shell(BaseShell):
             handler.addFilter(kwf)
 
     def receive_message(self, msg):
-        txt = msg.render_text(color=self.color)
-        log.debug("receive_message(%s)", txt)
-        self._append_message(txt)
+        text = msg.render_text(color=self.color)
+        plain = msg.render_text(color=False)
+        log.debug("receive_message(%s)", text)
+        self._append_message(text, plain)
 
     def do_step(self, cmd):
         if cmd and not self.internal_command(cmd):
@@ -360,46 +351,23 @@ class Shell(BaseShell):
     def stop(self, val=True, msg="see ya."):
         if not self._stop:
             super().stop(val, msg)
-        if hasattr(self, "application") and self.application is not None:
-            self.application.exit()
+        self.application.exit()
 
-    def _append_message(self, text):
-        if isinstance(text, str):
-            previous_cursor = self._message_buffer.cursor_position
-            at_end = previous_cursor >= len(self._message_buffer.text)
-            self._message_chunks.append(text)
-            combined = "\n".join(self._message_chunks)
-            if self.color:
-                fragments = ANSI(combined).__pt_formatted_text__()
-            else:
-                fragments = [("", combined)]
-            lines = [[]]
-            for style, value in fragments:
-                if "[ZeroWidthEscape]" in style:
-                    continue
-                remaining = value
-                while True:
-                    newline_index = remaining.find("\n")
-                    if newline_index == -1:
-                        if remaining:
-                            lines[-1].append((style, remaining))
-                        break
-                    piece = remaining[:newline_index]
-                    if piece:
-                        lines[-1].append((style, piece))
-                    lines.append([])
-                    remaining = remaining[newline_index + 1 :]
-                    if not remaining:
-                        break
-            plain = fragment_list_to_text(fragments)
-            self._message_buffer.set_document(
-                Document(plain, previous_cursor if previous_cursor <= len(plain) else len(plain)),
-                bypass_readonly=True,
-            )
-            self._message_line_tokens = lines
-            if at_end:
-                self._message_buffer.cursor_position = len(self._message_buffer.text)
-            self._invalidate()
+    def _append_message(self, text, plain):
+        previous_cursor = self._message_buffer.cursor_position
+        at_end = previous_cursor >= len(self._message_buffer.text)
+        self._messages.append((text, plain))
+        combined_plain = "\n".join(chunk[1] for chunk in self._messages)
+        fragments = to_formatted_text(ANSI("\n".join(chunk[0] for chunk in self._messages)) if self.color else combined_plain)
+        self._message_buffer.set_document(
+            Document(
+                combined_plain,
+                len(combined_plain) if at_end else min(previous_cursor, len(combined_plain)),
+            ),
+            bypass_readonly=True,
+        )
+        self._message_line_tokens = list(split_lines(fragments))
+        self.application.invalidate()
 
     def _scroll_messages_with(self, handler, event):
         layout = event.app.layout
@@ -416,16 +384,16 @@ class Shell(BaseShell):
             self.do_step(line)
         return True
 
-    def _invalidate(self):
-        if hasattr(self, "application") and self.application is not None:
-            self.application.invalidate()
-
     def _install_exception_handler(self):
         asyncio.get_running_loop().set_exception_handler(self._handle_application_exception)
 
     def _handle_application_exception(self, loop, context):
-        self._ensure_stderr_logging()
         exception = context.get("exception")
+        if self._stderr_handler is None:
+            self._stderr_handler = logging.StreamHandler(sys.stderr)
+            if isinstance(self._logging_opts, dict) and "format" in self._logging_opts:
+                self._stderr_handler.setFormatter(logging.Formatter(self._logging_opts["format"]))
+            logging.getLogger().addHandler(self._stderr_handler)
         if exception is None:
             msg = context.get("message", "unknown application error")
             log.error("unhandled application exception: %s", msg)
@@ -433,11 +401,3 @@ class Shell(BaseShell):
             msg = context.get("message", str(exception))
             log.exception("unhandled application exception: %s", msg, exc_info=exception)
         self.stop()
-
-    def _ensure_stderr_logging(self):
-        if self._stderr_handler is None:
-            handler = logging.StreamHandler(sys.stderr)
-            if isinstance(self._logging_opts, dict) and "format" in self._logging_opts:
-                handler.setFormatter(logging.Formatter(self._logging_opts["format"]))
-            logging.getLogger().addHandler(handler)
-            self._stderr_handler = handler

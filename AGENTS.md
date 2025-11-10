@@ -10,6 +10,7 @@
       typical sandbox issues involve socket files and ptys and things.
 - you can't run any part of t/shellexpect.py or the tests that use it because you can't allocate a pty due to your sandboxing. use the `pytest_run` mcp you have available to run those tests.
 - you can't run `lrun-shell.py` in any way due to the above pty allocation issue, stop trying
+- you should use `black -l 127` as a basic syntax check. I have to run that anyway due to pre-commit constraint.
 
 # HARD CONSTRAINTS
 - always be very brief with your words. If you resort to bullet points, make sure they don't repeat the same thing over and over.
