@@ -337,13 +337,14 @@ class Shell(BaseShell):
         pass
 
     def loop(self):
-        try:
-            self.application.run(
-                pre_run=self._install_exception_handler,
-                set_exception_handler=False,
-            )
-        except EOFError:
-            self.stop()
+        if not self.application.is_running and not self._stop:
+            try:
+                self.application.run(
+                    pre_run=self._install_exception_handler,
+                    set_exception_handler=False,
+                )
+            except EOFError:
+                self.stop()
 
     def get_std_tokens(self):
         """
@@ -366,8 +367,7 @@ class Shell(BaseShell):
         return sorted({t for l in owner.nearby_livings for t in l.tokens})
 
     def stop(self, val=True, msg="see ya."):
-        if not self._stop:
-            super().stop(val, msg)
+        super().stop(val=val, msg=msg)
         if self.application.is_running:
             self.application.exit()
 
