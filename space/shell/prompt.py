@@ -66,7 +66,9 @@
 # 6. the CompleteStyle.READLINE sucks and CompleteStyle.MULTI_COLUMN is better,
 #    despite the above.
 
+import asyncio
 import os
+import sys
 from collections import deque
 
 from prompt_toolkit.completion import Completer, Completion
@@ -84,6 +86,7 @@ from prompt_toolkit.layout.containers import Window, FloatContainer, Float
 from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl
 from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.menus import MultiColumnCompletionsMenu
+from prompt_toolkit.key_binding.bindings.scroll import scroll_half_page_down, scroll_half_page_up
 from prompt_toolkit.key_binding.defaults import load_key_bindings
 from prompt_toolkit.key_binding.key_bindings import merge_key_bindings
 
@@ -166,21 +169,34 @@ class Shell(BaseShell):
 
         @custom_bindings.add("s-up")
         def _(event):
-            log.debug("scroll up by half")
-            self._scroll_messages_half(-1)
+            layout = event.app.layout
+            previous = layout.current_window
+            layout.focus(self.message_control)
+            scroll_half_page_up(event)
+            if previous is not None and previous is not self._message_window:
+                layout.focus(previous)
+            else:
+                layout.focus(self._input_window)
 
         @custom_bindings.add("s-down")
         def _(event):
-            log.debug("scroll down by half")
-            self._scroll_messages_half(1)
+            layout = event.app.layout
+            previous = layout.current_window
+            layout.focus(self.message_control)
+            scroll_half_page_down(event)
+            if previous is not None and previous is not self._message_window:
+                layout.focus(previous)
+            else:
+                layout.focus(self._input_window)
 
         bindings = merge_key_bindings([load_key_bindings(), custom_bindings])
 
         self._prompt_text = "/space/ "
         self._message_chunks = deque(maxlen=800)
         self._message_formatted = ""
+        self._stderr_handler = None
 
-        self.message_control = FormattedTextControl(lambda: self._message_formatted or "")
+        self.message_control = FormattedTextControl(lambda: self._message_formatted or "", focusable=True, show_cursor=False)
         self._message_window = Window(
             content=self.message_control,
             wrap_lines=True,
@@ -301,10 +317,10 @@ class Shell(BaseShell):
         pass
 
     def loop(self):
-        try:
-            self.application.run()
-        except (EOFError, KeyboardInterrupt, IntentionalQuit):
-            self.stop()
+        self.application.run(
+            pre_run=self._install_exception_handler,
+            set_exception_handler=False,
+        )
 
     def get_std_tokens(self):
         """
@@ -351,22 +367,24 @@ class Shell(BaseShell):
         if hasattr(self, "application") and self.application is not None:
             self.application.invalidate()
 
-    def _scroll_messages_half(self, direction):
-        log.debug("_scroll_messages_half(direction=%d)", direction)
-        if info := self._message_window.render_info:
-            self._scroll_messages_by(direction * max(1, info.window_height // 2), info)
+    def _install_exception_handler(self):
+        asyncio.get_running_loop().set_exception_handler(self._handle_application_exception)
 
-    def _scroll_messages_by(self, delta, info=None):
-        log.debug("_scroll_messages_by(delta=%d)", delta)
-        if info := (info or self._message_window.render_info):
-            max_scroll = max(0, info.content_height - info.window_height)
-            target = min(max_scroll, max(0, self._message_pane.vertical_scroll + delta))
-            log.debug(
-                "_scroll_messages_by vertical_scroll=%d max_scroll=%d target=%d",
-                self._message_pane.vertical_scroll,
-                max_scroll,
-                target,
-            )
-            self._message_pane.vertical_scroll = target
-            self._message_window.vertical_scroll = target
-            self._invalidate()
+    def _handle_application_exception(self, loop, context):
+        self._ensure_stderr_logging()
+        exception = context.get("exception")
+        if exception is None:
+            msg = context.get("message", "unknown application error")
+            log.error("unhandled application exception: %s", msg)
+        else:
+            msg = context.get("message", str(exception))
+            log.exception("unhandled application exception: %s", msg, exc_info=exception)
+        self.stop()
+
+    def _ensure_stderr_logging(self):
+        if self._stderr_handler is None:
+            handler = logging.StreamHandler(sys.stderr)
+            if isinstance(self._logging_opts, dict) and "format" in self._logging_opts:
+                handler.setFormatter(logging.Formatter(self._logging_opts["format"]))
+            logging.getLogger().addHandler(handler)
+            self._stderr_handler = handler
