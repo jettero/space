@@ -70,6 +70,11 @@ SOUL = {
             "LIV": "$N $vwatch $p joke sail over $p1 head.",
             "": "$N $vwatch $p joke sail over the head of $p audience.",
         },
+        "overwhelm": {
+            "LIV STR": "$N $voverwhelm $p with $o.",
+            "LIV": "$N $voverwhelm $p with science.",
+            "": "$N $vare overwhelmed.",
+        },
         "show": {"LIV OBJ": "$N $vshow $t $p $o."},
         "hullah": {"": "$N $vare boring."},
         "blink": {
