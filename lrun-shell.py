@@ -14,7 +14,9 @@ elif c[0:2] in (["lotsa", "say"], ["say", "alot"]):
     c = [f"say hiya{x}" for x in range(30)]
     c.append("/quit")
 elif c[0:1] in (["fill"],):
-    c = ["open door; sSW6s2w; get bauble; l; l; l; smile; grin; bow"]
+    c = ["open door; sSW6s2w; get bauble; l; l; l; smile; grin; bow", *(
+        f'say this is a thing I said (x={x})' for x in range(200)
+        )]
 else:
     c = ["look"]
 
