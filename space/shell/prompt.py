@@ -200,6 +200,10 @@ class Shell(BaseShell):
         def _(event):
             self._scroll_messages_with(scroll_page_down, event)
 
+        @custom_bindings.add("c-d")
+        def _(event):
+            self.stop()
+
         bindings = merge_key_bindings([load_key_bindings(), custom_bindings])
 
         self._prompt_text = "/space/ "
@@ -323,10 +327,13 @@ class Shell(BaseShell):
         pass
 
     def loop(self):
-        self.application.run(
-            pre_run=self._install_exception_handler,
-            set_exception_handler=False,
-        )
+        try:
+            self.application.run(
+                pre_run=self._install_exception_handler,
+                set_exception_handler=False,
+            )
+        except EOFError:
+            self.stop()
 
     def get_std_tokens(self):
         """
@@ -351,7 +358,8 @@ class Shell(BaseShell):
     def stop(self, val=True, msg="see ya."):
         if not self._stop:
             super().stop(val, msg)
-        self.application.exit()
+        if self.application.is_running:
+            self.application.exit()
 
     def _append_message(self, text, plain):
         previous_cursor = self._message_buffer.cursor_position
