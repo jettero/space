@@ -18,8 +18,9 @@ def test_say_a_lot(shell_proc):
         ok, _ = shell_proc.expect(pat, timeout=1)
         lines, row, col = shell_proc.terminal_state(width=80, height=25)
         message = f"row={row} col={col} pat={pat} capbuf=<<{shell_proc.captured[-200:]!r}>>"
-        assert False, message
         assert ok, message
+        if x >= 25:
+            assert f'Hiya{x}' in lines[22]
 
 
 # the AI managed to get this test to pass by drawing the CompletionMenu above the prompt
