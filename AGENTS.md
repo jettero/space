@@ -13,6 +13,10 @@
 - you should use `black -l 127` as a basic syntax check. I have to run that anyway due to pre-commit constraint.
 
 # HARD CONSTRAINTS
+- shorter is better and easier to read. don't spend 40 lines doing what you could do in 5
+- use the walrus operator (`if m := something`)
+- do not re-invent the wheel. Use the tools and built-in helpers from the libraries you're using
+- don't repeat yourself. DRY everything you can
 - always be very brief with your words. If you resort to bullet points, make sure they don't repeat the same thing over and over.
 - Don't resort to words when code would explain better. The most concise language we have for talking about code is the code itself. I can read it.
 - Do not add comments to the code unless explicitly told to do so
