@@ -81,12 +81,19 @@ from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.document import Document
 from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.formatted_text import ANSI
-from prompt_toolkit.layout import Layout, HSplit, VSplit, ScrollablePane
+from prompt_toolkit.layout import Layout, HSplit, VSplit
 from prompt_toolkit.layout.containers import Window, FloatContainer, Float
 from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl
 from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.menus import MultiColumnCompletionsMenu
-from prompt_toolkit.key_binding.bindings.scroll import scroll_half_page_down, scroll_half_page_up
+from prompt_toolkit.layout.processors import Processor, Transformation, TransformationInput
+from prompt_toolkit.formatted_text.utils import fragment_list_to_text
+from prompt_toolkit.key_binding.bindings.scroll import (
+    scroll_half_page_down,
+    scroll_half_page_up,
+    scroll_page_down,
+    scroll_page_up,
+)
 from prompt_toolkit.key_binding.defaults import load_key_bindings
 from prompt_toolkit.key_binding.key_bindings import merge_key_bindings
 
@@ -96,6 +103,17 @@ from .base import BaseShell, IntentionalQuit
 from space.verb import VERBS
 
 log = logging.getLogger(__name__)
+
+
+class _MessageProcessor(Processor):
+    def __init__(self, shell):
+        self.shell = shell
+
+    def apply_transformation(self, transformation_input: TransformationInput):
+        tokens = self.shell._message_line_tokens
+        if transformation_input.lineno >= len(tokens):
+            return Transformation([])
+        return Transformation(tokens[transformation_input.lineno][:])
 
 
 class KeywordFilter(logging.Filter):
@@ -169,42 +187,39 @@ class Shell(BaseShell):
 
         @custom_bindings.add("s-up")
         def _(event):
-            layout = event.app.layout
-            previous = layout.current_window
-            layout.focus(self.message_control)
-            scroll_half_page_up(event)
-            if previous is not None and previous is not self._message_window:
-                layout.focus(previous)
-            else:
-                layout.focus(self._input_window)
+            self._scroll_messages_with(scroll_half_page_up, event)
 
         @custom_bindings.add("s-down")
         def _(event):
-            layout = event.app.layout
-            previous = layout.current_window
-            layout.focus(self.message_control)
-            scroll_half_page_down(event)
-            if previous is not None and previous is not self._message_window:
-                layout.focus(previous)
-            else:
-                layout.focus(self._input_window)
+            self._scroll_messages_with(scroll_half_page_down, event)
+
+        @custom_bindings.add("pageup")
+        def _(event):
+            self._scroll_messages_with(scroll_page_up, event)
+
+        @custom_bindings.add("pagedown")
+        def _(event):
+            self._scroll_messages_with(scroll_page_down, event)
 
         bindings = merge_key_bindings([load_key_bindings(), custom_bindings])
 
         self._prompt_text = "/space/ "
         self._message_chunks = deque(maxlen=800)
-        self._message_formatted = ""
+        self._message_line_tokens = [[]]
         self._stderr_handler = None
 
-        self.message_control = FormattedTextControl(lambda: self._message_formatted or "", focusable=True, show_cursor=False)
+        self._message_buffer = Buffer(read_only=True)
+        self._message_processor = _MessageProcessor(self)
+        self.message_control = BufferControl(
+            buffer=self._message_buffer,
+            focus_on_click=True,
+            input_processors=[self._message_processor],
+            include_default_input_processors=False,
+        )
         self._message_window = Window(
             content=self.message_control,
             wrap_lines=True,
             always_hide_cursor=True,
-        )
-        self._message_pane = ScrollablePane(
-            self._message_window,
-            show_scrollbar=False,
             height=Dimension(weight=1),
         )
 
@@ -236,7 +251,7 @@ class Shell(BaseShell):
 
         body = HSplit(
             [
-                self._message_pane,
+                self._message_window,
                 Window(height=Dimension.exact(1), char="─"),
                 bottom,
             ],
@@ -350,11 +365,49 @@ class Shell(BaseShell):
 
     def _append_message(self, text):
         if isinstance(text, str):
+            previous_cursor = self._message_buffer.cursor_position
+            at_end = previous_cursor >= len(self._message_buffer.text)
             self._message_chunks.append(text)
-            self._message_formatted = "\n".join(self._message_chunks)
+            combined = "\n".join(self._message_chunks)
             if self.color:
-                self._message_formatted = ANSI(self._message_formatted)
+                fragments = ANSI(combined).__pt_formatted_text__()
+            else:
+                fragments = [("", combined)]
+            lines = [[]]
+            for style, value in fragments:
+                if "[ZeroWidthEscape]" in style:
+                    continue
+                remaining = value
+                while True:
+                    newline_index = remaining.find("\n")
+                    if newline_index == -1:
+                        if remaining:
+                            lines[-1].append((style, remaining))
+                        break
+                    piece = remaining[:newline_index]
+                    if piece:
+                        lines[-1].append((style, piece))
+                    lines.append([])
+                    remaining = remaining[newline_index + 1 :]
+                    if not remaining:
+                        break
+            plain = fragment_list_to_text(fragments)
+            self._message_buffer.set_document(
+                Document(plain, previous_cursor if previous_cursor <= len(plain) else len(plain)),
+                bypass_readonly=True,
+            )
+            self._message_line_tokens = lines
+            if at_end:
+                self._message_buffer.cursor_position = len(self._message_buffer.text)
             self._invalidate()
+
+    def _scroll_messages_with(self, handler, event):
+        layout = event.app.layout
+        previous = layout.current_window
+        layout.focus(self._message_window)
+        handler(event)
+        if previous is not None:
+            layout.focus(previous)
 
     def _accept_input(self, buff):
         line = buff.text.strip()
