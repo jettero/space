@@ -70,8 +70,9 @@ class BaseShell:
         raise NotImplementedError()
 
     def stop(self, val=True, msg="see ya."):
-        self._stop = val
-        self.receive_text(msg)
+        if not self._stop:
+            self._stop = val
+            self.receive_text(msg)
 
     def pre_parse_kludges(self, line):
         # this used to try to find tokens like 'l' and make them into 'look'
