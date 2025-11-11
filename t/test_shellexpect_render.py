@@ -9,6 +9,10 @@ def test_four_corners(shell_proc):
     lines, row, col = shell_proc.terminal_state(width=80, height=25)
     msg = f"row={row} col={col} lines={[lines[:2],lines[23:]]!r}"
 
+    assert len(lines) == 25, msg
+    assert len(lines[0]) == 80, msg
+    assert len(lines[-1]) == 80, msg
+
     assert (row, col) == (0, 1), msg
     assert lines[0].startswith("1"), msg
     assert lines[0].endswith("2"), msg
