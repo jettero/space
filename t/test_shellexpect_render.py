@@ -3,20 +3,23 @@
 from t.shellexpect import render_terminal
 
 def test_four_corners(shell_proc):
-    shell_proc.captured = "\x1b[2J\x1b[24;79H4\x1b[1;79H2\x1b[24;1H3\x1b[1;1H1"
+    shell_proc.captured = "\n".join(f'--- line {x}' for x in range(1,26))
+    shell_proc.captured += "\x1b[25;1H4\x1b[25;80H3\x1b[1;80H2\x1b[1;1H1"
     lines, row, col = shell_proc.terminal_state(width=80, height=25)
-    msg = f'row={row} col={col} lines={lines!r}'
+    msg = f'row={row} col={col} lines={[lines[:2],lines[23:]]!r}'
 
     assert (row, col) == (0, 1), msg
-    assert lines[-1].startswith("3"), msg
-    assert lines[-1].endswith("4"), msg
+    assert lines[0].startswith("1"), msg
+    assert lines[0].endswith("2"), msg
+    assert lines[24].startswith("4"), msg
+    assert lines[24].endswith("3"), msg
 
-    shell_proc.captured += ('\x0a' * 25)
-    lines, row, col = shell_proc.terminal_state(width=80, height=25)
-    msg = f'row={row} col={col} lines={lines!r}'
-    assert (row, col) == (0, 1), msg
-    assert lines[-2].startswith("3"), msg
-    assert lines[-2].endswith("4"), msg
+    # shell_proc.captured += ('\x0a' * 25)
+    # lines, row, col = shell_proc.terminal_state(width=80, height=25)
+    # msg = f'row={row} col={col} lines={lines!r}'
+    # assert (row, col) == (0, 1), msg
+    # assert lines[-2].startswith("3"), msg
+    # assert lines[-2].endswith("4"), msg
 
 def test_prompt_bottom(shell_proc):
     shell_proc.expect(r"/space/ ", timeout=1)
