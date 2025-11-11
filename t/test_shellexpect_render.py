@@ -2,13 +2,27 @@
 
 from t.shellexpect import render_terminal
 
+def test_four_corners(shell_proc):
+    shell_proc.captured = "\x1b[2J\x1b[24;79H4\x1b[1;79H2\x1b[24;1H3\x1b[1;1H1"
+    lines, row, col = shell_proc.terminal_state(width=80, height=25)
+    msg = f'row={row} col={col} lines={lines!r}'
+
+    assert (row, col) == (0, 1), msg
+    assert lines[-1].startswith("3"), msg
+    assert lines[-1].endswith("4"), msg
+
+    shell_proc.captured += ('\x0a' * 25)
+    lines, row, col = shell_proc.terminal_state(width=80, height=25)
+    msg = f'row={row} col={col} lines={lines!r}'
+    assert (row, col) == (0, 1), msg
+    assert lines[-2].startswith("3"), msg
+    assert lines[-2].endswith("4"), msg
 
 def test_prompt_bottom(shell_proc):
     shell_proc.expect(r"/space/ ", timeout=1)
     for _ in range(10):
         shell_proc.sendline("look")
         shell_proc.expect(r"/space/ ", timeout=1)
-    shell_proc.drain()
     lines, row, col = shell_proc.terminal_state(width=80, height=25)
     message = repr(shell_proc.captured[-200:])
     assert row == 24, message
