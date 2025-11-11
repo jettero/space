@@ -6,6 +6,7 @@ import re
 import signal
 import sys
 import time
+from collections import namedtuple
 from contextlib import contextmanager
 import pytest
 import pexpect
@@ -120,8 +121,8 @@ def ShellExpect(module, cwd=None, env=None):
     finally:
         proc.close()
 
-
 def render_terminal(text, width=80, height=25):
-    lines = [" " * width for _ in range(height)]
-    row = col = 0
-    return lines, row, col
+    alt_lines = [" " * width for _ in range(height)]
+    main_lines = [" " * width for _ in range(height)]
+    cursor = namedtuple("Cursor", ['row', 'col'])(0,0)
+    return lines, *cursor
