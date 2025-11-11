@@ -10,7 +10,9 @@
       typical sandbox issues involve socket files and ptys and things.
     - it is not necessary to use `pytest_run` for the rest of the tests.
       `t/test_interactive_shell.py` is the only problem test
-- you can't run any part of t/shellexpect.py or the tests that use it because you can't allocate a pty due to your sandboxing. use the `pytest_run` mcp you have available to run those tests.
+- you can't run any part of `t/shellexpect.py` or the tests that use it because you can't allocate a pty due to your sandboxing.
+- this means you need `pytest_run` for `t/test_interactive_shell.py` and `t/test_shellexpect_render.py`
+- avoid using `pytest_run` unless you need it. it costs many tokens to use
 - you can't run `lrun-shell.py` in any way due to the above pty allocation issue, stop trying
 - you should use `black -l 127` as a basic syntax check. I have to run that anyway due to pre-commit constraint.
 
