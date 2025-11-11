@@ -40,7 +40,7 @@ def test_prompt_bottom(shell_proc):
     message = repr(shell_proc.captured[-200:])
     assert row == 24, message
     assert len(lines) == 25
-    assert lines[-2] == ('─' * 80), message
+    assert lines[-2] == ("─" * 80), message
     assert lines[-1] == "/space/ ", message
     assert row == len(lines) - 1, message
     assert col == len(lines[-1]), message
