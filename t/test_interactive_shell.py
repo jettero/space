@@ -31,7 +31,8 @@ def grab(shell_proc):
         fh.write(picture)
     with open("/tmp/captured.txt", "w") as fh:
         fh.write(shell_proc.captured)
-    return [int(x) for x in re.findall(r"Hiya(\d+)", picture)], f"pic={[lines[0],lines[22],lines[24]]!r}"
+    base = [int(x) for x in re.findall(r"Hiya(\d+)", picture)]
+    return base, f"base={base} first2={lines[:2]!r} last2={lines[-2:]!r}"
 
 
 def test_scroll_history(shell_proc):
@@ -40,10 +41,10 @@ def test_scroll_history(shell_proc):
 
     ok, _ = shell_proc.expect(r"Hiya199", timeout=1)
     base, msg = grab(shell_proc)
-    msg = f"base={base} {msg}"
 
     assert ok, msg
     assert len(base) == 23, msg
     assert base[-1] == 199, msg
+    assert base[0] == 177, msg
 
     # XXX assert False, "we still need to write \\x1b[1;2A \\x1b[1;2B tests"

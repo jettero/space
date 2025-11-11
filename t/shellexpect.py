@@ -125,24 +125,42 @@ def render_terminal(text, width=80, height=25):
     lines = [""]
     row = 0
     col = 0
+    pending_wrap = False
     i = 0
     length = len(text)
     while i < length:
         ch = text[i]
+        if pending_wrap:
+            if ch == "\n":
+                row += 1
+                row = _ensure_row(lines, row, height)
+                col = 0
+            elif ch == "\r":
+                col = 0
+            elif ch != "\x1b":
+                row += 1
+                row = _ensure_row(lines, row, height)
+                col = 0
+            pending_wrap = False
         if ch == "\x1b":
-            i, row, col = _consume_escape(text, i, row, col, lines, width, height)
+            i, row, col, pending_wrap = _consume_escape(text, i, row, col, lines, width, height, pending_wrap)
             continue
         if ch == "\r":
             col = 0
+            pending_wrap = False
         elif ch == "\n":
             row += 1
             row = _ensure_row(lines, row, height)
             col = 0
+            pending_wrap = False
         elif ch == "\b":
+            if pending_wrap and width:
+                pending_wrap = False
+                col = width - 1
             if col > 0:
                 col -= 1
         elif ch == "\x07":
-            pass
+            pending_wrap = False
         else:
             row = _ensure_row(lines, row, height)
             current = lines[row]
@@ -154,45 +172,47 @@ def render_terminal(text, width=80, height=25):
                 lines[row] += ch
             col += 1
             if width and col >= width:
-                row += 1
-                row = _ensure_row(lines, row, height)
-                col = 0
+                pending_wrap = True
+                col = width - 1
         i += 1
+    if pending_wrap and width:
+        col = width - 1
     return lines, row, col
 
 
-def _consume_escape(text, index, row, col, lines, width, height):
+def _consume_escape(text, index, row, col, lines, width, height, pending_wrap):
     next_index = index + 1
     if next_index >= len(text):
-        return len(text), row, col
+        return len(text), row, col, False
     marker = text[next_index]
     if marker == "[":
-        return _consume_csi(text, index, row, col, lines, width, height)
+        return _consume_csi(text, index, row, col, lines, width, height, pending_wrap)
     if marker == "]":
         end = next_index + 1
         while end < len(text) and text[end] != "\x07":
             end += 1
         if end < len(text):
             end += 1
-        return end, row, col
+        return end, row, col, False
     if marker == "(":
         end = next_index + 1
         if end < len(text):
             end += 1
-        return end, row, col
-    return next_index + 1, row, col
+        return end, row, col, False
+    return next_index + 1, row, col, False
 
 
-def _consume_csi(text, index, row, col, lines, width, height):
+def _consume_csi(text, index, row, col, lines, width, height, pending_wrap):
     start = index + 2
     end = start
     while end < len(text) and text[end] < "@":
         end += 1
     if end >= len(text):
-        return len(text), row, col
+        return len(text), row, col, False
     final = text[end]
     params = text[start:end]
     parts = params.split(";") if params else []
+    pending_wrap = False
     if final == "K":
         if row < len(lines):
             lines[row] = lines[row][:col]
@@ -238,7 +258,7 @@ def _consume_csi(text, index, row, col, lines, width, height):
         col = col % width
         row += extra
         row = _ensure_row(lines, row, height)
-    return end + 1, row, col
+    return end + 1, row, col, pending_wrap
 
 
 def _ensure_row(lines, row, height):
