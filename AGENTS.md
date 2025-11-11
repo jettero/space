@@ -17,6 +17,7 @@
 - you should use `black -l 127` as a basic syntax check. I have to run that anyway due to pre-commit constraint.
 
 # HARD CONSTRAINTS
+- never try to do this: `from t.shellexpect import ShellExpect, render_terminal`; it won't work cuz it requires a PTY
 - always tell me when you read this file (so I know for sure you see it on startup)
 - shorter is better and easier to read. don't spend 40 lines doing what you could do in 5
 - use the walrus operator (`if m := something`)
