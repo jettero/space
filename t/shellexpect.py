@@ -121,8 +121,29 @@ def ShellExpect(module, cwd=None, env=None):
     finally:
         proc.close()
 
+class Cursor(namedtuple("C", ['row', 'col', 'height', 'width'])):
+    def advance(self, chars=1):
+        # we advance the cursor forward by chars.  if we're passed our width:
+        # advance the row (and set col=0).  if we're passed our height: stay at
+        # max height and indicate we have to scroll.
+        scroll = False
+        self.col += chars
+        if self.col >= self.width:
+            self.col = 0
+            self.row += 1
+        if self.row >= self.height:
+            self.row = self.height-1
+            scroll = True
+        return scroll
+
+    def move(self, row=0, col=0):
+        # ansi \x1b[1;1H should be (0,0) in our matrix
+        # subtract one, but enforce a position that makes sense
+        self.row = min(self.height-1, max(0, row-1))
+        self.col = min(self.width-1, max(0, col-1))
+
 def render_terminal(text, width=80, height=25):
     alt_lines = [" " * width for _ in range(height)]
     main_lines = [" " * width for _ in range(height)]
-    cursor = namedtuple("Cursor", ['row', 'col'])(0,0)
+    cursor = Cursor(0,0,height,width)
     return lines, *cursor
