@@ -27,8 +27,7 @@ def test_say_a_lot(shell_proc):
 def grab(shell_proc):
     lines, _, _ = shell_proc.terminal_state(height=25)
     picture = "\n".join(lines)
-    msg = f"pic={lines!r}"
-    return [int(x) for x in re.findall(r"Hiya(\d+)", picture)], msg
+    return [int(x) for x in re.findall(r"Hiya(\d+)", picture)], f"pic={lines!r} captured={shell_proc.captured!r}"
 
 
 def test_scroll_history(shell_proc):
