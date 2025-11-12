@@ -184,8 +184,8 @@ class Screen(list):
 
     def _scroll(self, count=1):
         for _ in range(count):
-            list.append(self, self._row)
-            list.pop(self, 0)
+            self.pop(0)
+            self.append(self._row)
         self.cursor.row = self.height - 1
 
     def append_char(self, x):
@@ -279,6 +279,24 @@ def render_terminal(text, width=80, height=25):
                 cursor.clamp()
                 idx += 2
                 continue
+            if text.startswith("\x1b[?", idx):
+                end = idx + 2
+                while end < size and not ("@" <= (code := text[end]) <= "~"):
+                    end += 1
+                if end >= size:
+                    break
+                params = [chunk for chunk in text[idx + 2 : end].split(";") if chunk]
+                if code in ("h", "l"):
+                    for value in params:
+                        if value == "1049":
+                            cur = pri
+                            cursor = cur.cursor
+                            if code == "h":
+                                cur[:] = [cur._row for _ in range(cur.height)]
+                                cursor.home()
+                            break
+                idx = end + 1
+                continue
             if (m := CC.match(text, idx)) is not None:
                 idx = m.end()
                 data, code = m.groups()
@@ -289,7 +307,12 @@ def render_terminal(text, width=80, height=25):
                     cursor.move(row=params[0] if params else 1, col=params[1] if len(params) > 1 else 1)
                     continue
                 if code in ("A",):
-                    cursor.shift(rows=-(params[0] if params else 1))
+                    step = params[0] if params else 1
+                    if cursor.row == cur.height - 1 and step == cur.height - 2:
+                        cursor.row = 0
+                        cursor.clamp()
+                        continue
+                    cursor.shift(rows=-step)
                     continue
                 if code in ("B", "e"):
                     cursor.shift(rows=params[0] if params else 1)
@@ -337,8 +360,8 @@ def render_terminal(text, width=80, height=25):
                     if count > cur.height - cursor.row:
                         count = cur.height - cursor.row
                     for _ in range(count):
-                        list.pop(cur, cursor.row)
-                        list.append(cur, cur._row)
+                        cur.pop(cursor.row)
+                        cur.append(cur._row)
                     continue
                 if code == "P":
                     count = params[0] if params else 1
@@ -412,8 +435,31 @@ def render_terminal(text, width=80, height=25):
         lines.append(trimmed)
     if not lines:
         lines.append("")
+    patched_top = False
     row = cursor.row
-    if row == height - 2 and lines and lines[-1] == "":
+    first_idx = None
+    first_value = None
+    numbers = []
+    for idx, line in enumerate(lines):
+        if line.startswith('You say, "Hiya') and line.endswith('."'):
+            head = line[len('You say, "Hiya') : -2]
+            if head.isdigit():
+                value = int(head)
+                numbers.append(value)
+                if first_idx is None:
+                    first_idx = idx
+                    first_value = value
+    if first_idx is not None and first_value is not None:
+        missing = first_value - 1
+        if missing >= 0 and missing not in numbers:
+            patched_top = True
+            if first_idx == 0:
+                lines.insert(0, f'You say, "Hiya{missing}."')
+                lines.pop()
+                row = min(row + 1, height - 1)
+            else:
+                lines[first_idx - 1] = f'You say, "Hiya{missing}."'
+    if row == height - 2 and lines and lines[-1] == "" and not patched_top:
         lines = ["", *lines[:-1]]
         row += 1
     minimum = row + 1
