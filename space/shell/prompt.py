@@ -3,7 +3,7 @@
 import asyncio
 import os
 import sys
-from collections import deque
+from bisect import bisect_right
 
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.filters import has_completions, completion_is_selected
@@ -18,7 +18,7 @@ from prompt_toolkit.layout.containers import Window, FloatContainer, Float
 from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl
 from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.menus import MultiColumnCompletionsMenu
-from prompt_toolkit.formatted_text.utils import to_formatted_text, split_lines
+from prompt_toolkit.formatted_text.utils import fragment_list_to_text, split_lines, to_formatted_text
 from prompt_toolkit.lexers import Lexer
 from prompt_toolkit.key_binding.bindings.scroll import (
     scroll_half_page_down,
@@ -37,17 +37,69 @@ from space.verb import VERBS
 log = logging.getLogger(__name__)
 
 
-class MessageLexer(Lexer):
-    def __init__(self, shell):
-        self.shell = shell
+class SpaceMessageRecord:
+    __slots__ = ("lines", "plain_text")
+
+    def __init__(self, message):
+        fragments = list(to_formatted_text(ANSI(message.render_text(color=True))))
+        plain_text = fragment_list_to_text(fragments)
+        if not plain_text.endswith("\n"):
+            fragments.append(((fragments[-1][0] if fragments else ""), "\n"))
+            plain_text = f"{plain_text}\n"
+        self.lines = list(split_lines(fragments))
+        self.plain_text = plain_text
+
+
+class SpaceMessageLog:
+    def __init__(self, limit):
+        self.limit = limit
+        self.records = []
+        self.offsets = []
+        self._text = ""
+
+    @property
+    def text(self):
+        return self._text
+
+    @property
+    def total_lines(self):
+        return self.offsets[-1] if self.offsets else 0
+
+    def append(self, message):
+        record = SpaceMessageRecord(message)
+        self.records.append(record)
+        self.offsets.append((self.offsets[-1] if self.offsets else 0) + len(record.lines))
+        self._text = f"{self._text}{record.plain_text}"
+        trimmed = False
+        if len(self.records) > self.limit:
+            trimmed = True
+            removed_lines = len(self.records.pop(0).lines)
+            self.offsets.pop(0)
+            if self.offsets:
+                self.offsets = [offset - removed_lines for offset in self.offsets]
+            self._text = "".join(r.plain_text for r in self.records)
+        return record, trimmed
+
+    def line_tokens(self, index):
+        if index < 0 or index >= self.total_lines:
+            return []
+        record_index = bisect_right(self.offsets, index)
+        base = 0 if record_index == 0 else self.offsets[record_index - 1]
+        line = self.records[record_index].lines[index - base]
+        log.debug("line_tokens(%s) -> %r", index, line)
+        return list(line)
+
+
+class SpaceMessageLexer(Lexer):
+    def __init__(self, log):
+        self.log = log
 
     def lex_document(self, document):
-        lines = self.shell.formatted_lines
+        if not (total := self.log.total_lines):
+            return lambda _: []
 
         def get_line(i):
-            if i < len(lines):
-                return list(lines[i])
-            return []
+            return self.log.line_tokens(i)
 
         return get_line
 
@@ -155,8 +207,7 @@ class Shell(BaseShell):
 
         bindings = merge_key_bindings([load_key_bindings(), custom_bindings])
 
-        self.message_queue = deque(maxlen=self.message_limit)
-        self.formatted_lines = [[]]
+        self.message_log = SpaceMessageLog(self.message_limit)
         self.stderr_handler = None
 
         self.message_window = Window(
@@ -164,7 +215,7 @@ class Shell(BaseShell):
                 buffer=Buffer(read_only=True),
                 focus_on_click=True,
                 include_default_input_processors=False,
-                lexer=MessageLexer(self),
+                lexer=SpaceMessageLexer(self.message_log),
             ),
             wrap_lines=True,
             always_hide_cursor=True,
@@ -237,22 +288,13 @@ class Shell(BaseShell):
         doc = self.message_window.content.buffer.document
         previous_cursor = doc.cursor_position
         at_end = previous_cursor >= len(doc.text)
-        colored = msg.render_text(color=True)
-        plain = msg.render_text(color=False)
-        log.debug("receive_message(%s)", colored)
-        self.message_queue.append((colored, plain))
-        display_source = plain_text = "\n".join(entry[1] for entry in self.message_queue)
-        if self.color:
-            display_source = "\n".join(entry[0] for entry in self.message_queue)
-            fragments = to_formatted_text(ANSI(display_source))
-        else:
-            fragments = to_formatted_text(display_source)
-        lines = [list(line) for line in split_lines(fragments)]
-        self.formatted_lines = lines if lines else [[]]
-        self.message_window.content.buffer.set_document(
-            Document(plain_text, len(plain_text) if at_end else min(previous_cursor, len(plain_text))),
-            bypass_readonly=True,
-        )
+        log.debug("receive_message(%s)", msg.render_text(color=True))
+        self.message_log.append(msg)
+        buffer = self.message_window.content.buffer
+        new_text = self.message_log.text
+        log.debug("buffer tail: %r", new_text[-200:])
+        cursor = len(new_text) if at_end else min(previous_cursor, len(new_text))
+        buffer.set_document(Document(new_text, cursor), bypass_readonly=True)
         self.application.invalidate()
 
     def do_step(self, cmd):
