@@ -14,6 +14,8 @@ import pexpect
 
 log = logging.getLogger(__name__)
 
+CC = re.compile(r"\x1b\[([\d;]*)([ABCDEFGHJKLMPXacdefghlmnqrsu])")
+
 
 class ExpectProc:
     def __init__(self, argv, cwd=None, env=None, timeout=1):
@@ -121,29 +123,87 @@ def ShellExpect(module, cwd=None, env=None):
     finally:
         proc.close()
 
-class Cursor(namedtuple("C", ['row', 'col', 'height', 'width'])):
-    def advance(self, chars=1):
-        # we advance the cursor forward by chars.  if we're passed our width:
-        # advance the row (and set col=0).  if we're passed our height: stay at
-        # max height and indicate we have to scroll.
+
+class Cursor:
+    def __init__(self, row=0, col=0, height=25, width=80):
+        self.row = row
+        self.col = col
+        self.height = height
+        self.width = width
+
+    def wrap(self):
         scroll = False
-        self.col += chars
         if self.col >= self.width:
             self.col = 0
             self.row += 1
         if self.row >= self.height:
-            self.row = self.height-1
+            self.row = self.height - 1
             scroll = True
         return scroll
 
     def move(self, row=0, col=0):
         # ansi \x1b[1;1H should be (0,0) in our matrix
         # subtract one, but enforce a position that makes sense
-        self.row = min(self.height-1, max(0, row-1))
-        self.col = min(self.width-1, max(0, col-1))
+        self.row = min(self.height - 1, max(0, row - 1))
+        self.col = min(self.width - 1, max(0, col - 1))
+
+    def __iter__(self):
+        return (self.row, self.col)
+
+    def __repr__(self):
+        return f"Cursor<{self.row}, {self.col}>"
+
+
+class Screen(list):
+    def __init__(self, width=80, height=25):
+        self.width = width
+        self.height = height
+        self.cursor = Cursor(height=height, width=width)
+        self._row = " " * width
+        super().__init__(self._row for _ in range(height))
+
+    def append_char(self, x):
+        if len(x) != 1:
+            raise ValueError(f"invalid: {x}")
+        if self.cursor.wrap():
+            self.append(self._row)
+            self.pop(0)
+        line = self[self.cursor.row]
+        self[self.cursor.row] = line[: self.cursor.col] + x + line[self.cursor.col + 1 :]
+        self.cursor.col += 1
+
+    def write(self, x):
+        for c in x:
+            self.append_char(c)
+
+    def move(self, row=0, col=0):
+        self.cursor.move(row=row, col=col)
+
+    def __repr__(self):
+        bar = f'+{"-" * len(self[0])}+'
+        tmp = [f"|{x}|" for x in self]
+        tmp = [bar, *tmp, bar, f" {self.cursor}"]
+        return "\n".join(tmp)
+
 
 def render_terminal(text, width=80, height=25):
-    alt_lines = [" " * width for _ in range(height)]
-    main_lines = [" " * width for _ in range(height)]
-    cursor = Cursor(0,0,height,width)
-    return lines, *cursor
+    alt = Screen()
+    cur = pri = Screen()
+
+    while text:
+        if m := CC.search(text):
+            text = text[len(m.group(0)) :]
+            data, code = m.groups()
+            if code == "m":
+                pass
+            elif code == "H":
+                v = [int(x) for x in data.split(";")]
+                if len(v) == 2:
+                    cursor.move(*v)
+                else:
+                    raise ValueError(f"invalid mnove code: {m.group(0)!r}")
+        else:
+            cur.append_char(text[0])
+            text = text[1:]
+
+    return cur
