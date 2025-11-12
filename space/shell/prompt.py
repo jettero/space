@@ -85,7 +85,7 @@ from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl
 from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.menus import MultiColumnCompletionsMenu
 from prompt_toolkit.layout.processors import Processor, Transformation, TransformationInput
-from prompt_toolkit.formatted_text.utils import split_lines, to_formatted_text
+from prompt_toolkit.formatted_text.utils import to_formatted_text
 from prompt_toolkit.key_binding.bindings.scroll import (
     scroll_half_page_down,
     scroll_half_page_up,
@@ -217,7 +217,8 @@ class Shell(BaseShell):
         bindings = merge_key_bindings([load_key_bindings(), custom_bindings])
 
         self._prompt_text = "/space/ "
-        self._messages = deque(maxlen=800)
+        self._message_limit = 800
+        self._messages = deque()
         self._message_line_tokens = [[]]
         self._stderr_handler = None
 
@@ -308,10 +309,59 @@ class Shell(BaseShell):
             handler.addFilter(kwf)
 
     def receive_message(self, msg):
+        doc = self._message_buffer.document
+        previous_cursor = doc.cursor_position
+        at_end = previous_cursor >= len(doc.text)
         text = msg.render_text(color=self.color)
         plain = msg.render_text(color=False)
         log.debug("receive_message(%s)", text)
-        self._append_message(text, plain)
+        if len(self._messages) == self._message_limit:
+            self._messages.popleft()
+            rebuilt_lines = [[]]
+            rebuilt_parts = []
+            for index, (cached_text, cached_plain) in enumerate(self._messages):
+                if index:
+                    rebuilt_parts.append("\n")
+                rebuilt_parts.append(cached_plain)
+                chunk = ("\n" if index else "") + (cached_text if self.color else cached_plain)
+                fragments = to_formatted_text(ANSI(chunk) if self.color else chunk)
+                line = rebuilt_lines[-1]
+                for style, string, *handler in fragments:
+                    if (pieces := string.split("\n"))[:-1]:
+                        for piece in pieces[:-1]:
+                            line.append((style, piece, *handler))
+                            rebuilt_lines.append([])
+                            line = rebuilt_lines[-1]
+                    line.append((style, pieces[-1], *handler))
+            rebuilt_text = "".join(rebuilt_parts)
+            self._message_buffer.set_document(
+                Document(rebuilt_text, len(rebuilt_text) if at_end else min(previous_cursor, len(rebuilt_text))),
+                bypass_readonly=True,
+            )
+            self._message_line_tokens = rebuilt_lines if rebuilt_lines else [[]]
+            doc = self._message_buffer.document
+            previous_cursor = doc.cursor_position
+        separator = "\n" if self._messages else ""
+        append_plain = f"{separator}{plain}" if separator else plain
+        source = f"{separator}{text}" if self.color else f"{separator}{plain}"
+        fragments = to_formatted_text(ANSI(source) if self.color else source)
+        line = self._message_line_tokens[-1] if self._message_line_tokens else []
+        if not self._message_line_tokens:
+            self._message_line_tokens = [line]
+        for style, string, *handler in fragments:
+            if (pieces := string.split("\n"))[:-1]:
+                for piece in pieces[:-1]:
+                    line.append((style, piece, *handler))
+                    self._message_line_tokens.append([])
+                    line = self._message_line_tokens[-1]
+            line.append((style, pieces[-1], *handler))
+        new_text = f"{doc.text}{append_plain}"
+        self._message_buffer.set_document(
+            Document(new_text, len(new_text) if at_end else min(previous_cursor, len(new_text))),
+            bypass_readonly=True,
+        )
+        self._messages.append((text, plain))
+        self.application.invalidate()
 
     def do_step(self, cmd):
         if cmd and not self.internal_command(cmd):
@@ -370,22 +420,6 @@ class Shell(BaseShell):
         super().stop(val=val, msg=msg)
         if self.application.is_running:
             self.application.exit()
-
-    def _append_message(self, text, plain):
-        previous_cursor = self._message_buffer.cursor_position
-        at_end = previous_cursor >= len(self._message_buffer.text)
-        self._messages.append((text, plain))
-        combined_plain = "\n".join(chunk[1] for chunk in self._messages)
-        fragments = to_formatted_text(ANSI("\n".join(chunk[0] for chunk in self._messages)) if self.color else combined_plain)
-        self._message_buffer.set_document(
-            Document(
-                combined_plain,
-                len(combined_plain) if at_end else min(previous_cursor, len(combined_plain)),
-            ),
-            bypass_readonly=True,
-        )
-        self._message_line_tokens = list(split_lines(fragments))
-        self.application.invalidate()
 
     def _scroll_messages_with(self, handler, event):
         layout = event.app.layout
