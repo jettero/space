@@ -108,7 +108,7 @@ class _MessageProcessor(Processor):
         self.shell = shell
 
     def apply_transformation(self, transformation_input: TransformationInput):
-        tokens = self.shell._message_line_tokens
+        tokens = self.shell.message_line_tokens
         if transformation_input.lineno >= len(tokens):
             return Transformation([])
         return Transformation(tokens[transformation_input.lineno][:])
@@ -163,7 +163,8 @@ class ShellCompleter(Completer):
 
 class Shell(BaseShell):
     color = True
-    _logging_opts = None
+    logging_opts = None
+    message_limit = 800
 
     def startup(self, init=None):
         completer = ShellCompleter(self)
@@ -216,22 +217,18 @@ class Shell(BaseShell):
 
         bindings = merge_key_bindings([load_key_bindings(), custom_bindings])
 
-        self._prompt_text = "/space/ "
-        self._message_limit = 800
-        self._messages = deque()
-        self._message_line_tokens = [[]]
-        self._stderr_handler = None
+        self.message_queue = deque()
+        self.message_line_tokens = [[]]
+        self.stderr_handler = None
 
-        self._message_buffer = Buffer(read_only=True)
-        self._message_processor = _MessageProcessor(self)
-        self.message_control = BufferControl(
-            buffer=self._message_buffer,
-            focus_on_click=True,
-            input_processors=[self._message_processor],
-            include_default_input_processors=False,
-        )
-        self._message_window = Window(
-            content=self.message_control,
+        self.message_buffer = Buffer(read_only=True)
+        self.message_window = Window(
+            content=BufferControl(
+                buffer=self.message_buffer,
+                focus_on_click=True,
+                input_processors=[_MessageProcessor(self)],
+                include_default_input_processors=False,
+            ),
             wrap_lines=True,
             always_hide_cursor=True,
             height=Dimension(weight=1),
@@ -239,53 +236,46 @@ class Shell(BaseShell):
 
         self.input_buffer = Buffer(
             completer=completer,
-            complete_while_typing=False,
             multiline=False,
             accept_handler=self._accept_input,
         )
-        self.input_control = BufferControl(buffer=self.input_buffer, focus_on_click=True)
-        prompt_window = Window(
-            content=FormattedTextControl(lambda: self._prompt_text),
+        self.input_window = Window(
+            content=BufferControl(buffer=self.input_buffer, focus_on_click=True),
             dont_extend_height=True,
-            width=len(self._prompt_text),
-            always_hide_cursor=True,
-        )
-        self._input_window = Window(
-            content=self.input_control,
-            dont_extend_height=True,
-        )
-
-        bottom = VSplit(
-            [
-                prompt_window,
-                self._input_window,
-            ],
-            height=Dimension.exact(1),
-        )
-
-        body = HSplit(
-            [
-                self._message_window,
-                Window(height=Dimension.exact(1), char="─"),
-                bottom,
-            ],
-            padding=0,
-        )
-
-        root = FloatContainer(
-            content=body,
-            floats=[
-                Float(
-                    content=MultiColumnCompletionsMenu(),
-                    attach_to_window=self._input_window,
-                    xcursor=True,
-                    ycursor=True,
-                )
-            ],
         )
 
         self.application = Application(
-            layout=Layout(root, focused_element=self._input_window),
+            layout=Layout(
+                FloatContainer(
+                    content=HSplit(
+                        [
+                            self.message_window,
+                            Window(height=Dimension.exact(1), char="─"),
+                            VSplit(
+                                [
+                                    Window(
+                                        content=FormattedTextControl(lambda: "/space/ "),
+                                        dont_extend_height=True,
+                                        width=len("/space/ "),
+                                        always_hide_cursor=True,
+                                    ),
+                                    self.input_window,
+                                ],
+                                height=Dimension.exact(1),
+                            ),
+                        ],
+                    ),
+                    floats=[
+                        Float(
+                            content=MultiColumnCompletionsMenu(),
+                            attach_to_window=self.input_window,
+                            xcursor=True,
+                            ycursor=True,
+                        )
+                    ],
+                ),
+                focused_element=self.input_window,
+            ),
             key_bindings=bindings,
             full_screen=True,
             editing_mode=EditingMode.VI,
@@ -297,29 +287,29 @@ class Shell(BaseShell):
 
     def reconfigure_logging(self, **kw):
         opts = {k: v for k, v in kw.items() if v is not None}
-        if isinstance(self._logging_opts, dict):
-            for key, value in self._logging_opts.items():
+        if isinstance(self.logging_opts, dict):
+            for key, value in self.logging_opts.items():
                 if key not in opts and value is not None:
                     opts[key] = value
-        self._logging_opts = opts
+        self.logging_opts = opts
         logging.root.handlers = []
-        logging.basicConfig(**self._logging_opts)
+        logging.basicConfig(**self.logging_opts)
         kwf = KeywordFilter("space.args")  # XXX: should be configurable
         for handler in logging.root.handlers:
             handler.addFilter(kwf)
 
     def receive_message(self, msg):
-        doc = self._message_buffer.document
+        doc = self.message_buffer.document
         previous_cursor = doc.cursor_position
         at_end = previous_cursor >= len(doc.text)
         text = msg.render_text(color=self.color)
         plain = msg.render_text(color=False)
         log.debug("receive_message(%s)", text)
-        if len(self._messages) == self._message_limit:
-            self._messages.popleft()
+        if len(self.message_queue) == self.message_limit:
+            self.message_queue.popleft()
             rebuilt_lines = [[]]
             rebuilt_parts = []
-            for index, (cached_text, cached_plain) in enumerate(self._messages):
+            for index, (cached_text, cached_plain) in enumerate(self.message_queue):
                 if index:
                     rebuilt_parts.append("\n")
                 rebuilt_parts.append(cached_plain)
@@ -334,33 +324,33 @@ class Shell(BaseShell):
                             line = rebuilt_lines[-1]
                     line.append((style, pieces[-1], *handler))
             rebuilt_text = "".join(rebuilt_parts)
-            self._message_buffer.set_document(
+            self.message_buffer.set_document(
                 Document(rebuilt_text, len(rebuilt_text) if at_end else min(previous_cursor, len(rebuilt_text))),
                 bypass_readonly=True,
             )
-            self._message_line_tokens = rebuilt_lines if rebuilt_lines else [[]]
-            doc = self._message_buffer.document
+            self.message_line_tokens = rebuilt_lines if rebuilt_lines else [[]]
+            doc = self.message_buffer.document
             previous_cursor = doc.cursor_position
-        separator = "\n" if self._messages else ""
+        separator = "\n" if self.message_queue else ""
         append_plain = f"{separator}{plain}" if separator else plain
         source = f"{separator}{text}" if self.color else f"{separator}{plain}"
         fragments = to_formatted_text(ANSI(source) if self.color else source)
-        line = self._message_line_tokens[-1] if self._message_line_tokens else []
-        if not self._message_line_tokens:
-            self._message_line_tokens = [line]
+        line = self.message_line_tokens[-1] if self.message_line_tokens else []
+        if not self.message_line_tokens:
+            self.message_line_tokens = [line]
         for style, string, *handler in fragments:
             if (pieces := string.split("\n"))[:-1]:
                 for piece in pieces[:-1]:
                     line.append((style, piece, *handler))
-                    self._message_line_tokens.append([])
-                    line = self._message_line_tokens[-1]
+                    self.message_line_tokens.append([])
+                    line = self.message_line_tokens[-1]
             line.append((style, pieces[-1], *handler))
         new_text = f"{doc.text}{append_plain}"
-        self._message_buffer.set_document(
+        self.message_buffer.set_document(
             Document(new_text, len(new_text) if at_end else min(previous_cursor, len(new_text))),
             bypass_readonly=True,
         )
-        self._messages.append((text, plain))
+        self.message_queue.append((text, plain))
         self.application.invalidate()
 
     def do_step(self, cmd):
@@ -424,7 +414,7 @@ class Shell(BaseShell):
     def _scroll_messages_with(self, handler, event):
         layout = event.app.layout
         previous = layout.current_window
-        layout.focus(self._message_window)
+        layout.focus(self.message_window)
         handler(event)
         if previous is not None:
             layout.focus(previous)
@@ -441,11 +431,11 @@ class Shell(BaseShell):
 
     def _handle_application_exception(self, loop, context):
         exception = context.get("exception")
-        if self._stderr_handler is None:
-            self._stderr_handler = logging.StreamHandler(sys.stderr)
-            if isinstance(self._logging_opts, dict) and "format" in self._logging_opts:
-                self._stderr_handler.setFormatter(logging.Formatter(self._logging_opts["format"]))
-            logging.getLogger().addHandler(self._stderr_handler)
+        if self.stderr_handler is None:
+            self.stderr_handler = logging.StreamHandler(sys.stderr)
+            if isinstance(self.logging_opts, dict) and "format" in self.logging_opts:
+                self.stderr_handler.setFormatter(logging.Formatter(self.logging_opts["format"]))
+            logging.getLogger().addHandler(self.stderr_handler)
         if exception is None:
             msg = context.get("message", "unknown application error")
             log.error("unhandled application exception: %s", msg)
