@@ -8,15 +8,16 @@ from space.master import MasterControlProgram as MCP
 
 profile = False
 
+GET_BAUBLE = ["open door; sSW6s2w; get bauble; 2NEnn"]
+
 c = sys.argv[1:]
 if c[0:2] in (["get"], ["ubi"], ["get", "bauble"], ["bauble"], ["ubi"]):
-    c = ["open door; sSW6s2w; get bauble"]
+    c = GET_BAUBLE
 elif c[0:2] in (["lotsa", "say"], ["say", "alot"]):
     c = [f"say hiya{x}" for x in range(30)]
     c.append("/quit")
 elif c[0:1] in (["fill"],):
-    c = [
-        "open door; sSW6s2w; get bauble; l; l; l; smile; grin; bow",
+    c = [*GET_BAUBLE, "l; l; l; smile; grin; bow",
         *(f"say this is a thing I said (x={x})" for x in range(200)),
     ]
 elif c[0:1] in (["profile"],):
