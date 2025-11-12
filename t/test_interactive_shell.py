@@ -48,7 +48,7 @@ def test_scroll_history(shell_proc):
     assert base[0] == 177, msg
 
     # s-up: [1;2A
-    shell_proc.sendline('\x1b[1;2A')
+    shell_proc.sendline("\x1b[1;2A")
     base, msg = grab(shell_proc)
     assert len(base) == 23, msg
     assert base[-1] == 199, msg
