@@ -18,7 +18,7 @@ from prompt_toolkit.layout.containers import Window, FloatContainer, Float
 from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl
 from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.menus import MultiColumnCompletionsMenu
-from prompt_toolkit.formatted_text.utils import to_formatted_text
+from prompt_toolkit.formatted_text.utils import to_formatted_text, split_lines
 from prompt_toolkit.lexers import Lexer
 from prompt_toolkit.key_binding.bindings.scroll import (
     scroll_half_page_down,
@@ -155,7 +155,7 @@ class Shell(BaseShell):
 
         bindings = merge_key_bindings([load_key_bindings(), custom_bindings])
 
-        self.message_queue = deque()
+        self.message_queue = deque(maxlen=self.message_limit)
         self.formatted_lines = [[]]
         self.stderr_handler = None
 
@@ -238,55 +238,22 @@ class Shell(BaseShell):
         doc = self.message_buffer.document
         previous_cursor = doc.cursor_position
         at_end = previous_cursor >= len(doc.text)
-        text = msg.render_text(color=self.color)
+        colored = msg.render_text(color=True)
         plain = msg.render_text(color=False)
-        log.debug("receive_message(%s)", text)
-        if len(self.message_queue) == self.message_limit:
-            self.message_queue.popleft()
-            rebuilt_lines = [[]]
-            rebuilt_parts = []
-            for index, (cached_text, cached_plain) in enumerate(self.message_queue):
-                if index:
-                    rebuilt_parts.append("\n")
-                rebuilt_parts.append(cached_plain)
-                chunk = ("\n" if index else "") + (cached_text if self.color else cached_plain)
-                fragments = to_formatted_text(ANSI(chunk) if self.color else chunk)
-                line = rebuilt_lines[-1]
-                for style, string, *handler in fragments:
-                    if (pieces := string.split("\n"))[:-1]:
-                        for piece in pieces[:-1]:
-                            line.append((style, piece, *handler))
-                            rebuilt_lines.append([])
-                            line = rebuilt_lines[-1]
-                    line.append((style, pieces[-1], *handler))
-            rebuilt_text = "".join(rebuilt_parts)
-            self.message_buffer.set_document(
-                Document(rebuilt_text, len(rebuilt_text) if at_end else min(previous_cursor, len(rebuilt_text))),
-                bypass_readonly=True,
-            )
-            self.formatted_lines = rebuilt_lines if rebuilt_lines else [[]]
-            doc = self.message_buffer.document
-            previous_cursor = doc.cursor_position
-        separator = "\n" if self.message_queue else ""
-        append_plain = f"{separator}{plain}" if separator else plain
-        source = f"{separator}{text}" if self.color else f"{separator}{plain}"
-        fragments = to_formatted_text(ANSI(source) if self.color else source)
-        line = self.formatted_lines[-1] if self.formatted_lines else []
-        if not self.formatted_lines:
-            self.formatted_lines = [line]
-        for style, string, *handler in fragments:
-            if (pieces := string.split("\n"))[:-1]:
-                for piece in pieces[:-1]:
-                    line.append((style, piece, *handler))
-                    self.formatted_lines.append([])
-                    line = self.formatted_lines[-1]
-            line.append((style, pieces[-1], *handler))
-        new_text = f"{doc.text}{append_plain}"
+        log.debug("receive_message(%s)", colored)
+        self.message_queue.append((colored, plain))
+        display_source = plain_text = "\n".join(entry[1] for entry in self.message_queue)
+        if self.color:
+            display_source = "\n".join(entry[0] for entry in self.message_queue)
+            fragments = to_formatted_text(ANSI(display_source))
+        else:
+            fragments = to_formatted_text(display_source)
+        lines = [list(line) for line in split_lines(fragments)]
+        self.formatted_lines = lines if lines else [[]]
         self.message_buffer.set_document(
-            Document(new_text, len(new_text) if at_end else min(previous_cursor, len(new_text))),
+            Document(plain_text, len(plain_text) if at_end else min(previous_cursor, len(plain_text))),
             bypass_readonly=True,
         )
-        self.message_queue.append((text, plain))
         self.application.invalidate()
 
     def do_step(self, cmd):
