@@ -1,0 +1,38 @@
+CHANGELOG
+=========
+
+3.0.1: 2023-02-21
+-----------------
+
+Fixes:
+- Honor input encoding for sys.stdin when reading piped data.
+- Accept input/output arguments for Pager.
+- Several fixes related to newer prompt_toolkit versions.
+
+
+3.0.0: 2020-03-06
+-----------------
+
+- Upgrade to prompt_toolkit 3.0
+- Dropping support for prompt_toolkit 2.0 and Python 2.7.
+
+- Added type annotations everywhere.
+- Fixed some issues when displaying local files.
+
+
+0.5: 2018-11-28
+---------------
+
+- Added missing dependency: 'six'.
+
+
+0.4: 2018-11-28
+---------------
+
+- Upgrade to prompt_toolkit 3.0.
+
+
+0.3: 2018-07-22
+---------------
+
+- Upgrade to prompt_toolkit 2.0.
