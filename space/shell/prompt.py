@@ -170,7 +170,6 @@ class Shell(BaseShell):
             always_hide_cursor=True,
             height=Dimension(weight=1),
         )
-        self.message_buffer = self.message_window.content.buffer
 
         self.input_window = Window(
             content=BufferControl(
@@ -235,7 +234,7 @@ class Shell(BaseShell):
             handler.addFilter(kwf)
 
     def receive_message(self, msg):
-        doc = self.message_buffer.document
+        doc = self.message_window.content.buffer.document
         previous_cursor = doc.cursor_position
         at_end = previous_cursor >= len(doc.text)
         colored = msg.render_text(color=True)
@@ -250,7 +249,7 @@ class Shell(BaseShell):
             fragments = to_formatted_text(display_source)
         lines = [list(line) for line in split_lines(fragments)]
         self.formatted_lines = lines if lines else [[]]
-        self.message_buffer.set_document(
+        self.message_window.content.buffer.set_document(
             Document(plain_text, len(plain_text) if at_end else min(previous_cursor, len(plain_text))),
             bypass_readonly=True,
         )
