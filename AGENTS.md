@@ -15,6 +15,7 @@
 - avoid using `pytest_run` unless you need it. it costs many tokens to use
 - you can't run `lrun-shell.py` in any way due to the above pty allocation issue, stop trying
 - you should use `black -l 127` as a basic syntax check. I have to run that anyway due to pre-commit constraint.
+- before using introspection to figure out `prompt_toolkit` syntax, please scan the reference doc in `contrib/pt_doc.html`
 
 # HARD CONSTRAINTS
 - never try to do this: `from t.shellexpect import ShellExpect, render_terminal`; it won't work cuz it requires a PTY
