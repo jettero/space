@@ -110,3 +110,6 @@ class BaseShell:
         if self.owner.location.pos != p0:
             self.owner.do("look")
         return ok
+
+    def handle_application_exception(self, loop, context):
+        pass
