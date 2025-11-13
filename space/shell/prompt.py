@@ -19,12 +19,6 @@ from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.menus import MultiColumnCompletionsMenu
 from prompt_toolkit.formatted_text.utils import to_formatted_text, to_plain_text
 from prompt_toolkit.lexers import Lexer
-from prompt_toolkit.key_binding.bindings.scroll import (
-    scroll_half_page_down,
-    scroll_half_page_up,
-    scroll_page_down,
-    scroll_page_up,
-)
 from prompt_toolkit.key_binding.defaults import load_key_bindings
 from prompt_toolkit.key_binding.key_bindings import merge_key_bindings
 
@@ -48,6 +42,9 @@ class SpaceMessageLog:
 
     def __bool__(self):
         return bool(self.lines)
+
+    def __len__(self):
+        return len(self.lines)
 
     def __getitem__(self, i):
         try:
@@ -151,19 +148,23 @@ class Shell(BaseShell):
 
         @custom_bindings.add("s-up")
         def _(event):
-            self._scroll_messages_with(scroll_half_page_up, event)
+            r = self.message_window.render_info
+            b = self.message_window.content.buffer
+            h = max(5, r.window_height // 2)
+            f = r.first_visible_line()
+            i = b.document.translate_row_col_to_index(f - h, 0)
+            log.debug("scroll-up event: sheight=%d fvl=%d index=%d", h, f, i)
+            b.cursor_position = i
 
         @custom_bindings.add("s-down")
         def _(event):
-            self._scroll_messages_with(scroll_half_page_down, event)
-
-        @custom_bindings.add("pageup")
-        def _(event):
-            self._scroll_messages_with(scroll_page_up, event)
-
-        @custom_bindings.add("pagedown")
-        def _(event):
-            self._scroll_messages_with(scroll_page_down, event)
+            r = self.message_window.render_info
+            b = self.message_window.content.buffer
+            h = max(5, r.window_height // 2)
+            l = r.last_visible_line()
+            i = b.document.translate_row_col_to_index(l + h, 0)
+            log.debug("scroll-dn event: sheight=%d lvl=%d index=%d", h, l, i)
+            b.cursor_position = i
 
         @custom_bindings.add("c-d")
         def _(event):
@@ -185,18 +186,18 @@ class Shell(BaseShell):
 
         self.message_window = Window(
             content=BufferControl(
-                buffer=Buffer(read_only=True),
+                buffer=Buffer(name="msg buf", read_only=True),
                 include_default_input_processors=False,
                 lexer=SpaceMessageLexer(self.message_log),
             ),
-            wrap_lines=True,
-            always_hide_cursor=True,
+            wrap_lines=False,
+            always_hide_cursor=False,
             height=Dimension(weight=1),
         )
 
         self.input_window = Window(
             content=BufferControl(
-                buffer=Buffer(completer=completer, multiline=False, accept_handler=self._accept_input),
+                buffer=Buffer(name="input buf", completer=completer, multiline=False, accept_handler=self._accept_input),
             ),
             dont_extend_height=True,
         )
@@ -214,7 +215,7 @@ class Shell(BaseShell):
                                         content=FormattedTextControl(lambda: "/space/ "),
                                         dont_extend_height=True,
                                         width=len("/space/ "),
-                                        always_hide_cursor=True,
+                                        always_hide_cursor=False,
                                     ),
                                     self.input_window,
                                 ],
@@ -321,11 +322,6 @@ class Shell(BaseShell):
         super().stop(val=val, msg=msg)
         if self.application.is_running:
             self.application.exit()
-
-    def _scroll_messages_with(self, handler, event):
-        event.app.layout.focus(self.message_window)
-        handler(event)
-        event.app.layout.focus(self.input_window)
 
     def _accept_input(self, buff):
         if line := buff.text.strip():
