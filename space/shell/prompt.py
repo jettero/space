@@ -17,7 +17,7 @@ from prompt_toolkit.layout.containers import Window, FloatContainer, Float
 from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl
 from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.menus import MultiColumnCompletionsMenu
-from prompt_toolkit.formatted_text.utils import fragment_list_to_text, split_lines, to_formatted_text
+from prompt_toolkit.formatted_text.utils import to_formatted_text, to_plain_text
 from prompt_toolkit.lexers import Lexer
 from prompt_toolkit.key_binding.bindings.scroll import (
     scroll_half_page_down,
@@ -36,57 +36,35 @@ from space.verb import VERBS
 log = logging.getLogger(__name__)
 
 
-class SpaceMessageRecord:
-    __slots__ = ("lines", "plain_text")
-
-    def __init__(self, message):
-        fragments = list(to_formatted_text(ANSI(message.render_text(color=True))))
-        plain_text = fragment_list_to_text(fragments)
-        if not plain_text.endswith("\n"):
-            fragments.append(((fragments[-1][0] if fragments else ""), "\n"))
-            plain_text = f"{plain_text}\n"
-        self.lines = list(split_lines(fragments))
-        self.plain_text = plain_text
-
-
 class SpaceMessageLog:
-    def __init__(self, limit):
+    def __init__(self, limit=1000, color=True):
         self.limit = limit
-        self.records = []
-        self.offsets = []
-        self._text = ""
+        self.color = color
+        self.lines = list()
+        self.plain = list()
 
-    @property
-    def text(self):
-        return self._text
+    def __len__(self):
+        return len(self.lines)
 
-    @property
-    def total_lines(self):
-        return self.offsets[-1] if self.offsets else 0
+    def __bool__(self):
+        return bool(self.lines)
 
-    def append(self, message):
-        record = SpaceMessageRecord(message)
-        self.records.append(record)
-        self.offsets.append((self.offsets[-1] if self.offsets else 0) + len(record.lines))
-        self._text = f"{self._text}{record.plain_text}"
-        trimmed = False
-        if len(self.records) > self.limit:
-            trimmed = True
-            removed_lines = len(self.records.pop(0).lines)
-            self.offsets.pop(0)
-            if self.offsets:
-                self.offsets = [offset - removed_lines for offset in self.offsets]
-            self._text = "".join(r.plain_text for r in self.records)
-        return record, trimmed
-
-    def line_tokens(self, index):
-        if index < 0 or index >= self.total_lines:
+    def __getitem__(self, i):
+        try:
+            return to_formatted_text(ANSI(self.lines[i]))
+        except IndexError:
             return []
-        record_index = bisect_right(self.offsets, index)
-        base = 0 if record_index == 0 else self.offsets[record_index - 1]
-        line = self.records[record_index].lines[index - base]
-        log.debug("line_tokens(%s) -> %r", index, line)
-        return list(line)
+
+    def append(self, msg):
+        new_lines = msg.render_text(color=self.color).split("\n")
+        self.lines += new_lines
+        self.plain += [to_plain_text(x) for x in new_lines]
+        d = len(self.lines) - self.limit
+        if d < 0:
+            self.lines = self.lines[d:]
+            self.plain = self.lines[d:]
+        self.text = "\n".join(self.plain)
+        log.debug("SpaceMessageLog.append() len(lines)=%d len(plain)=%d", len(self.lines), len(self.plain))
 
 
 class SpaceMessageLexer(Lexer):
@@ -94,11 +72,8 @@ class SpaceMessageLexer(Lexer):
         self.log = log
 
     def lex_document(self, document):
-        if not (total := self.log.total_lines):
-            return lambda _: []
-
         def get_line(i):
-            return self.log.line_tokens(i)
+            return self.log[i]
 
         return get_line
 
@@ -206,13 +181,11 @@ class Shell(BaseShell):
 
         bindings = merge_key_bindings([load_key_bindings(), custom_bindings])
 
-        self.message_log = SpaceMessageLog(self.message_limit)
-        self.stderr_handler = None
+        self.message_log = SpaceMessageLog(limit=self.message_limit, color=self.color)
 
         self.message_window = Window(
             content=BufferControl(
                 buffer=Buffer(read_only=True),
-                focus_on_click=True,
                 include_default_input_processors=False,
                 lexer=SpaceMessageLexer(self.message_log),
             ),
@@ -224,7 +197,6 @@ class Shell(BaseShell):
         self.input_window = Window(
             content=BufferControl(
                 buffer=Buffer(completer=completer, multiline=False, accept_handler=self._accept_input),
-                focus_on_click=True,
             ),
             dont_extend_height=True,
         )
@@ -284,15 +256,15 @@ class Shell(BaseShell):
             handler.addFilter(kwf)
 
     def receive_message(self, msg):
-        doc = self.message_window.content.buffer.document
-        previous_cursor = doc.cursor_position
-        at_end = previous_cursor >= len(doc.text)
-        log.debug("receive_message(%s) cursor=%d at_end=%s", msg.render_text(color=True), previous_cursor, at_end)
+        buf = self.message_window.content.buffer
+        pos = buf.document.cursor_position
+        end = buf.document.is_cursor_at_the_end
+        log.debug("receive_message(pos=%d end=%s)", pos, end)
         self.message_log.append(msg)
-        buffer = self.message_window.content.buffer
-        new_text = self.message_log.text
-        cursor = len(new_text) if at_end else min(previous_cursor, len(new_text))
-        buffer.set_document(Document(new_text, cursor), bypass_readonly=True)
+        if end:
+            pos = len(self.message_log.text)
+            log.debug("  at end, setting pos=%d", pos)
+        buf.set_document(Document(self.message_log.text, pos), bypass_readonly=True)
         self.application.invalidate()
 
     def do_step(self, cmd):
@@ -351,12 +323,9 @@ class Shell(BaseShell):
             self.application.exit()
 
     def _scroll_messages_with(self, handler, event):
-        layout = event.app.layout
-        previous = layout.current_window
-        layout.focus(self.message_window)
+        event.app.layout.focus(self.message_window)
         handler(event)
-        if previous is not None:
-            layout.focus(previous)
+        event.app.layout.focus(self.input_window)
 
     def _accept_input(self, buff):
         if line := buff.text.strip():
@@ -368,11 +337,10 @@ class Shell(BaseShell):
 
     def handle_application_exception(self, loop, context):
         exception = context.get("exception")
-        if self.stderr_handler is None:
-            self.stderr_handler = logging.StreamHandler(sys.stderr)
-            if isinstance(self.logging_opts, dict) and "format" in self.logging_opts:
-                self.stderr_handler.setFormatter(logging.Formatter(self.logging_opts["format"]))
-            logging.getLogger().addHandler(self.stderr_handler)
+        stderr_handler = logging.StreamHandler(sys.stderr)
+        if isinstance(self.logging_opts, dict) and "format" in self.logging_opts:
+            stderr_handler.setFormatter(logging.Formatter(self.logging_opts["format"]))
+        logging.getLogger().addHandler(stderr_handler)
         if exception is None:
             msg = context.get("message", "unknown application error")
             log.error("unhandled application exception: %s", msg)

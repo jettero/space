@@ -47,6 +47,8 @@ class MapMessage(Message):
         super().__init__()
         self.map = a_map
         if tb is None:
+            from .find import this_body
+
             tb = this_body()
         if tb is None:
             raise ValueError("this-body must be supplied if this_body() is unset")
@@ -54,7 +56,6 @@ class MapMessage(Message):
 
     def render_text(self, color=True):
         from .map.util import LineSeg
-        from .find import this_body
 
         def dist(pos1, pos2):
             return LineSeg(pos1, pos2).distance
