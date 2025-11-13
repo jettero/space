@@ -48,8 +48,8 @@ class MapMessage(Message):
         self.map = a_map
 
     def render_text(self, color=True):
-        from ..map.util import LineSeg
-        from ..find import this_body
+        from .map.util import LineSeg
+        from .find import this_body
 
         def dist(pos1, pos2):
             return LineSeg(pos1, pos2).distance
