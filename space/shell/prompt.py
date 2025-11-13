@@ -1,6 +1,5 @@
 # coding: utf-8
 
-import asyncio
 import os
 import sys
 from bisect import bisect_right
@@ -156,7 +155,7 @@ class Shell(BaseShell):
     logging_opts = None
     message_limit = 800
 
-    def startup(self, init=None):
+    def preflight(self, init=None):
         completer = ShellCompleter(self)
         custom_bindings = KeyBindings()
 
@@ -320,13 +319,10 @@ class Shell(BaseShell):
     def step(self):
         pass
 
-    def loop(self):
+    def start(self):
         if not self.application.is_running and not self._stop:
             try:
-                self.application.run(
-                    pre_run=self._install_exception_handler,
-                    set_exception_handler=False,
-                )
+                self.application.run(set_exception_handler=False)
             except EOFError:
                 self.stop()
 
@@ -370,10 +366,7 @@ class Shell(BaseShell):
             self.do_step(line)
         return True
 
-    def _install_exception_handler(self):
-        asyncio.get_running_loop().set_exception_handler(self._handle_application_exception)
-
-    def _handle_application_exception(self, loop, context):
+    def handle_application_exception(self, loop, context):
         exception = context.get("exception")
         if self.stderr_handler is None:
             self.stderr_handler = logging.StreamHandler(sys.stderr)

@@ -24,9 +24,9 @@ class BaseShell:
     def __init__(self, owner=None, init=None):
         if owner is not None:
             owner.shell = self
-        self.startup(init=init)
+        self.preflight(init=init)
 
-    def startup(self, init=None):
+    def preflight(self, init=None):
         pass
 
     @property
@@ -66,7 +66,7 @@ class BaseShell:
     def step(self):
         raise NotImplementedError()
 
-    def loop(self):
+    def start(self):
         raise NotImplementedError()
 
     def stop(self, val=True, msg="see ya."):

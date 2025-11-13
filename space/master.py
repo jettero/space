@@ -3,6 +3,7 @@
 
 # WE ARE THE MASTER CONTROL PROGRAM
 
+import asyncio
 import threading
 import time
 import heapq
@@ -54,7 +55,8 @@ class MasterControlProgram:
             self.every(4.0, self.step_map_shells)
 
         shell = PromptShell(owner=body, init=init)
-        shell.loop()
+        asyncio.get_event_loop_policy().get_event_loop().set_exception_handler(shell.handle_application_exception)
+        shell.start()
 
     # --- Timers -----------------------------------------------------------
     def start_timers(self):
