@@ -11,7 +11,7 @@ class Action(Verb):
     def do_sheet(self):
         """Display basic character sheet with core stats."""
 
-        from ..shell.message import BoxMessage
+        from ..msg import BoxMessage
 
         # name
         lines = [

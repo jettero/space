@@ -8,7 +8,7 @@ class Action(Verb):
     nick = ["i", "inv"]
 
     def do_inventory(self):
-        from ..shell.message import BoxMessage
+        from ..msg import BoxMessage
 
         self.simple_action("$N $vinventory $p stuff.")
         entries = []  # (slot_label, item_name, mass_str)

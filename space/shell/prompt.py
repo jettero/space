@@ -287,11 +287,10 @@ class Shell(BaseShell):
         doc = self.message_window.content.buffer.document
         previous_cursor = doc.cursor_position
         at_end = previous_cursor >= len(doc.text)
-        log.debug("receive_message(%s)", msg.render_text(color=True))
+        log.debug("receive_message(%s) cursor=%d at_end=%s", msg.render_text(color=True), previous_cursor, at_end)
         self.message_log.append(msg)
         buffer = self.message_window.content.buffer
         new_text = self.message_log.text
-        log.debug("buffer tail: %r", new_text[-200:])
         cursor = len(new_text) if at_end else min(previous_cursor, len(new_text))
         buffer.set_document(Document(new_text, cursor), bypass_readonly=True)
         self.application.invalidate()
@@ -360,10 +359,11 @@ class Shell(BaseShell):
             layout.focus(previous)
 
     def _accept_input(self, buff):
-        line = buff.text.strip()
-        buff.set_document(Document("", 0))
-        if line:
+        if line := buff.text.strip():
+            # buff is the commandline input buffer, so if we got a command, we
+            # should do the needful
             self.do_step(line)
+        buff.set_document(Document("", 0))
         return True
 
     def handle_application_exception(self, loop, context):

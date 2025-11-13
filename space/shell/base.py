@@ -9,7 +9,7 @@ from ..util import weakify
 
 from ..verb.quit import IntentionalQuit
 from ..parser import parse
-from .message import TextMessage, MapMessage, Message
+from ..msg import TextMessage, MapMessage, Message
 
 from ..map.dir_util import is_direction_string
 from ..map import Map

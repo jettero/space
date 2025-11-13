@@ -219,7 +219,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
         return False, {"error": "look at what?"}
 
     def do_look(self):
-        from ..shell.message import MapMessage
+        from ..msg import MapMessage
 
         self.simple_action("$N $vlook around.")
         self.tell(MapMessage(self.location.map.visicalc_submap(self)))
