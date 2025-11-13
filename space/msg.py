@@ -43,9 +43,14 @@ class TextMessage(Message):
 
 
 class MapMessage(Message):
-    def __init__(self, a_map):
+    def __init__(self, a_map, tb=None):
         super().__init__()
         self.map = a_map
+        if tb is None:
+            tb = this_body()
+        if tb is None:
+            raise ValueError("this-body must be supplied if this_body() is unset")
+        self.tb = tb
 
     def render_text(self, color=True):
         from .map.util import LineSeg
@@ -54,11 +59,10 @@ class MapMessage(Message):
         def dist(pos1, pos2):
             return LineSeg(pos1, pos2).distance
 
-        tb = this_body()
         txt = self.map.colorized_text_drawing if color else self.map.text_drawing
-        tbp = tb.location.pos
+        tbp = self.tb.location.pos
         dob = sorted([(dist(tbp, o.location.pos), o) for o in self.map.objects], key=lambda x: x[0])
-        dob = [(f"{o[0]:0.1f}", o[1]) for o in dob if o[1] is not tb]
+        dob = [(f"{o[0]:0.1f}", o[1]) for o in dob if o[1] is not self.tb]
         if dob:
             mdob = max([len(o[0]) for o in dob])
             for dist, o in dob:
