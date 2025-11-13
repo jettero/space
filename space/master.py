@@ -16,13 +16,7 @@ from space.shell.mob import Shell as MobShell
 
 
 class MasterControlProgram:
-    """Minimal MCP for local instances.
-
-    For now, supports starting a local interactive shell instance by wiring a
-    provided body (owner) and optional prebuilt map/objects. This mirrors what
-    lrun-shell.py currently does but centralizes the boot logic here so future
-    transports (ssh/telnet) can call the same entry point.
-    """
+    """Minimal MCP for local shells with a shared timer scheduler."""
 
     def __init__(self):
         # lightweight timer scheduler
@@ -37,15 +31,7 @@ class MasterControlProgram:
         self.body = None
 
     def start_instance(self, type="local", username=None, map=None, body=None, init=None):  # pylint: disable=redefined-builtin
-        """Start an instance.
-
-        Args:
-            type: instance type; only 'local' supported for now.
-            username: informational; unused for now.
-            map: optional map to render on look; can be None.
-            body: the Living to own the shell; required.
-            init: list/tuple of initial commands.
-        """
+        """Run a local PromptShell for `body`; optional `map` enables mob stepping."""
         if type != "local":
             raise NotImplementedError("only local instances supported")
         if not isinstance(body, HasShell):
@@ -65,17 +51,14 @@ class MasterControlProgram:
         self.start_timers()
         if self.map is not None:
             # periodically step mob shells on this map
-            self.every(4.0, self._step_map_shells)
+            self.every(4.0, self.step_map_shells)
 
         shell = PromptShell(owner=body, init=init)
         shell.loop()
 
     # --- Timers -----------------------------------------------------------
     def start_timers(self):
-        """Start the background timer loop if not already running.
-
-        Best-effort timing; tasks may run late. Uses a single daemon thread.
-        """
+        """Idempotently spin up the background timer loop."""
         with self._timer_lock:
             if self._timers_running:
                 return
@@ -85,7 +68,7 @@ class MasterControlProgram:
         log.info("MCP timers started")
 
     def stop_timers(self):
-        """Stop the background timer loop. Tasks remaining will not run."""
+        """Stop the background timer loop without waiting long."""
         with self._timer_lock:
             if not self._timers_running:
                 return
@@ -97,15 +80,15 @@ class MasterControlProgram:
         log.info("MCP timers stopped")
 
     def call_out(self, fn: Callable, delay, *args, **kwargs):
-        """Schedule a one-shot call roughly after `delay` seconds."""
-        return self._schedule(delay, 0.0, fn, args, kwargs, kwargs.pop("label", None))
+        """Run `fn` once after `delay` seconds; forwards args/label and returns the timer handle."""
+        return self.schedule(delay, 0.0, fn, args, kwargs, kwargs.pop("label", None))
 
     def every(self, interval, fn: Callable, *args, **kwargs):
-        """Schedule a repeating call roughly every `interval` seconds."""
-        return self._schedule(interval, interval, fn, args, kwargs, kwargs.pop("label", None))
+        """Run `fn` every `interval` seconds until cancelled; same kwargs as `call_out`."""
+        return self.schedule(interval, interval, fn, args, kwargs, kwargs.pop("label", None))
 
     def cancel(self, label):
-        """Cancel tasks matching `label`. Best-effort; O(n) prune on next tick."""
+        """Remove pending tasks matching `label`; returns the number cleared."""
         with self._timer_lock:
             if not self._timer_heap:
                 return 0
@@ -120,7 +103,8 @@ class MasterControlProgram:
                 self._timer_cv.notify_all()
             return removed
 
-    def _schedule(self, delay, interval, fn, args, kwargs, label):
+    def schedule(self, delay, interval, fn, args, kwargs, label):
+        """Push a timer for `fn` after `delay`; reschedule every `interval` when > 0."""
         when = time.monotonic() + float(delay)
         with self._timer_lock:
             self._timer_counter += 1
@@ -163,9 +147,9 @@ class MasterControlProgram:
                     self._timer_cv.notify_all()
 
     # --- Helpers ----------------------------------------------------------
-    def _step_map_shells(self):
-        """Step all shells on a map (best-effort)."""
-        log.debug("timer: _step_map_shells")
+    def step_map_shells(self):
+        """Advance every HasShell on the active map (best-effort)."""
+        log.debug("timer: step_map_shells")
         # Iterate current snapshot to avoid issues if list mutates during stepping
         if self.map is None:
             return
