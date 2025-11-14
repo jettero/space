@@ -31,15 +31,15 @@ def parse(actor, input_text, parse_only=False):
 
     pop_to_args = None
 
+    routes = find_routes(actor, verbs, len(tokens))
+    rnames = set(x.name for x in routes)
+    if len(rnames) > 1:
+        raise E.ParseError(f'"{vtok}" is ambiguous and could mean any of: {", ".join(sorted(rnames))}')
+
     set_this_body(actor)
 
     errors = list()
-    for route in find_routes(actor, verbs):
-        if len(tokens) < len(route.can.ihint):
-            log.debug("pre-rejecting %s: not enough tokens to fill all ihints", route)
-            filled = False
-            continue
-
+    for route in routes:
         log.debug("considering route=%s", repr(route))
         filled = True
         max_ino = len(route.can.ihint) - 1
@@ -226,11 +226,11 @@ def list_match(name, objs, adj=list(), rtype=StdObj, aerr=None):
     return ret
 
 
-def find_routes(actor, verbs):
-    return tuple(sorted(_find_routes(actor, verbs), key=lambda x: x.score, reverse=True))
+def find_routes(actor, verbs, n):
+    return tuple(sorted(_find_routes(actor, verbs, n), key=lambda x: x.score, reverse=True))
 
 
-def _find_routes(actor, verbs):
+def _find_routes(actor, verbs, n):
     if isinstance(verbs, str):
         verbs = find_verb(verbs)
     for verb in verbs:
@@ -241,7 +241,11 @@ def _find_routes(actor, verbs):
                 can = FnMap(can, get_introspection_hints(can, imply_type_callback=implied_type))
                 do = FnMap(do, get_introspection_names(do))
                 score = sum(type_rank(x) for x in can.ihint)
-                yield Route(verb, can, do, score)
+                route = Route(verb, can, do, score)
+                if len(can.ihint) > n:
+                    log.debug("pre-rejecting %s: not enough tokens to fill all ihints", route)
+                    continue
+                yield route
 
 
 def implied_type(name):
