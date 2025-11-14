@@ -134,7 +134,9 @@ class Shell(BaseShell):
         self.reconfigure_logging(
             # XXX: this should require a filename arg and should be invoked by the
             # user we'll leave it for now cuz it's handy for debugging
-            filename="shell.log", format="%(asctime)s %(name)17s %(levelname)5s %(message)s", level=logging.DEBUG
+            filename="shell.log",
+            format="%(asctime)s %(name)17s %(levelname)5s %(message)s",
+            level=logging.DEBUG,
         )
 
         @custom_bindings.add("tab", filter=has_completions & ~completion_is_selected)
@@ -202,7 +204,7 @@ class Shell(BaseShell):
                 buffer=Buffer(name="input buf", completer=completer, multiline=False, accept_handler=self._accept_input),
             ),
             dont_extend_height=True,
-            wrap_lines=True
+            wrap_lines=True,
         )
 
         self.application = Application(
@@ -250,7 +252,7 @@ class Shell(BaseShell):
         try:
             # this is not the right way to do this. There's certainly an arg we
             # could provide to trunace the log
-            if self.logging_opts and (f := self.logging_opts.get('filename')):
+            if self.logging_opts and (f := self.logging_opts.get("filename")):
                 if os.path.isfile(f):
                     os.unlink(f)
         except FileNotFoundError:
