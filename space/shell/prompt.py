@@ -192,7 +192,7 @@ class Shell(BaseShell):
                 include_default_input_processors=False,
                 lexer=SpaceMessageLexer(self.message_log),
             ),
-            wrap_lines=False,
+            wrap_lines=True,
             always_hide_cursor=False,
             height=Dimension(weight=1),
         )
@@ -202,6 +202,7 @@ class Shell(BaseShell):
                 buffer=Buffer(name="input buf", completer=completer, multiline=False, accept_handler=self._accept_input),
             ),
             dont_extend_height=True,
+            wrap_lines=True
         )
 
         self.application = Application(
