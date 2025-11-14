@@ -246,6 +246,14 @@ class Shell(BaseShell):
                 self.do_step(cmd)
 
     def reconfigure_logging(self, **kw):
+        try:
+            # this is not the right way to do this. There's certainly an arg we
+            # could provide to trunace the log
+            if self.logging_opts and (f := self.logging_opts.get('filename')):
+                if os.path.isfile(f):
+                    os.unlink(f)
+        except FileNotFoundError:
+            pass
         opts = {k: v for k, v in kw.items() if v is not None}
         if isinstance(self.logging_opts, dict):
             for key, value in self.logging_opts.items():
