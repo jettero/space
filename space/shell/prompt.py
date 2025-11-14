@@ -59,7 +59,7 @@ class SpaceMessageLog:
         d = len(self.lines) - self.limit
         if d < 0:
             self.lines = self.lines[d:]
-            self.plain = self.lines[d:]
+            self.plain = self.plain[d:]
         self.text = "\n".join(self.plain)
         log.debug("SpaceMessageLog.append() len(lines)=%d len(plain)=%d", len(self.lines), len(self.plain))
 
