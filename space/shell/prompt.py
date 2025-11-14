@@ -132,6 +132,8 @@ class Shell(BaseShell):
         custom_bindings = KeyBindings()
 
         self.reconfigure_logging(
+            # XXX: this should require a filename arg and should be invoked by the
+            # user we'll leave it for now cuz it's handy for debugging
             filename="shell.log", format="%(asctime)s %(name)17s %(levelname)5s %(message)s", level=logging.DEBUG
         )
 
