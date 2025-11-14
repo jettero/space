@@ -1,11 +1,27 @@
 # coding: utf-8
 
-import re
+import io
 import logging
+import os
+import re
+from types import SimpleNamespace
 
 log = logging.getLogger(__name__)
 
 CC = re.compile(r"\x1b\[([\d;]*)([ABCDEFGHJKLMPXacdefghlmnqrsu])")
+
+from prompt_toolkit.application import create_app_session
+from prompt_toolkit.application.current import set_app
+from prompt_toolkit.buffer import CompletionState
+from prompt_toolkit.completion import CompleteEvent
+from prompt_toolkit.document import Document
+from prompt_toolkit.keys import Keys
+from prompt_toolkit.output.base import ColorDepth, Size
+from prompt_toolkit.output.vt100 import Vt100_Output
+
+from space.msg import TextMessage
+from space.shell import prompt as prompt_module
+from space.shell.prompt import Shell
 
 
 class Cursor:
@@ -350,3 +366,125 @@ def render_terminal(text, width=80, height=25):
     while len(lines) > minimum and lines[-1] == "":
         lines.pop()
     return lines, row, cursor.col
+
+
+DEFAULT_WIDTH = 80
+DEFAULT_HEIGHT = 25
+_KEY_MAP = {"shift-up": Keys.ShiftUp, "tab": Keys.Tab}
+
+
+def build_output(width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT):
+    stream = io.StringIO()
+    output = Vt100_Output(
+        stream,
+        lambda: Size(rows=height, columns=width),
+        term="xterm-256color",
+        default_color_depth=ColorDepth.DEPTH_24_BIT,
+        enable_bell=False,
+        enable_cpr=False,
+    )
+    return stream, output
+
+
+def find_binding(shell, name):
+    key = _KEY_MAP[name]
+    for binding in shell.application.key_bindings.get_bindings_for_keys((key,)):
+        if binding.handler.__qualname__.startswith("Shell.preflight"):
+            return binding.handler
+    raise KeyError(f"binding not found: {name}")
+
+
+class ShellEnv:
+    def __init__(self, width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT):
+        self.width = width
+        self.height = height
+        self.stream, self.output = build_output(width, height)
+        self.context = create_app_session(output=self.output)
+        self.context.__enter__()
+        self.shell = Shell()
+        for window in (self.shell.input_window, self.shell.message_window):
+            window.content.buffer._load_history_task = True
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+
+    def close(self):
+        if self.context is not None:
+            self.context.__exit__(None, None, None)
+            self.context = None
+
+    def render(self):
+        with set_app(self.shell.application):
+            self.shell.application.renderer.render(self.shell.application, self.shell.application.layout)
+        data = self.stream.getvalue()
+        self.stream.seek(0)
+        self.stream.truncate(0)
+        return data
+
+    def render_lines(self):
+        return render_terminal(self.render(), width=self.width, height=self.height)
+
+    def trigger(self, name, buffer=None):
+        handler = find_binding(self.shell, name)
+        target = buffer or self.shell.input_window.content.buffer
+        with set_app(self.shell.application):
+            handler(SimpleNamespace(current_buffer=target))
+
+    def set_document(self, doc):
+        buffer = self.shell.input_window.content.buffer
+        buffer.set_document(doc)
+        return buffer
+
+    def set_input_text(self, text):
+        return self.set_document(Document(text, len(text)))
+
+    def apply_completions(self, doc, completions, index=None):
+        buffer = self.set_document(doc)
+        buffer.complete_state = CompletionState(doc, completions, complete_index=index)
+        return buffer
+
+    def set_completions(self, text, index=0):
+        buffer = self.set_input_text(text)
+        doc = buffer.document
+        completions = list(buffer.completer.get_completions(doc, CompleteEvent(completion_requested=True)))
+        buffer.complete_state = CompletionState(doc, completions, complete_index=index)
+        return buffer, completions
+
+
+def shell_env(width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT):
+    return ShellEnv(width, height)
+
+
+def build_screen(messages=None, input_text="", width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT, setup=None):
+    items = messages or []
+    with ShellEnv(width, height) as env:
+        for message in items:
+            if isinstance(message, TextMessage):
+                env.shell.receive_message(message)
+            else:
+                env.shell.receive_message(TextMessage(message))
+        env.set_input_text(input_text)
+        if setup:
+            setup(env)
+        return env.render_lines()
+
+
+def find_completion_extension(env):
+    buffer = env.shell.input_window.content.buffer
+    completer = buffer.completer
+    for verb in sorted(prompt_module.VERBS):
+        for length in range(1, len(verb)):
+            prefix = verb[:length]
+            doc = Document(prefix, length)
+            completions = list(completer.get_completions(doc, CompleteEvent(completion_requested=True)))
+            matches = [c for c in completions if c.text.startswith(prefix)]
+            if len(matches) < 2:
+                continue
+            suffixes = [c.text[length:] for c in matches]
+            common = os.path.commonprefix(suffixes)
+            if common:
+                return doc, completions, common
+    raise ValueError("no completion prefix with shared suffix found")
