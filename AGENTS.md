@@ -6,19 +6,11 @@
     - use `kagi_fastgpt` if you need to search for examples or docs
     - use `kagi_summarize` if you want to check the contents of a specific URL
     - use `kagi_search` if you just want to quickly search for something
-    - if you cannot run a test because of a sandboxing issue, use `pytest_run`;
-      typical sandbox issues involve socket files and ptys and things.
-    - it is not necessary to use `pytest_run` for the rest of the tests.
-      `t/test_interactive_shell.py` is the only problem test
-- you can't run any part of `t/shellexpect.py` or the tests that use it because you can't allocate a pty due to your sandboxing.
-- this means you need `pytest_run` for `t/test_interactive_shell.py` and `t/test_shellexpect_render.py`
-- avoid using `pytest_run` unless you need it. it costs many tokens to use
-- you can't run `lrun-shell.py` in any way due to the above pty allocation issue, stop trying
+- you can't run `lrun-shell.py` in any way because you cannot allocate a PTY
 - you should use `black -l 127` as a basic syntax check. I have to run that anyway due to pre-commit constraint.
 - before using introspection to figure out `prompt_toolkit` syntax, please scan the reference doc in `contrib/pt_doc.html`
 
 # HARD CONSTRAINTS
-- never try to do this: `from t.shellexpect import ShellExpect, render_terminal`; it won't work cuz it requires a PTY
 - always tell me when you read this file (so I know for sure you see it on startup)
 - shorter is better and easier to read. don't spend 40 lines doing what you could do in 5
 - use the walrus operator (`if m := something`)
