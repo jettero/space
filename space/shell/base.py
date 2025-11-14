@@ -99,12 +99,12 @@ class BaseShell:
                         xp()
                         ok = True
                     else:
-                        self.receive_text(f"error: {xp.error}")
+                        self.receive_text(str(e))
                 except IntentionalQuit:
                     raise
                 except Exception as e:  # pylint: disable=broad-except
                     log.exception("during input: %s", input_text)
-                    self.receive_text(f"error: {e}")
+                    self.receive_text(str(e))
                     if reraise:
                         raise
         if self.owner.location.pos != p0:
