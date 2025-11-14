@@ -5,8 +5,6 @@ import pytest
 from space.shell.list import Shell as ListShell
 import logging
 
-from t.shellexpect import ShellExpect
-
 log = logging.getLogger(__name__)
 
 
@@ -72,13 +70,6 @@ def dd(me_dd_ss):
 @pytest.fixture
 def ss(me_dd_ss):
     return me_dd_ss[2]
-
-
-@pytest.fixture
-def shell_proc():
-    with ShellExpect("t.shell1") as p:
-        yield p
-        p.sendline("/quit")
 
 
 def pytest_sessionstart(session):
