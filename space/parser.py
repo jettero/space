@@ -32,7 +32,7 @@ def parse(actor, input_text, parse_only=False):
     pop_to_args = None
 
     routes = find_routes(actor, verbs, len(tokens))
-    rnames = set(x.name for x in routes)
+    rnames = set(x.verb.name for x in routes)
     if len(rnames) > 1:
         raise E.ParseError(f'"{vtok}" is ambiguous and could mean any of: {", ".join(sorted(rnames))}')
 
