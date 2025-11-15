@@ -116,3 +116,11 @@
 - You must keep scope clean by not adding one-shot names.
 - You must not remove single-use variables written by humans.
 - You must only remove single-use temps that you introduced.
+
+## Function Documentation
+- Write docstrings as short documents that plainly state what the function does; include inputs and key behaviors instead of vague summaries.
+- Wrap lines around 70–80 characters so the devs can read it -- document generators reflow these comments anyway
+- Close/open docstring triple quotes on their own line and leave a blank line between the docstring and the function body.
+- Use multi-paragraph docstrings when needed; keep them concise but cover important semantics like scoring, filtering, or other side effects.
+- annotate documented functions, since that's a very useful part of the documentation
+- avoid the @overload/... syntax if there's variable calling signatures, choose the single-pipe OR syntax for these cases
