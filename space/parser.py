@@ -1,12 +1,15 @@
 import shlex, inspect, logging, types
 from functools import lru_cache
 from collections import namedtuple
+from collections.abc import Iterable, Iterator
+from typing import overload
 
 from .find import find_verb, set_this_body
 import space.exceptions as E
 from .living import Living
 from .stdobj import StdObj
 from .util import get_introspection_hints, get_introspection_names
+from .verb import Verb
 
 log = logging.getLogger(__name__)
 
@@ -225,20 +228,22 @@ class FnMap(namedtuple("FM", ["fn", "ihint"])):
     def nargs(self):
         return len(self.ihint)
 
-    def nargs_ok(self, v):
-        if v is False:
-            return True
-        n = len(self.ihint)
-        if v > n and any(x.variadic for x in self.ihint):
-            return True
-        if v == n:
-            return True
-        return False
-
     @property
     def variadic(self):
         return any(x.variadic for x in self.ihint)
 
+    def nargs_ok(self, n: int) -> bool:
+        """
+        nargs_ok is True when a can_ route needs exactly `n` tokens or when `n`
+        is greater than the needed tokens, but at least one can_ arg is
+        variadic.
+        """
+        needed = len(self.ihint)
+        if n > needed and any(x.variadic for x in self.ihint):
+            return True
+        if n == needed:
+            return True
+        return False
 
 
 def list_match(name, objs, adj=list(), rtype=StdObj, aerr=None):
@@ -253,20 +258,33 @@ def list_match(name, objs, adj=list(), rtype=StdObj, aerr=None):
     return ret
 
 
-def find_routes(actor, verbs, n=False):
+def find_routes(actor: Living, verbs: str | Verb | Iterable[Verb], n: int | bool = False) -> tuple[Route, ...]:
+    """
+    Return every applicable can_/do route for `verbs` on `actor`.
+
+    The actor's can_ methods are introspected to discover matching routes,
+    each wrapped as a `Route` and scored so the most specific matches sort
+    first.
+
+    When `n` is provided, routes that require more tokens than remain are
+    removed before sorting.
+    """
+
+    if isinstance(verbs, str):
+        verbs = find_verb(verbs)
+    if isinstance(verbs, Verb):
+        verbs = [verbs]
     return tuple(sorted(_find_routes(actor, verbs, n), key=lambda x: x.score, reverse=True))
 
 
-def _find_routes(actor, verbs, n=False):
-    if isinstance(verbs, str):
-        verbs = find_verb(verbs)
+def _find_routes(actor: Living, verbs: Iterable[Verb], n: int | bool = False) -> Iterator[Route]:
     for verb in verbs:
         can_name = f"can_{verb.name}"
         for fn in [x for x in dir(actor) if x == can_name or x.startswith(f"{can_name}_")]:
             if do := getattr(actor, f"do_{fn[4:]}", False):
                 can = getattr(actor, fn, False)
                 can = FnMap(can, get_introspection_hints(can, imply_type_callback=implied_type))
-                if can.nargs_ok(n):
+                if n is False or can.nargs_ok(n):
                     do = FnMap(do, get_introspection_names(do))
                     score = sum(type_rank(x) for x in can.ihint)
                     route = Route(verb, can, do, score)
