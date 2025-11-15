@@ -212,6 +212,10 @@ class Route(namedtuple("R", ["verb", "can", "do", "score"])):
         return self.can.variadic
 
     @property
+    def multi(self):
+        return self.can.multi
+
+    @property
     def name(self):
         return self.can.fn.__name__[4:]
 
@@ -232,14 +236,18 @@ class FnMap(namedtuple("FM", ["fn", "ihint"])):
     def variadic(self):
         return any(x.variadic for x in self.ihint)
 
+    @property
+    def multi(self):
+        return any(x.multi for x in self.ihint)
+
     def nargs_ok(self, n: int) -> bool:
         """
         nargs_ok is True when a can_ route needs exactly `n` tokens or when `n`
         is greater than the needed tokens, but at least one can_ arg is
-        variadic.
+        multi.
         """
         needed = len(self.ihint)
-        if n > needed and any(x.variadic for x in self.ihint):
+        if n > needed and any(x.multi for x in self.ihint):
             return True
         if n == needed:
             return True
