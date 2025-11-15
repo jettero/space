@@ -54,21 +54,32 @@ class MapMessage(Message):
             raise ValueError("this-body must be supplied if this_body() is unset")
         self.tb = tb
 
-    def render_text(self, color=True):
+    def inventory_text(self, color=True):
         from .map.util import LineSeg
 
         def dist(pos1, pos2):
             return LineSeg(pos1, pos2).distance
 
-        txt = self.map.colorized_text_drawing if color else self.map.text_drawing
+        ret = list()
         tbp = self.tb.location.pos
         dob = sorted([(dist(tbp, o.location.pos), o) for o in self.map.objects], key=lambda x: x[0])
         dob = [(f"{o[0]:0.1f}", o[1]) for o in dob if o[1] is not self.tb]
         if dob:
             mdob = max([len(o[0]) for o in dob])
             for dist, o in dob:
-                txt += f"\n{dist:>{mdob}} [{o.abbr}] {o.long}"
-        return txt
+                ret.append(f"{dist:>{mdob}} [{o.abbr}] {o.long}")
+        return "\n".join(ret)
+
+    def map_drawing_text(self, color=True):
+        if color:
+            return self.map.colorized_text_drawing
+        return self.map.text_drawing
+
+    def render_text(self, color=True):
+        return self.map_drawing_text(color) + "\n" + self.inventory_text(color)
+
+    def __str__(self):
+        return f'"""\n{self.render_text()}\n"""'
 
 
 class BoxMessage(Message):
