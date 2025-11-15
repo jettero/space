@@ -301,6 +301,12 @@ def test_itsatest_parametric(me, objs, cmd, can_marker, do_marker):
 
     MARKERS.clear()
     assert me.do(cmd) is True, msg
+
+    # me.do(cmd): parses cmd, the parser will locate all the route (see
+    # find_routes), then try out combinations of args to satisfy the routes --
+    # our can_ methods (above) are promiscuous AF and will pretty much allow
+    # any args to work.
+
     CM, DM = MARKERS
     assert can_marker == CM, msg
     assert do_marker == DM, msg
