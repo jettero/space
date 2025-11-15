@@ -99,7 +99,7 @@ class BaseShell:
                         xp()
                         ok = True
                     else:
-                        self.receive_text(str(e))
+                        self.receive_text(xp.error)
                 except IntentionalQuit:
                     raise
                 except Exception as e:  # pylint: disable=broad-except
