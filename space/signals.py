@@ -1,9 +1,29 @@
 # coding: utf-8
 
+# the idea here is, you mark a function with a signal like this
+#
+# @emits_signal('boo')
+# def spooky(...): ...
+#
+# Then you mark a class with the signal like this
+#
+# @subscribes_signal('boo')
+# class Whatever:
+#   pass
+#
+# every time a Whatever gets intialized, it's subscribed to the signal
+
 import logging
+import types, inspect
 from .util import weakify
 
+FM = (types.FunctionType, types.MethodType)
+
 log = logging.getLogger(__name__)
+
+__all__ = ["emits_signal", "subscribes_signal"]
+
+SIGNALS = dict()
 
 
 class Signal:
@@ -20,53 +40,61 @@ class Signal:
         self.listeners = set()
 
     def subscribe(self, subscriber):
-        if not hasattr(subscriber, "tell"):
-            raise TypeError(f"{subscriber} cannot subscribe to {self} (no .tell() method)")
-        self.listeners.add(subscriber)
+        if isinstance(subscriber, FM):
+            return self.listeners.add(subscriber)
+        if hasattr(subscriber, "receive_signal"):
+            return self.listeners.add(subscriber)
+        raise TypeError(f"{subscriber} cannot subscribe to {self} (no .receive_signal() method)")
 
     def unsubscribe(self, subscriber):
-        self.listeners -= {
-            subscriber,
-        }
+        self.listeners -= {subscriber}
 
     def emit(self, emitter):
         em = self.Emission(self, emitter)
         for listener in self.listeners:
-            if callable(self.cb):
-                if not self.cb(listener, emitter):
+            if isinstance(self.cb, FM):
+                if not self.cb(listener, em):
                     continue
             try:
-                listener.tell(em)
-            except ReferenceError:
+                listener.receive_signal(em)
+            except (AttributeError, ReferenceError):
                 continue
 
-
-SIGNALS = dict()
+    def __repr__(self):
+        return f"(**{self.name}**)"
 
 
 def get_signal(name, cb=None):
     if name in SIGNALS:
         return SIGNALS[name]
-    sig = SIGNALS[name] = Signal(name, cb=cb)
+    sig = SIGNALS[name] = Signal(name, cb)
     return sig
 
 
 def subscribes_signal(name, cb=None):
-    sig = get_signal(name, cb=cb)
+    sig = get_signal(name, cb)
 
-    def decorator(cls):
-        def initer(*a, **kw):
-            o = cls(*a, **kw)
-            sig.subscribe(o)
-            return o
+    def decorator(cls_or_function_or_method):
+        if inspect.isclass(cls_or_function_or_method):
 
-        return initer
+            def initer(*a, **kw):
+                o = cls_or_function_or_method(*a, **kw)
+                sig.subscribe(o)
+                return o
+
+            return initer
+
+        if isinstance(cls, FM):
+            sig.subscribe(cls_or_function_or_method)
+            return cls_or_function_or_method
+
+        raise TypeError(f"can't decorate {cls_or_function_or_method!r} with @subscribes_signal")
 
     return decorator
 
 
 def emits_signal(name, cb=None):
-    sig = get_signal(name, cb=cb)
+    sig = get_signal(name, cb)
 
     def decorator(wrapped):
         def helper(self, *a, **kw):

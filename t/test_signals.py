@@ -37,7 +37,7 @@ class Mob1(blah):
         self.name = name
         self.cmsg()
 
-    def tell(self, emission):
+    def receive_signal(self, emission):
         self.heard.append(emission)
 
 
