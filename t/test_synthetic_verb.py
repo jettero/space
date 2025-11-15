@@ -184,6 +184,11 @@ def test_method_scores(me):
     assert scores["itsatest_words_living"] > scores["itsatest_words"]
     assert scores["itsatest_words"] < scores["itsatest_word"]
 
+@pytest.mark.parametrize('n', range(10))
+def test_method_routes_by_args(me, n):
+    for route in find_routes(me, "itsatest", n):
+        assert route.nargs == n or (route.variadic and route.nargs <=n)
+
 
 TABLE = [
     (
@@ -277,6 +282,11 @@ TABLE = [
 
 @pytest.mark.parametrize("cmd, can_marker, do_marker", TABLE)
 def test_itsatest_parametric(me, objs, cmd, can_marker, do_marker):
+    msg = f'''<param>
+    cmd={cmd}
+    can_marker={can_marker}
+    do_marker={do_marker}\n</param>'''
+
     def resolve(marker):
         if isinstance(marker, tuple):
             return tuple(resolve(x) for x in marker)
@@ -290,10 +300,10 @@ def test_itsatest_parametric(me, objs, cmd, can_marker, do_marker):
     do_marker = resolve(do_marker)
 
     MARKERS.clear()
-    assert me.do(cmd) is True
+    assert me.do(cmd) is True, msg
     CM, DM = MARKERS
-    assert can_marker == CM
-    assert do_marker == DM
+    assert can_marker == CM, msg
+    assert do_marker == DM, msg
 
 
 def test_itsatest_coverage():
