@@ -226,11 +226,11 @@ def list_match(name, objs, adj=list(), rtype=StdObj, aerr=None):
     return ret
 
 
-def find_routes(actor, verbs, n):
+def find_routes(actor, verbs, n=False):
     return tuple(sorted(_find_routes(actor, verbs, n), key=lambda x: x.score, reverse=True))
 
 
-def _find_routes(actor, verbs, n):
+def _find_routes(actor, verbs, n=False):
     if isinstance(verbs, str):
         verbs = find_verb(verbs)
     for verb in verbs:
@@ -242,7 +242,7 @@ def _find_routes(actor, verbs, n):
                 do = FnMap(do, get_introspection_names(do))
                 score = sum(type_rank(x) for x in can.ihint)
                 route = Route(verb, can, do, score)
-                if len(can.ihint) > n:
+                if n is not False and len(can.ihint) > n:
                     log.debug("pre-rejecting %s: not enough tokens to fill all ihints", route)
                     continue
                 yield route
