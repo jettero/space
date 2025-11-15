@@ -1,6 +1,8 @@
 # coding: utf-8
 
+import re
 import pytest
+
 from space.living import Living
 from space.stdobj import StdObj
 from space.verb import Verb, register_outside_verb
@@ -184,10 +186,18 @@ def test_method_scores(me):
     assert scores["itsatest_words_living"] > scores["itsatest_words"]
     assert scores["itsatest_words"] < scores["itsatest_word"]
 
-@pytest.mark.parametrize('n', range(10))
+
+@pytest.mark.parametrize("n", range(10))
 def test_method_routes_by_args(me, n):
     for route in find_routes(me, "itsatest", n):
-        assert route.nargs == n or (route.variadic and route.nargs <=n)
+        underscores = len(re.findall("_", route.name))
+        plurals = len(re.findall(r"\ws(?:_|$)", route.name))
+        msg = f"""<param>
+        route: {route.name}
+        n:     {n}
+        |_|:   {underscores}
+        |s_|:  {plurals}\n</param>"""
+        assert underscores == n or (plurals > 0 and underscores <= n), msg
 
 
 TABLE = [
@@ -282,10 +292,10 @@ TABLE = [
 
 @pytest.mark.parametrize("cmd, can_marker, do_marker", TABLE)
 def test_itsatest_parametric(me, objs, cmd, can_marker, do_marker):
-    msg = f'''<param>
+    msg = f"""<param>
     cmd={cmd}
     can_marker={can_marker}
-    do_marker={do_marker}\n</param>'''
+    do_marker={do_marker}\n</param>"""
 
     def resolve(marker):
         if isinstance(marker, tuple):
