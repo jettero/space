@@ -201,6 +201,14 @@ class ExecutionPlan(namedtuple("XP", ["actor", "fn", "kw"])):
 
 class Route(namedtuple("R", ["verb", "can", "do", "score"])):
     @property
+    def nargs(self):
+        return self.can.nargs
+
+    @property
+    def variadic(self):
+        return self.can.variadic
+
+    @property
     def name(self):
         return self.can.fn.__name__[4:]
 
@@ -212,6 +220,25 @@ class FnMap(namedtuple("FM", ["fn", "ihint"])):
     def __repr__(self):
         ihl = ", ".join(str(x) for x in self.ihint)
         return f"FM<{self.fn.__name__}({ihl})>"
+
+    @property
+    def nargs(self):
+        return len(self.ihint)
+
+    def nargs_ok(self, v):
+        if v is False:
+            return True
+        n = len(self.ihint)
+        if v > n and any(x.variadic for x in self.ihint):
+            return True
+        if v == n:
+            return True
+        return False
+
+    @property
+    def variadic(self):
+        return any(x.variadic for x in self.ihint)
+
 
 
 def list_match(name, objs, adj=list(), rtype=StdObj, aerr=None):
@@ -239,13 +266,13 @@ def _find_routes(actor, verbs, n=False):
             if do := getattr(actor, f"do_{fn[4:]}", False):
                 can = getattr(actor, fn, False)
                 can = FnMap(can, get_introspection_hints(can, imply_type_callback=implied_type))
-                do = FnMap(do, get_introspection_names(do))
-                score = sum(type_rank(x) for x in can.ihint)
-                route = Route(verb, can, do, score)
-                if n is not False and len(can.ihint) > n:
-                    log.debug("pre-rejecting %s: not enough tokens to fill all ihints", route)
-                    continue
-                yield route
+                if can.nargs_ok(n):
+                    do = FnMap(do, get_introspection_names(do))
+                    score = sum(type_rank(x) for x in can.ihint)
+                    route = Route(verb, can, do, score)
+                    yield route
+                log.debug("pre-rejecting %s: not enough tokens to fill all ihints", can)
+                continue
 
 
 def implied_type(name):
