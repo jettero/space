@@ -70,6 +70,16 @@ def flooft(em):
     naked_floof.append(em)
 
 
+@subscribes_signal(SIGNAL_NAME)
+def busted0():
+    naked_floof.append(em)
+
+
+@subscribes_signal(SIGNAL_NAME)
+def busted2():
+    naked_floof.append(em)
+
+
 def test_Mob2_is_decorated():
     assert Mob2.__name__ == "FakeClass"
     assert isinstance(Mob2, types.FunctionType)

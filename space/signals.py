@@ -1,17 +1,26 @@
 # coding: utf-8
+"""
+the idea here is, you mark a function with a signal like this
 
-# the idea here is, you mark a function with a signal like this
-#
-# @emits_signal('boo')
-# def spooky(...): ...
-#
-# Then you mark a class with the signal like this
-#
-# @subscribes_signal('boo')
-# class Whatever:
-#   pass
-#
-# every time a Whatever gets intialized, it's subscribed to the signal
+    @emits_signal('boo')
+    def spooky(...): ...
+
+Then you mark a class with the signal like this
+
+    @subscribes_signal('boo')
+    class Whatever:
+        def receive_signal(self, emo): ...
+
+Every time a Whatever gets intialized, it's subscribed to the signal.
+You can also decorate a function:
+
+    @subscribes_signal('boo')
+    def wazzit(emo): ...
+
+The object 'emo' is an Emission, which has the following attributes:
+    emo.emitter  # the object that emitted the signal
+    emo.signal   # the signal name
+"""
 
 import logging
 import types, inspect
@@ -28,14 +37,15 @@ SIGNALS = dict()
 
 class Signal:
     class Emission:
-        def __init__(self, signal, emitter, listener):
-            log.debug("%s emitting signal[%s] to %s", emitter, signal.name, listener)
+        __slots__ = ["emitter", "signal"]
+
+        def __init__(self, signal, emitter):
+            log.debug("%s emitting %s", emitter, signal)
             self.emitter = weakify(emitter)
-            self.signal = weakify(signal)
-            self.listener = weakify(listener)
+            self.signal = signal.name
 
     def __init__(self, name, cb=None):
-        log.debug("creating signal[%s]", name)
+        log.debug("creating %s", self)
         self.cb = cb
         self.name = name
         self.listeners = set()
@@ -51,21 +61,30 @@ class Signal:
             raise TypeError(f"{subscriber} cannot subscribe to {self} (no .receive_signal() method)")
 
     def unsubscribe(self, subscriber):
-        self.listeners -= {subscriber}
+        unsub = subscriber if isinstance(subscriber, set) else {subscriber}
+        log.debug("Signal.unsubscribe(%s ~%s~)", self.name, repr(unsub))
+        self.listeners -= unsub
 
     def emit(self, emitter):
+        unsub = set()
         for listener in self.listeners:
-            em = self.Emission(self, emitter, listener)
+            em = self.Emission(self, emitter)
             if isinstance(self.cb, FM):
                 log.debug("Emission(%s => %s) =cb()=> %s", repr(emitter), self.name, repr(listener))
                 if not self.cb(listener, em):
                     continue
-            if isinstance(listener, FM):
-                log.debug("Emission(%s => %s) =fn()=> %s", repr(emitter), self.name, repr(listener))
-                listener(em)
-            else:
-                log.debug("Emission(%s => %s) =Class()=> %s", repr(emitter), self.name, repr(listener))
-                listener.receive_signal(em)
+            try:
+                if isinstance(listener, FM):
+                    log.debug("Emission(%s => %s) =fn()=> %s", repr(emitter), self.name, repr(listener))
+                    listener(em)
+                else:
+                    log.debug("Emission(%s => %s) =Class()=> %s", repr(emitter), self.name, repr(listener))
+                    listener.receive_signal(em)
+            except TypeError as e:
+                log.error("ERROR unsubscribing %s from %s due to type-error: %s", listener, self, e)
+                unsub.add(listener)
+        if unsub:
+            self.unsubscribe(unsub)
 
     def __repr__(self):
         return f"signal[{self.name}]"
