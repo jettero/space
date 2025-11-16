@@ -138,7 +138,6 @@ class baseobj:  # pylint: disable=invalid-name
                 from space.map.dir_util import positional_adjectives
             tok.update(positional_adjectives(self))
 
-        log.debug(f"WTF names+adjectives: {tok}")
         for n in names:
             matched = False
             for t in tok:
