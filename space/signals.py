@@ -41,10 +41,13 @@ class Signal:
 
     def subscribe(self, subscriber):
         if isinstance(subscriber, FM):
-            return self.listeners.add(subscriber)
-        if hasattr(subscriber, "receive_signal"):
-            return self.listeners.add(subscriber)
-        raise TypeError(f"{subscriber} cannot subscribe to {self} (no .receive_signal() method)")
+            log.debug("Signal.subscribe(%s =f()=> %s)", self.name, repr(subscriber))
+            self.listeners.add(subscriber)
+        elif hasattr(subscriber, "receive_signal"):
+            log.debug("Signal.subscribe(%s =Cls=> %s)", self.name, repr(subscriber))
+            self.listeners.add(subscriber)
+        else:
+            raise TypeError(f"{subscriber} cannot subscribe to {self} (no .receive_signal() method)")
 
     def unsubscribe(self, subscriber):
         self.listeners -= {subscriber}
@@ -52,6 +55,7 @@ class Signal:
     def emit(self, emitter):
         em = self.Emission(self, emitter)
         for listener in self.listeners:
+            log.debug('Emission(%s => %s) => %s', repr(emitter), self.name, repr(listener))
             if isinstance(self.cb, FM):
                 if not self.cb(listener, em):
                     continue
@@ -74,17 +78,28 @@ def get_signal(name, cb=None):
 def subscribes_signal(name, cb=None):
     sig = get_signal(name, cb)
 
+    log.debug("@subscribes_signal(%s, cb=%s) =generate-decorator=> %s", name, repr(cb), repr(sig))
+
     def decorator(cls_or_function_or_method):
         if inspect.isclass(cls_or_function_or_method):
+            log.debug("@subscribes_signal(%s, cb=%s) => %s", name, repr(cb), repr(cls_or_function_or_method))
 
-            def initer(*a, **kw):
+            def FakeClass(*a, **kw):
                 o = cls_or_function_or_method(*a, **kw)
+                log.debug(
+                    "@subscribes_signal(%s, cb=%s) =cls=> %s =init=> %s",
+                    name,
+                    repr(cb),
+                    repr(cls_or_function_or_method),
+                    repr(o),
+                )
                 sig.subscribe(o)
                 return o
 
-            return initer
+            return FakeClass
 
-        if isinstance(cls, FM):
+        if isinstance(cls_or_function_or_method, FM):
+            log.debug("@subscribes_signal(%s, cb=%s) =f=> %s", name, repr(cb), repr(cls_or_function_or_method))
             sig.subscribe(cls_or_function_or_method)
             return cls_or_function_or_method
 
@@ -96,7 +111,11 @@ def subscribes_signal(name, cb=None):
 def emits_signal(name, cb=None):
     sig = get_signal(name, cb)
 
+    log.debug("@emits_signal(%s, cb=%s) =generate-decorator=> %s", name, repr(cb), repr(sig))
+
     def decorator(wrapped):
+        log.debug("@emits_signal(%s, cb=%s) => %s", name, repr(cb), repr(wrapped))
+
         def helper(self, *a, **kw):
             sig.emit(self)
             return wrapped(self, *a, **kw)

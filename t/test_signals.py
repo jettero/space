@@ -2,6 +2,7 @@
 
 import logging
 import pytest
+import types
 from space.signals import emits_signal, subscribes_signal, get_signal
 
 log = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ class Emitter(blah):
         self.cmsg()
 
     @emits_signal(SIGNAL_NAME)
-    def floof(self):
+    def method_that_emits(self):
         return self.name
 
 
@@ -61,8 +62,24 @@ def mob2():
     return Mob2("mob2")
 
 
+naked_floof = list()
+
+
+@subscribes_signal(SIGNAL_NAME)
+def flooft(em):
+    naked_floof.append(em)
+
+def test_Mob2_is_decorated():
+    assert Mob2.__name__ == 'FakeClass'
+    assert isinstance(Mob2, types.FunctionType)
+
+def test_naked_floof(em1):
+    assert em1.method_that_emits() == "em1"
+    assert len(naked_floof) == 1
+
+
 def test_nosub_mob1(mob1, em1):
-    assert em1.floof() == "em1"
+    assert em1.method_that_emits() == "em1"
     assert mob1.heard == list()
 
 
@@ -70,10 +87,10 @@ def test_sub_mob1(mob1, em1):
     sig = get_signal("floofed")
     sig.subscribe(mob1)
 
-    assert em1.floof() == "em1"
+    assert em1.method_that_emits() == "em1"
     assert len(mob1.heard) == 1
 
 
 def test_decorated_mob2(mob2, em1):
-    assert em1.floof() == "em1"
+    assert em1.method_that_emits() == "em1"
     assert len(mob2.heard) == 1
