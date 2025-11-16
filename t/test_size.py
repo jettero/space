@@ -11,11 +11,10 @@ def test_size():
 
 def test_size_subclass():
     class TestSize(Size):
-        class Meta:
-            mass = 2.2
-            height = 5.92
-            width = 2.5
-            depth = 0.7
+        mass = 2.2
+        height = 5.92
+        width = 2.5
+        depth = 0.7
 
     s = TestSize()
     assert s.volume == PV("5.92 m") * PV("2.5 m") * PV("0.7m")

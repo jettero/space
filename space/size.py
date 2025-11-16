@@ -25,58 +25,36 @@ class Volume(DN):
         units = "m³"
 
 
-class SizeMeta:
-    class Meta:
-        pass
-
-    @classmethod
-    def compute_hwd(cls, v):
-        raise NotImplementedError()
-
-    def __init_subclass__(cls):
-        super().__init_subclass__()
-        cls._mass = Mass(getattr(cls.Meta, "mass", 0))
-        vol = getattr(cls.Meta, "volume", None)
-        if vol is not None:
-            cls._height, cls._width, cls._depth = cls.compute_hwd(vol)
-        else:
-            cls._height = Length(getattr(cls.Meta, "height", 0))
-            cls._width = Length(getattr(cls.Meta, "width", 0))
-            cls._depth = Length(getattr(cls.Meta, "depth", 0))
-
-
-class Size(SizeMeta):
-    mass = height = width = depth = 0
-
-    class Meta:
-        mass = height = width = depth = 0
-
+class Size:
     def __init__(self, mass=None, height=None, width=None, depth=None, volume=None, **kw):
         super().__init__()  # ancestor init never takes kwargs
-        # confusingly, these properties are actually defined below (see: define_dimensional_property)
-        self.mass = mass
-        self.height = height
-        self.width = width
-        self.depth = depth
-        self.volume = volume
 
-    @property
-    def volume(self):
-        return Volume(self.height * self.width * self.depth)
+        self.mass = mass
+
+        if volume is None:
+            self.height = height
+            self.width = width
+            self.depth = depth
+        else:
+            self.volume = volume
 
     @classmethod
-    def compute_hwd(cls, v):
+    def compute_cuboid_dimensions(cls, v):
         if isinstance(v, (tuple, VV)):
             h, w, d = v
         else:
             h = w = d = v ** (1 / 3.0)
         return [Length(i) for i in (h, w, d)]
 
+    @property
+    def volume(self):
+        return Volume(self.height * self.width * self.depth)
+
     @volume.setter
     def volume(self, v):
         if v is None:
             return
-        self.height = self.width = self.depth = self.compute_hwd(v)
+        self.height,self.width,self.depth = self.compute_cuboid_dimensions(v)
 
     @property
     def size(self):
@@ -88,23 +66,49 @@ class Size(SizeMeta):
     def __str__(self):
         return f"{self.mass:0.2fa}, {self.height:0.2fa} × {self.width:0.2fa} × {self.depth:0.2fa}"
 
+    def __init_subclass__(cls, *a, **kw):
+        super().__init_subclass__(*a, **kw)
+
+        for aname in BLESSED_PROPERTIES:
+            if not isinstance((ca := getattr(cls,aname,None)), property):
+                sa = getattr(Size, aname, None)
+                log.debug("size-blessing %s.%s to %s (vs %s)", cls, aname, sa, ca)
+                sa.fset(cls, ca)
+                setattr(cls, aname, sa)
+
+        # be sure to also deal with the cursed properties
+        if not isinstance((ca := getattr(cls, 'volume', None)), property):
+            s = Size(volume=ca)
+            log.debug("size-uncursing %s.volume to %s*%s*%s (vs %s)", cls, s._height, s._width, s._depth, ca)
+            cls._height = s._height
+            cls._width = s._width
+            cls._depth = s._depth
+            setattr(cls, 'volume', Size.volume)
+
+
+BLESSED_PROPERTIES = {'weight'}
+
 
 def define_dimensional_property(cls, aname, acls):
     a = f"_{aname}"
     z = acls(0)
 
     def _g(self):
-        return getattr(self, a)
+        return getattr(self, a, z)
 
     def _s(self, v):
         if v is None:
             return
         if not isinstance(v, acls):
             v = z + v
-        return setattr(self, a, max(z, v))
+        if v < 0:
+            v = z
+        log.debug('setting %s.%s = %s', self,a,v)
+        return setattr(self, a, v)
 
     p = property(_g).setter(_s)
     setattr(cls, aname, p)
+    BLESSED_PROPERTIES.add(aname)
 
 
 define_dimensional_property(Size, "mass", Mass)
@@ -112,4 +116,4 @@ define_dimensional_property(Size, "height", Length)
 define_dimensional_property(Size, "width", Length)
 define_dimensional_property(Size, "depth", Length)
 
-Size.weight = Size.mass  # spurious without an acceleration field, but whatever
+Size.weight = Size.mass
