@@ -28,10 +28,11 @@ SIGNALS = dict()
 
 class Signal:
     class Emission:
-        def __init__(self, signal, emitter):
-            log.debug("emitting signal[%s]", signal.name)
+        def __init__(self, signal, emitter, listener):
+            log.debug("%s emitting signal[%s] to %s", emitter, signal.name, listener)
             self.emitter = weakify(emitter)
             self.signal = weakify(signal)
+            self.listener = weakify(listener)
 
     def __init__(self, name, cb=None):
         log.debug("creating signal[%s]", name)
@@ -41,10 +42,10 @@ class Signal:
 
     def subscribe(self, subscriber):
         if isinstance(subscriber, FM):
-            log.debug("Signal.subscribe(%s =f()=> %s)", self.name, repr(subscriber))
+            log.debug("Signal.subscribe(%s =fn()=> %s)", self.name, repr(subscriber))
             self.listeners.add(subscriber)
         elif hasattr(subscriber, "receive_signal"):
-            log.debug("Signal.subscribe(%s =Cls=> %s)", self.name, repr(subscriber))
+            log.debug("Signal.subscribe(%s =Class()=> %s)", self.name, repr(subscriber))
             self.listeners.add(subscriber)
         else:
             raise TypeError(f"{subscriber} cannot subscribe to {self} (no .receive_signal() method)")
@@ -53,19 +54,21 @@ class Signal:
         self.listeners -= {subscriber}
 
     def emit(self, emitter):
-        em = self.Emission(self, emitter)
         for listener in self.listeners:
-            log.debug('Emission(%s => %s) => %s', repr(emitter), self.name, repr(listener))
+            em = self.Emission(self, emitter, listener)
             if isinstance(self.cb, FM):
+                log.debug("Emission(%s => %s) =cb()=> %s", repr(emitter), self.name, repr(listener))
                 if not self.cb(listener, em):
                     continue
-            try:
+            if isinstance(listener, FM):
+                log.debug("Emission(%s => %s) =fn()=> %s", repr(emitter), self.name, repr(listener))
+                listener(em)
+            else:
+                log.debug("Emission(%s => %s) =Class()=> %s", repr(emitter), self.name, repr(listener))
                 listener.receive_signal(em)
-            except (AttributeError, ReferenceError):
-                continue
 
     def __repr__(self):
-        return f"(**{self.name}**)"
+        return f"signal[{self.name}]"
 
 
 def get_signal(name, cb=None):

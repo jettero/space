@@ -69,9 +69,11 @@ naked_floof = list()
 def flooft(em):
     naked_floof.append(em)
 
+
 def test_Mob2_is_decorated():
-    assert Mob2.__name__ == 'FakeClass'
+    assert Mob2.__name__ == "FakeClass"
     assert isinstance(Mob2, types.FunctionType)
+
 
 def test_naked_floof(em1):
     assert em1.method_that_emits() == "em1"
