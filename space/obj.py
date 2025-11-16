@@ -16,9 +16,9 @@ class baseobj:  # pylint: disable=invalid-name
     _tokens = _location = None
 
     def strongify(self):
-        # XXX: Having a Heisenbug around ReferenceError literally every other
-        # run of pytest t/test_verb_open_close.py gives a ReferenceError vs
-        # passing normally.
+        # XXX: I was having a Heisenbug around ReferenceError where literally
+        # every other run of pytest t/test_verb_open_close.py was giving a
+        # ReferenceError vs passing normally.
         #
         # NOTE: later, this turned out to be a set_this_body() bug in the
         # parser. if you call the below positional_adjectives and you fail to
@@ -30,7 +30,7 @@ class baseobj:  # pylint: disable=invalid-name
         # AI keeps trying to use it inappropriately, so it may be just a matter
         # of time.
         #
-        # Hey, talkin' to you codex: stop it.
+        # Hey, talkin' to you codex: stop using this.
         return self
 
     @property
