@@ -1,6 +1,8 @@
 # coding: utf-8
 # pylint: disable=invalid-name,redefined-outer-name
 
+import math
+
 from space.pv import PV
 from space.dn import DN, DescriptiveNumber  # DescriptiveNumber = DN
 from space.roll import Roll
@@ -83,3 +85,21 @@ def test_units():
     l3 = Length(4)
 
     assert l1 * l2 * l3 == PV("64 m³")
+
+
+def test_plus_const():
+    a = DN(7)
+    b = a + 1
+    assert a.__class__ == b.__class__
+
+
+def test_times_const():
+    a = DN(7)
+    b = a * 1
+    assert a.__class__ == b.__class__
+
+
+def test_times_const():
+    a = DN(float("inf"))
+    b = a * 0
+    assert not math.isnan(b.v)
