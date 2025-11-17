@@ -18,6 +18,8 @@
 - don't repeat yourself. DRY everything you can
 - always be very brief with your words. If you resort to bullet points, make sure they don't repeat the same thing over and over.
 - Don't resort to words when code would explain better. The most concise language we have for talking about code is the code itself. I can read it.
+- default to public names. Mostly little helper functions do not need to be
+  private. Avoid `_private_name` unless whatever private name seems really to be 100% compeltely internal-use only
 - Do not add comments to the code unless explicitly told to do so
   - don't remove comments I put there unless they're nolonger true because of
     the code changes
