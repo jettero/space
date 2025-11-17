@@ -6,6 +6,8 @@ import lark
 import space.exceptions as E
 from ..find import this_body
 
+import space.obj
+
 log = logging.getLogger(__name__)
 
 DIRS = ("n", "s", "e", "w")
@@ -223,3 +225,6 @@ def positional_adjectives(obj):
             ret.add("far")
 
     return ret
+
+
+space.obj.positional_adjectives = positional_adjectives

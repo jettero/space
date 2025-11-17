@@ -5,7 +5,7 @@ from collections import deque
 import space.exceptions as E
 from .pv import INFINITY
 from .size import Size, BLESSED_PROPERTIES
-from .obj import baseobj
+from .obj import baseobj, register_haver_recurse_by_owner, register_location_leaf
 from .named import Named
 
 
@@ -137,3 +137,7 @@ class Slot(Container):
         if self._items:
             raise E.ContainerError(f"{self} is occupied by {self._items[0]}")
         return super().accept(item)
+
+
+register_haver_recurse_by_owner(Slot)
+register_location_leaf(Container)

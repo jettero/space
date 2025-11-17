@@ -13,6 +13,29 @@ class OwnershipError(TypeError): ...
 class LocationError(TypeError): ...
 
 
+LOCATION_LEAF = tuple()
+HAVER_RECURSE_BY_OWNER = tuple()
+HAVER_LEAF = tuple()
+
+
+def register_location_leaf(cls):
+    """classes that can be a location for something"""
+    global LOCATION_LEAF
+    LOCATION_LEAF = (*LOCATION_LEAF, cls)
+
+
+def register_haver_recurse_by_owner(cls):
+    """classes composed into haver-leaves that are owned by the (e.g.) Living, but that aren't located in the Living"""
+    global HAVER_RECURSE_BY_OWNER
+    HAVER_RECURSE_BY_OWNER = (*HAVER_RECURSE_BY_OWNER, cls)
+
+
+def register_haver_leaf(cls):
+    """classes that can be an owner of something"""
+    global HAVER_LEAF
+    HAVER_LEAF = (*HAVER_LEAF, cls)
+
+
 # all mud objects get this ancestor
 # most objects you can pick up or put in a room should also get Containable
 # you're probably looking for space/stdobj.py
@@ -58,9 +81,8 @@ class baseobj:  # pylint: disable=invalid-name
         if v is None:
             self._location = None
             return
-        from space.container import Container
 
-        if isinstance(v, Container):
+        if isinstance(v, LOCATION_LEAF):
             self._location = weakify(v)
         else:
             raise LocationError(f"given {v}, but locations should be containers")
@@ -76,13 +98,11 @@ class baseobj:  # pylint: disable=invalid-name
         Ownership may not quite follow location, but this does. This is the Living location of the object -- even if nested.
         """
         try:
-            from space.living import Living, Slot
-
             o = self._location
             while o is not None:
-                if isinstance(o, Slot) and isinstance(o._owner, Living):
+                if isinstance(o, HAVER_RECURSE_BY_OWNER) and isinstance(o._owner, HAVER_LEAF):
                     return o._owner.strongify()
-                if isinstance(o, Living):
+                if isinstance(o, HAVER_LEAF):
                     return o.strongify()
                 o = o._location
         except (ReferenceError, AttributeError):
@@ -108,9 +128,8 @@ class baseobj:  # pylint: disable=invalid-name
         if v is None:
             self._owner = None
             return
-        from space.living import Living
 
-        if isinstance(v, Living):
+        if isinstance(v, HAVER_LEAF):
             self._owner = weakify(v)
         else:
             raise OwnershipError(f"given {v}, but owners should be alive")
@@ -186,8 +205,6 @@ class baseobj:  # pylint: disable=invalid-name
 
         tok = self.tokens
         if pos_adj:
-            from space.map.dir_util import positional_adjectives
-
             tok.update(positional_adjectives(self))
 
         for n in names:

@@ -8,6 +8,7 @@ from space.pv import INFINITY
 
 from ..vv import VV
 from ..stdobj import StdObj
+from ..obj import register_haver_leaf
 from ..damage import Damage, Kinetic
 from ..roll import Roll, AttrChoices
 
@@ -323,3 +324,6 @@ class Living(ReceivesMessages, CanMove, StdObj):
     @property
     def nearby_things(self):
         return list(x for x in self.vmap.objects if isinstance(x, StdObj)) + list(self.inventory)
+
+
+register_haver_leaf(Living)
