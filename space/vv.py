@@ -175,7 +175,7 @@ class VV(list):
         if isinstance(other, (int, float, PV)):
             return VV([other] * len(self))
         if not isinstance(other, OUR_TYPES):
-            raise TypeError("argument is not VV or scalar")
+            raise TypeError(f"argument={other!r} is not VV or scalar")
         if len(self) != len(other):
             raise TypeError("VV size mismatch")
         return other
