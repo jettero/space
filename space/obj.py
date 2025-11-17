@@ -50,6 +50,22 @@ class baseobj:  # pylint: disable=invalid-name
         self._location = weakify(v)
 
     @property
+    def haver(self):
+        """
+        Ownership may not quite follow location, but this does. This is the Living location of the object -- even if nested.
+        """
+        try:
+            o = self._location
+            from space.living import Living
+
+            while o is not None and not isinstance(o, Living):
+                o = o._location
+            if o:
+                return o
+        except (ReferenceError, AttributeError):
+            pass
+
+    @property
     def owner(self):
         """
         The owner of the object, if set, is the Living that owns the object.
@@ -59,15 +75,7 @@ class baseobj:  # pylint: disable=invalid-name
         """
         if self._owner is not None:
             return self._owner
-        try:
-            o = self._location
-            from space.living import Living
-
-            while o is not None and not isinstance(o, Living):
-                o = o._location
-            return o
-        except AttributeError:
-            pass
+        return self.haver
 
     @owner.setter
     def owner(self, v):
