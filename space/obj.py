@@ -6,6 +6,8 @@ from .util import weakify
 
 log = logging.getLogger(__name__)
 
+class OwnershipError(TypeError):...
+class LocationError(TypeError):...
 
 # all mud objects get this ancestor
 # most objects you can pick up or put in a room should also get Containable
@@ -47,7 +49,19 @@ class baseobj:  # pylint: disable=invalid-name
 
     @location.setter
     def location(self, v):
-        self._location = weakify(v)
+        if v is None:
+            self._location = None
+            return
+        from space.container import Container
+        if isinstance(v, Container):
+            self._location = weakify(v)
+        else:
+            raise LocationError(f"given {v}, but locations should be containers")
+        try:
+            if (h := self.haver) is not None:
+                self.owner = h
+        except OwnershipError:
+            pass
 
     @property
     def haver(self):
@@ -55,13 +69,12 @@ class baseobj:  # pylint: disable=invalid-name
         Ownership may not quite follow location, but this does. This is the Living location of the object -- even if nested.
         """
         try:
-            o = self._location
             from space.living import Living
-
-            while o is not None and not isinstance(o, Living):
+            o = self._location
+            while o is not None:
+                if isinstance(o, Living):
+                    return o
                 o = o._location
-            if o:
-                return o
         except (ReferenceError, AttributeError):
             pass
 
@@ -72,6 +85,9 @@ class baseobj:  # pylint: disable=invalid-name
         The owner is always a Living or None.  Owners are always a
         weak-reference, and so-weakened can become None due to a user logging
         out or otherwise vanishing.
+
+        The owner isn't neccissarily the haver, use .haver to see who's
+        currently holding it a thing.
         """
         if self._owner is not None:
             return self._owner
@@ -79,11 +95,14 @@ class baseobj:  # pylint: disable=invalid-name
 
     @owner.setter
     def owner(self, v):
+        if v is None:
+            self._owner = None
+            return
         from space.living import Living
-
         if isinstance(v, Living):
             self._owner = weakify(v)
-        raise ValueError(f"owners should be alive")
+        else:
+            raise OwnershipError(f"given {v}, but owners should be alive")
 
     @property
     def id(self):
