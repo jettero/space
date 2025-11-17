@@ -4,8 +4,9 @@ from collections import deque
 
 import space.exceptions as E
 from .pv import INFINITY
-from .size import Size
+from .size import Size, BLESSED_PROPERTIES
 from .obj import baseobj
+from .named import Named
 
 
 class Containable(Size, baseobj):
@@ -17,70 +18,55 @@ class Containable(Size, baseobj):
         super().__init__(**kw)  # calls both Size and baseobj __init__ (well, baseobj doesn't have one, but it would)
 
 
-class CapacityMeta:
-    class Meta:
-        pass
-
-    class Capacity(Size):
-        class Meta:
-            mass = INFINITY
-            volume = INFINITY
-
-    def __init_subclass__(cls):
-        super().__init_subclass__()
-        m = type(
-            "Meta",
-            (cls.Capacity.Meta,),
-            {
-                "mass": getattr(cls.Meta, "mass_capacity", cls.Capacity.Meta.mass),
-                "volume": getattr(cls.Meta, "volume_capacity", cls.Capacity.Meta.volume),
-            },
-        )
-        cls.Capacity = type("Capacity", (cls.Capacity,), {"Meta": m})
-
-
-class Container(Containable, CapacityMeta):
+# Note, this is used by all sorts of things you can't pick up (rooms, living
+# slots, etc) If you want to make a pack or a thing you can pick up, you
+# probably also want StdObj
+class Container:
     a = "~"
     l = s = "container"
     accept_types = tuple()
 
-    class Meta:
-        mass_capacity = INFINITY
-        volume_capacity = INFINITY
+    class Capacity(Size):
+        mass = INFINITY
+        volume = INFINITY
 
     def __init__(self, *items, mass_capacity=None, volume_capacity=None, **kw):
         super().__init__(**kw)
-        self._capacity = self.Capacity(mass=mass_capacity, volume=volume_capacity)
+        self.capacity = self.Capacity(mass=mass_capacity, volume=volume_capacity)
         self._items = deque()
         self.add_items(*items)
 
-    @property
-    def content_size(self):
-        start = self.size * 0
-        return sum([x.size for x in self._items], start)
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        super_blessed_attrs = [f"{aname}_capacity" for aname in BLESSED_PROPERTIES]
+        if to_copy := [(x, getattr(cls, x)) for x in super_blessed_attrs if hasattr(cls, x)]:
+
+            class Capacity(cls.Capacity): ...
+
+            cls.Capacity = Capacity
+            for name, val in to_copy:
+                aname, _ = name.split("_")
+                setattr(Capacity, aname, val)
+            # have to invoke this manually since we added these after it ran. :-(
+            Capacity.__init_subclass__()
 
     @property
-    def capacity(self):
-        return self._capacity.size
+    def content_size(self):
+        return sum([x.size for x in self._items], self.capacity.size * 0)
 
     @property
     def remaining_capacity(self):
-        return self.capacity - self.content_size
+        return self.capacity.size - self.content_size
 
     def add_items(self, *items):
-        items = [i for i in items if self.accept(i)]
-        for i in items:
-            self._add_item(i)
+        for item in items:
+            if self.accept(item):
+                if item.location:
+                    item.location.remove_item(item)
+                self._items.append(item)
+                item.location = self
 
-    def _add_item(self, item):
-        if item.location:
-            item.location.remove_item(item)
-        self._items.append(item)
-        item.location = self
-
-    def add_item(self, item):
-        if self.accept(item):
-            self._add_item(item)
+    add_item = add_items
 
     def remove_item(self, item):
         if item in self._items:

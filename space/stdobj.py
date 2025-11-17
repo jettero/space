@@ -24,4 +24,5 @@ class StdObj(Named, Containable):
     stdobj_dist_val = 1
 
     def __init_subclass__(cls):
+        super().__init_subclass__()
         cls.stdobj_dist_val = len([x for x in cls.__mro__ if issubclass(x, StdObj)])

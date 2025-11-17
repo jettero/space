@@ -6,14 +6,12 @@ from .util import weakify
 
 log = logging.getLogger(__name__)
 
-positional_adjectives = None
-
 
 # all mud objects get this ancestor
 # most objects you can pick up or put in a room should also get Containable
 # you're probably looking for space/stdobj.py
 class baseobj:  # pylint: disable=invalid-name
-    _tokens = _location = None
+    _owner = _tokens = _location = None
 
     def strongify(self):
         # XXX: I was having a Heisenbug around ReferenceError where literally
@@ -35,6 +33,16 @@ class baseobj:  # pylint: disable=invalid-name
 
     @property
     def location(self):
+        """
+        The location of a thing is the object that literally contains it: the
+        bag it's in, the hand slot of a Living, the floor, etc.
+
+        It is somewhat related to the owner of the object, but it's not
+        necessarily the same thing.
+
+        The location is always stored as a weak-reference. Whatever container
+        holds the object has the strong ref.
+        """
         return self._location
 
     @location.setter
@@ -43,6 +51,14 @@ class baseobj:  # pylint: disable=invalid-name
 
     @property
     def owner(self):
+        """
+        The owner of the object, if set, is the Living that owns the object.
+        The owner is always a Living or None.  Owners are always a
+        weak-reference, and so-weakened can become None due to a user logging
+        out or otherwise vanishing.
+        """
+        if self._owner is not None:
+            return self._owner
         try:
             o = self._location
             from space.living import Living
@@ -58,8 +74,7 @@ class baseobj:  # pylint: disable=invalid-name
         from space.living import Living
 
         if isinstance(v, Living):
-            self.location = v
-            return
+            self._owner = weakify(v)
         raise ValueError(f"owners should be alive")
 
     @property
@@ -133,9 +148,8 @@ class baseobj:  # pylint: disable=invalid-name
 
         tok = self.tokens
         if pos_adj:
-            global positional_adjectives
-            if positional_adjectives is None:
-                from space.map.dir_util import positional_adjectives
+            from space.map.dir_util import positional_adjectives
+
             tok.update(positional_adjectives(self))
 
         for n in names:

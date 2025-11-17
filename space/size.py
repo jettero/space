@@ -54,7 +54,7 @@ class Size:
     def volume(self, v):
         if v is None:
             return
-        self.height,self.width,self.depth = self.compute_cuboid_dimensions(v)
+        self.height, self.width, self.depth = self.compute_cuboid_dimensions(v)
 
     @property
     def size(self):
@@ -70,23 +70,23 @@ class Size:
         super().__init_subclass__(*a, **kw)
 
         for aname in BLESSED_PROPERTIES:
-            if not isinstance((ca := getattr(cls,aname,None)), property):
+            if not isinstance((ca := getattr(cls, aname, None)), property):
                 sa = getattr(Size, aname, None)
                 log.debug("size-blessing %s.%s to %s (vs %s)", cls, aname, sa, ca)
                 sa.fset(cls, ca)
                 setattr(cls, aname, sa)
 
         # be sure to also deal with the cursed properties
-        if not isinstance((ca := getattr(cls, 'volume', None)), property):
+        if not isinstance((ca := getattr(cls, "volume", None)), property):
             s = Size(volume=ca)
             log.debug("size-uncursing %s.volume to %s*%s*%s (vs %s)", cls, s._height, s._width, s._depth, ca)
             cls._height = s._height
             cls._width = s._width
             cls._depth = s._depth
-            setattr(cls, 'volume', Size.volume)
+            setattr(cls, "volume", Size.volume)
 
 
-BLESSED_PROPERTIES = {'weight'}
+BLESSED_PROPERTIES = {"weight"}
 
 
 def define_dimensional_property(cls, aname, acls):
@@ -103,7 +103,7 @@ def define_dimensional_property(cls, aname, acls):
             v = z + v
         if v < 0:
             v = z
-        log.debug('setting %s.%s = %s', self,a,v)
+        log.debug("setting %s.%s = %s", self, a, v)
         return setattr(self, a, v)
 
     p = property(_g).setter(_s)

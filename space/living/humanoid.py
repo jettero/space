@@ -72,6 +72,7 @@ class Humanoid(Living):
             raise eff
 
     def can_drop_obj(self, obj: StdObj):
+        log.debug("%s.can_drop_obj(%s) (owner: %s)", self, obj, obj.owner)
         if obj.owner != self:
             return False, {"error": f"You don't have {obj}."}
         return True, {"obj": obj}  # keys must match do_drop args

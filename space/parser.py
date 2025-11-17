@@ -297,8 +297,8 @@ def _find_routes(actor: Living, verbs: Iterable[Verb], n: int | bool = False) ->
                     score = sum(type_rank(x) for x in can.ihint)
                     route = Route(verb, can, do, score)
                     yield route
+                    continue
                 log.debug("pre-rejecting %s: not enough tokens to fill all ihints", can)
-                continue
 
 
 def implied_type(name):
