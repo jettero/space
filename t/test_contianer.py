@@ -1,8 +1,9 @@
 # coding: utf-8
 
-from space.size import Mass, Volume
 from space.container import Container, Containable
+from space.living.slots import HandSlot
 from space.pv import INFINITY
+from space.size import Mass, Volume
 from space.vv import VV
 
 
@@ -46,3 +47,13 @@ def test_contents():
 
     assert c.remaining_capacity == VV("4.8kg", "4.5m³")
     assert h.remaining_capacity == VV(minf, vinf)
+
+
+def test_ubi_haver_tracks_owner(objs):
+    me = objs.me
+    ubi = objs.ubi
+    slot = me.slots.right_hand_slot
+    slot.add_item(ubi)
+    assert ubi.location.__class__ is HandSlot
+    assert slot.owner is me
+    assert ubi.haver is me

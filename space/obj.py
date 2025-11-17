@@ -6,8 +6,12 @@ from .util import weakify
 
 log = logging.getLogger(__name__)
 
-class OwnershipError(TypeError):...
-class LocationError(TypeError):...
+
+class OwnershipError(TypeError): ...
+
+
+class LocationError(TypeError): ...
+
 
 # all mud objects get this ancestor
 # most objects you can pick up or put in a room should also get Containable
@@ -45,6 +49,8 @@ class baseobj:  # pylint: disable=invalid-name
         The location is always stored as a weak-reference. Whatever container
         holds the object has the strong ref.
         """
+        if self._location is not None:
+            return self._location.strongify()
         return self._location
 
     @location.setter
@@ -53,6 +59,7 @@ class baseobj:  # pylint: disable=invalid-name
             self._location = None
             return
         from space.container import Container
+
         if isinstance(v, Container):
             self._location = weakify(v)
         else:
@@ -69,11 +76,14 @@ class baseobj:  # pylint: disable=invalid-name
         Ownership may not quite follow location, but this does. This is the Living location of the object -- even if nested.
         """
         try:
-            from space.living import Living
+            from space.living import Living, Slot
+
             o = self._location
             while o is not None:
+                if isinstance(o, Slot) and isinstance(o._owner, Living):
+                    return o._owner.strongify()
                 if isinstance(o, Living):
-                    return o
+                    return o.strongify()
                 o = o._location
         except (ReferenceError, AttributeError):
             pass
@@ -90,7 +100,7 @@ class baseobj:  # pylint: disable=invalid-name
         currently holding it a thing.
         """
         if self._owner is not None:
-            return self._owner
+            return self._owner.strongify()
         return self.haver
 
     @owner.setter
@@ -99,6 +109,7 @@ class baseobj:  # pylint: disable=invalid-name
             self._owner = None
             return
         from space.living import Living
+
         if isinstance(v, Living):
             self._owner = weakify(v)
         else:

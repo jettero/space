@@ -8,7 +8,6 @@ from space.pv import INFINITY
 
 from ..vv import VV
 from ..stdobj import StdObj
-from ..container import Containable
 from ..damage import Damage, Kinetic
 from ..roll import Roll, AttrChoices
 

@@ -74,7 +74,6 @@ class Slots:
 
         def _p(slot_prop_name):
             def _g(self):
-                log.debug("get %s.%s.item", self, slot_prop_name)
                 return getattr(self, slot_prop_name).item
 
             def _s(self, v):
@@ -87,9 +86,7 @@ class Slots:
             for slot_name, slot_class in cls.Meta.slots.items():
                 prop_name = PROP_NAME_RE.sub("_", slot_name)
                 slot_prop_name = prop_name + "_slot"
-                log.debug(
-                    "[subclass] slot_name=%s prop_name=%s slot_prop_name=%s", slot_name, prop_name, slot_prop_name
-                )
+                log.debug("[subclass] slot_name=%s prop_name=%s slot_prop_name=%s", slot_name, prop_name, slot_prop_name)
                 sd[slot_prop_name] = (slot_name, slot_class)
                 prop = _p(slot_prop_name)
                 setattr(cls, prop_name, prop)

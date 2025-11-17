@@ -21,7 +21,7 @@ class Containable(Size, baseobj):
 # Note, this is used by all sorts of things you can't pick up (rooms, living
 # slots, etc) If you want to make a pack or a thing you can pick up, you
 # probably also want StdObj
-class Container:
+class Container(baseobj):
     a = "~"
     l = s = "container"
     accept_types = tuple()
@@ -117,7 +117,8 @@ class Slot(Container):
     def __init__(self, name, owner=None):
         super().__init__()
         self.s = self.l = f"{name} slot"
-        self.owner = owner
+        if owner is not None:
+            self.owner = owner
 
     @property
     def item(self):
