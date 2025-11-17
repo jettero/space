@@ -2,6 +2,7 @@
 
 import re
 import copy
+import math
 import operator
 import logging
 
@@ -74,8 +75,14 @@ class PV(PVMeta):
         else:
             self._q = fix
 
+        # This definitely isn't right (e.g., inf/inf is nan, so this should
+        # return 1 if we're pretending this is a defined opeartion). But it
+        # does save us some trouble, and we probably shouldn't try to compute
+        # inf/inf very often.
+        if math.isnan(self._q.magnitude):
+            self._q = self.zero
+
     def __init__(self, expression=None):
-        self._q = self.zero
         self.q = expression
 
     def __repr__(self):
@@ -162,7 +169,7 @@ def generic_value(other):
     return other
 
 
-def common_class(this, other, last_resort=PV):
+def common_class(this, other, last_resort=None):
     st = type(this)
     if isinstance(other, st):
         return st
@@ -182,7 +189,9 @@ def common_class(this, other, last_resort=PV):
                 break
             if isinstance(this, om) and isinstance(other, sm):
                 return sm
-    return last_resort
+    if last_resort is not None:
+        return last_resort
+    return st
 
 
 def add_boolops(cls, *op):
