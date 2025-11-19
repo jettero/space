@@ -39,8 +39,14 @@ class Serial:
         return pass_filter, stop_filter, save, nosave
 
     @classmethod
-    def default_serial(cls, merge=True):
-        """enumerate all the fields we need to save"""
+    def default_serial(cls, merge=True, omit_class=True):
+        """
+        enumerate all the fields we need to save. by default, we merge one big
+        list of k,v pairs together and return a dict. specifying merge=False
+        triggers a list return and specifying omit_class=False causes the
+        return data to be labled by origin-class (although, in the merge case,
+        this will just be the top level class name).
+        """
         s = set()
         ret = dict() if merge else list()
         for c in reversed(cls.mro()):
@@ -59,8 +65,18 @@ class Serial:
             if dat:
                 if merge:
                     ret.update(dat)
+                elif omit_class:
+                    ret.append(dat)
                 else:
                     ret.append({f"{c.__module__}.{c.__name__}": dat})
-        if merge:
+        if merge and not omit_class:
             return {f"{cls.__module__}.{cls.__name__}": ret}
         return ret
+
+    def save(self):
+        ret = dict()
+        for k, v in self.default_serial(merge=True, omit_class=True).items():
+            if (ga := getattr(self, k, None)) != v:
+                ret[k] = ga
+        cls = self.__class__
+        return {f"{cls.__module__}.{cls.__name__}": ret}
