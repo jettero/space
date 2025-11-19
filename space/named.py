@@ -223,5 +223,5 @@ class Tags(Serial):
         if isinstance(other, Tags):
             return self._a == other._a  # pylint: disable=protected-access
         if not isinstance(other, set):
-            other = set(other)
+            other = set() if other is None else set(other)
         return self._a == other
