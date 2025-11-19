@@ -7,6 +7,7 @@ import operator
 import logging
 
 from pint import UnitRegistry, DimensionalityError
+from .serial import Serial
 
 INFINITY = float("inf")
 log = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ def _is_qty(x):
     return True
 
 
-class PV(PVMeta):
+class PV(PVMeta, Serial):
     convert_on_set = False
     check_type = False
 
@@ -84,6 +85,9 @@ class PV(PVMeta):
 
     def __init__(self, expression=None):
         self.q = expression
+
+    def save(self):
+        return super().save(override=f"{self._q.magnitude} {self._q.units}")
 
     def __repr__(self):
         return f"{self.__class__.__name__}<{self:abbr}>"  # invoke __format__

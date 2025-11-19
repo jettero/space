@@ -2,81 +2,47 @@
 
 import inspect
 import types
+import weakref
 
-# def dig_class(base, pass_filter=(int,str,float), stop_filter=(property, classmethod, types.FunctionType, types.MethodType, )):
-#     if not inspect.isclass(base):
-#         base = base.__class__
-#     ret = dict()
-#     for c in base.mro():
-#         ret.update({ k:v for k,v in c.__dict__.items() if not k.startswith('__') and isinstance(v, pass_filter) and not isinstance(v, stop_filter) })
-#     return ret
+# *_FILTER quirks:
+# isinstance(True, int) -> True -- (wierd)
 
-# dig_class(o.me)
-
-PASS_FILTER = (int, str, float)
-STOP_FILTER = (property, classmethod, types.FunctionType, types.MethodType)
+PASS_FILTER = (int, str, float, list, tuple)
+STOP_FILTER = (property, classmethod, types.FunctionType, types.MethodType, weakref.ProxyType)
 
 
 class Serial:
-    @classmethod
-    def get_filters(cls):
-        try:
-            pass_filter = c.__pass_filter__
-        except:
-            pass_filter = PASS_FILTER
-        try:
-            stop_filter = c.__stop_filter__
-        except:
-            stop_filter = STOP_FILTER
-        try:
-            save = c.__save__
-        except:
-            save = list()
-        try:
-            nosave = c.__nosave__
-        except:
-            nosave = list()
-        return pass_filter, stop_filter, save, nosave
-
-    @classmethod
-    def default_serial(cls, merge=True, omit_class=True):
-        """
-        enumerate all the fields we need to save. by default, we merge one big
-        list of k,v pairs together and return a dict. specifying merge=False
-        triggers a list return and specifying omit_class=False causes the
-        return data to be labled by origin-class (although, in the merge case,
-        this will just be the top level class name).
-        """
-        s = set()
-        ret = dict() if merge else list()
-        for c in reversed(cls.mro()):
-            pass_filter, stop_filter, save, nosave = cls.get_filters()
-            dat = {
-                k: v
-                for k, v in c.__dict__.items()
-                if k in save
-                or (
-                    k not in nosave
-                    and not k.startswith("__")
-                    and isinstance(v, pass_filter)
-                    and not isinstance(v, stop_filter)
-                )
-            }
-            if dat:
-                if merge:
-                    ret.update(dat)
-                elif omit_class:
-                    ret.append(dat)
-                else:
-                    ret.append({f"{c.__module__}.{c.__name__}": dat})
-        if merge and not omit_class:
-            return {f"{cls.__module__}.{cls.__name__}": ret}
-        return ret
-
-    def save(self):
-        ret = dict()
-        for k, v in self.default_serial(merge=True, omit_class=True).items():
-            if (ga := getattr(self, k, None)) != v:
-                ret[k] = ga
+    def save(self, hide_class=False, unfiltered=False, recurse=True, inject=None, override=None):
         cls = self.__class__
-        return {f"{cls.__module__}.{cls.__name__}": ret}
+        nam = f"{cls.__module__}.{cls.__name__}"
+
+        if override:
+            if hide_class:
+                return override
+            return {nam: override}
+
+        obj_d = self.__dict__
+        cls_d = cls.__dict__
+
+        first_pass = {k: (cls_d.get(k), obj_v, isinstance(obj_v, Serial)) for k, obj_v in obj_d.items()}
+        if unfiltered:
+            return first_pass  # this is likely only any good for debugging
+
+        save = {
+            k: (obj_v.save() if recurse and isserial else obj_v)
+            for k, (cls_v, obj_v, isserial) in first_pass.items()
+            if (
+                not isinstance(cls_v, STOP_FILTER)
+                and not isinstance(obj_v, STOP_FILTER)
+                and (isinstance(obj_v, PASS_FILTER) or isserial)
+                and cls_v != obj_v  # but we don't want to save any defaults
+            )
+        }
+
+        if inject:
+            # presuambly a child class passed this in via super().save(inject=dict())
+            save.update(inject)
+
+        if hide_class:
+            return save
+        return {nam: save}
