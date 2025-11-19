@@ -3,6 +3,7 @@
 import re
 import logging
 from .util import weakify
+from .serial import Serial
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ def register_haver_leaf(cls):
 # all mud objects get this ancestor
 # most objects you can pick up or put in a room should also get Containable
 # you're probably looking for space/stdobj.py
-class baseobj:  # pylint: disable=invalid-name
+class baseobj(Serial):  # pylint: disable=invalid-name
     _owner = _tokens = _location = None
 
     def strongify(self):

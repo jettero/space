@@ -3,14 +3,13 @@
 import re
 import logging
 
-from .serial import Serial
-from .obj import baseobj
+from .obj import baseobj, Serial
 
 FORMAT_RE = re.compile(r"^(.*?)(?:\b|[~])?(a|s|l|d|abbr|short|long|desc)?$")
 log = logging.getLogger(__name__)
 
 
-class Named(Serial, baseobj):
+class Named(baseobj):
     a = "~"
     s = "object"
     l = "named object"

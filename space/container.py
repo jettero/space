@@ -7,6 +7,7 @@ from .pv import INFINITY
 from .size import Size, BLESSED_PROPERTIES
 from .obj import baseobj, register_haver_recurse_by_owner, register_location_leaf
 from .named import Named
+from .serial import Serial
 
 
 class Containable(Size, baseobj):

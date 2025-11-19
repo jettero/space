@@ -6,6 +6,7 @@ from collections import OrderedDict
 import space.exceptions as E
 from ..container import Slot, Container
 from ..stdobj import StdObj
+from ..serial import Serial
 
 log = logging.getLogger(__name__)
 PROP_NAME_RE = re.compile(r"[^\w\d]+")
@@ -63,7 +64,7 @@ class FeetSlot(Slot):
     accept_types = (FeetWearable,)
 
 
-class Slots:
+class Slots(Serial):
     class Meta:
         slots = OrderedDict()
         default = None
