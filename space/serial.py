@@ -1,45 +1,66 @@
 # coding: utf-8
 
+import inspect
+import types
+
+# def dig_class(base, pass_filter=(int,str,float), stop_filter=(property, classmethod, types.FunctionType, types.MethodType, )):
+#     if not inspect.isclass(base):
+#         base = base.__class__
+#     ret = dict()
+#     for c in base.mro():
+#         ret.update({ k:v for k,v in c.__dict__.items() if not k.startswith('__') and isinstance(v, pass_filter) and not isinstance(v, stop_filter) })
+#     return ret
+
+# dig_class(o.me)
+
+PASS_FILTER = (int, str, float)
+STOP_FILTER = (property, classmethod, types.FunctionType, types.MethodType)
+
 
 class Serial:
     @classmethod
-    def to_save(cls):
-        """enumerate (as a generator) all items in cls.Meta.save"""
+    def get_filters(cls):
+        try:
+            pass_filter = c.__pass_filter__
+        except:
+            pass_filter = PASS_FILTER
+        try:
+            stop_filter = c.__stop_filter__
+        except:
+            stop_filter = STOP_FILTER
+        try:
+            save = c.__save__
+        except:
+            save = list()
+        try:
+            nosave = c.__nosave__
+        except:
+            nosave = list()
+        return pass_filter, stop_filter, save, nosave
+
+    @classmethod
+    def default_serial(cls, merge=True):
+        """enumerate all the fields we need to save"""
         s = set()
-        for c in cls.mro():
-            try:
-                for k in c.Meta.save:
-                    if k not in s:
-                        yield k
-                        s.add(k)
-            except AttributeError:
-                pass
-
-    def serial(self, skip_class=True, non_stop=False, full=False):
-        """serialize all items from to_save().
-        If any items in to_save() are '\x00', 0, False, or None,
-        stop processing there and return results.
-        params:
-          skip_class=True : when false, populate 'm' and 'c' with module and class
-          non_stop=False  : when True, don't stop on stop-processing items, simply skip those
-          full=False      : set skip_class=False and non_stop=True
-        """
-        r = dict()
-        if full:
-            skip_class = False
-            non_stop = True
-        if not skip_class:
-            r.update({"c": self.__class__.__name__, "m": self.__class__.__module__})
-        for k in self.to_save():
-            if k in ("\0", 0, False, None):
-                if non_stop:
-                    continue
-                break
-            r[k] = getattr(self, k, None)
-        return r
-
-    def as_dict(self, **kw):
-        """return serial(full=True) merged with any given kwargs"""
-        r = self.serial(full=True)
-        r.update(kw)
-        return r
+        ret = dict() if merge else list()
+        for c in reversed(cls.mro()):
+            pass_filter, stop_filter, save, nosave = cls.get_filters()
+            dat = {
+                k: v
+                for k, v in c.__dict__.items()
+                if k in save
+                or (
+                    k not in nosave
+                    and not k.startswith("__")
+                    and isinstance(v, pass_filter)
+                    and not isinstance(v, stop_filter)
+                )
+            }
+            if dat:
+                if merge:
+                    ret.update(dat)
+                else:
+                    ret.append({f"{c.__module__}.{c.__name__}": dat})
+        if merge:
+            return {f"{cls.__module__}.{cls.__name__}": ret}
+        return ret
