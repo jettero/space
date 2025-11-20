@@ -89,6 +89,10 @@ class PV(PVMeta, Serial):
     def save(self):
         return super().save(override=f"{self._q.magnitude} {self._q.units}")
 
+    @classmethod
+    def load(cls, data):
+        return cls(data)
+
     def __repr__(self):
         return f"{self.__class__.__name__}<{self:abbr}>"  # invoke __format__
 
