@@ -1,7 +1,8 @@
 # coding: utf-8
 
+import importlib
+import importlib.util
 import json
-import inspect
 import types
 import weakref
 from collections import deque
@@ -40,7 +41,7 @@ class Serial:
 
     def save(self, hide_class=False, unfiltered=False, recurse=True, inject=None, override=None):
         cls = self.__class__
-        nam = f"\x1f{cls.__module__}.{cls.__name__}"
+        nam = f"\x1f{cls.__module__}.{cls.__qualname__}"
 
         if override:
             if hide_class:
@@ -82,6 +83,75 @@ class Serial:
         if hide_class:
             return save
         return {nam: save}
+
+    @classmethod
+    def load(cls, data):
+        if not isinstance(data, dict):
+            raise TypeError(f"{cls.__qualname__} cannot load {type(data).__name__}")
+        inst = cls.__new__(cls)
+
+        def convert(value):
+            if isinstance(value, tuple):
+                return tuple(convert(v) for v in value)
+            if isinstance(value, dict) and len(value) == 1:
+                for marker in value:
+                    if marker.startswith("\x1f"):
+                        return load(value)
+            return value
+
+        for name, raw in data.items():
+            value = convert(raw)
+            if isinstance(default := cls.__dict__.get(name), list):
+                value = list(value)
+            elif isinstance(default, tuple):
+                value = tuple(value)
+            elif isinstance(default, deque):
+                value = deque(value)
+            setattr(inst, name, value)
+
+        return inst
+
+
+def split_marker(marker):
+    parts = marker.split(".")
+    for size in range(len(parts), 0, -1):
+        module_name = ".".join(parts[:size])
+        try:
+            spec = importlib.util.find_spec(module_name)
+        except ModuleNotFoundError:
+            continue
+        if spec is not None:
+            return module_name, ".".join(parts[size:])
+    raise ModuleNotFoundError(marker)
+
+
+def resolve_marker(marker):
+    if marker.startswith("\x1f"):
+        marker = marker[1:]
+    module_name, qual = split_marker(marker)
+    module = importlib.import_module(module_name)
+    target = module
+    if qual:
+        for attr in qual.split("."):
+            target = getattr(target, attr)
+    return target
+
+
+def load(dat):
+    if isinstance(dat, str):
+        dat = json.loads(dat)
+    if not isinstance(dat, dict):
+        raise TypeError("load expects dict or json string")
+    if len(dat) != 1:
+        raise ValueError("load expects exactly one root object")
+
+    for marker, payload in dat.items():
+        if not marker.startswith("\x1f"):
+            raise ValueError("load missing class marker")
+        cls = resolve_marker(marker)
+        if not issubclass(cls, Serial):
+            raise TypeError("load target is not a Serial subclass")
+        return cls.load(payload)
 
 
 PASS_FILTER = (*PASS_FILTER, Serial)
