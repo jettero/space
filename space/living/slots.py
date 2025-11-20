@@ -101,6 +101,8 @@ class Slots(Serial):
         for slot_prop_name, a in self._slots.items():
             slot_name, slot_class = a
             setattr(self, slot_prop_name, slot_class(slot_name, owner))
+            # XXX: we should move this naming from the instance creation to the class creation
+            # it's polluting the save files.
 
     def __iter__(self):
         for slot_prop_name in self._slots:
