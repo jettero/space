@@ -1,5 +1,6 @@
 # coding: utf-8
 
+import json
 import inspect
 import types
 import weakref
@@ -28,9 +29,18 @@ class Serial:
                 pass
         return ret
 
+    def as_json(self, indent=2, sort_keys=True, filename=None):
+        ret = json.dumps(self.save(), indent=indent, sort_keys=sort_keys)
+        if filename is not None:
+            if not filename.endswith(".json"):
+                filename += ".json"
+            with open(filename, "w") as fh:
+                fh.write(ret)
+        return ret
+
     def save(self, hide_class=False, unfiltered=False, recurse=True, inject=None, override=None):
         cls = self.__class__
-        nam = f"{cls.__module__}.{cls.__name__}"
+        nam = f"\x1f{cls.__module__}.{cls.__name__}"
 
         if override:
             if hide_class:
