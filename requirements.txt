@@ -1,2 +1,4 @@
+asyncssh
 lark-parser
 pint
+prompt_toolkit
