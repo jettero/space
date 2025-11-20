@@ -220,7 +220,7 @@ class Route(namedtuple("R", ["verb", "can", "do", "score"])):
         return self.can.fn.__name__[4:]
 
     def adj(self, arg_name, **kw):
-        return tuple(kw[k] for k in self.can.fn.__dict__.get("adj_map", {}).get(arg_name, []) if k in kw)
+        return tuple(kw[k] for k in getattr(self.can.fn, "adj_map", {}).get(arg_name, []) if k in kw)
 
 
 class FnMap(namedtuple("FM", ["fn", "ihint"])):
