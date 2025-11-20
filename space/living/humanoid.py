@@ -101,27 +101,32 @@ class Humanoid(Living):
         # if word is 'south' and there's a door to the south, then we can be
         # pretty sure we've selected the right door.
 
-        ok, ctx = obj.can_open()
-        if ok:
-            if self.unit_distance_to(obj) <= self.reach:
-                return ok, {"obj": obj}
-            return False, {"error": f"{obj} is too far away"}
-        return ok, ctx
+        return self.can_open_obj(obj)
 
     do_open_word_obj = do_open_obj
 
     def can_close_obj(self, obj: Door):
-        ok, err = obj.can_close()
+        ok, ctx = obj.can_close()
         if ok:
             if self.unit_distance_to(obj) <= self.reach:
-                return ok, err
+                return ok, {"obj": obj}
             return False, {"error": f"{obj} is too far away"}
-        return ok, err
+        if (reason := meta.get("reason")) == "already-closed":
+            return False, {"error": f"{obj} is already closed"}
+        if reason == "stuck":
+            return False, {"error": f"{obj} appears to be stuck"}
+        return False, {"error": f"You cannot close {obj}"}
+
+    @adj_map(obj="word")
+    def can_close_word_obj(self, word: str, obj: Door):
+        return self.can_close_obj(obj)
 
     def do_close_obj(self, obj: Door):
         log.debug("do_sclose_obj(%s)", obj)
         obj.do_close()
         self.simple_action("$N $vclose $o.", obj)
+
+    do_close_word_obj = do_close_obj
 
 
 class Human(PointLessVoiceLines, Humanoid):

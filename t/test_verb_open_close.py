@@ -17,19 +17,17 @@ def test_open_door(me):
     assert xp.fn.__name__ == "do_open_obj"
 
 
-@pytest.mark.xfail(reason="todo: would require adjective filters")
 def test_open_south_door(me):
     xp = me.parse("open south door")
     assert xp
-    assert xp.fn.__name__ == "do_open_word_obj"
+    assert xp.fn.__name__ in ("do_open_word_obj", "do_open_obj")  # nicknamed in humanoid.py
     xp()
 
 
-@pytest.mark.xfail(reason="todo: would require adjective filters")
 def test_open_north_door_fail(me):
     xp = me.parse("open north door")
     assert not xp
-    with pytest.raises(E.ParseError, match=r"no door to the north"):
+    with pytest.raises(E.ParseError, match=r"unable to find.*north door"):
         xp()
 
 
@@ -60,3 +58,25 @@ def test_open_door_and_move_through_it(me):
     assert xp and xp.fn.__name__ == "do_move_words"
     xp()
     assert me.location.pos == (8, 2)
+
+
+def test_close_door(me):
+    assert (xp := me.parse("open door"))
+    xp()
+    assert (xp := me.parse("close door"))
+    assert xp.fn.__name__ == "do_close_obj"
+    xp()
+    assert not (xp := me.parse("move south"))
+    with pytest.raises(E.ParseError, match=r"door is closed"):
+        xp()
+
+
+def test_close_south_door(me):
+    assert (xp := me.parse("open door"))
+    xp()
+    assert (xp := me.parse("close south door"))
+    assert xp.fn.__name__ in ("do_close_word_obj", "do_close_obj")  #  nicknamed in humanoid.py
+    xp()
+    assert not (xp := me.parse("move south"))
+    with pytest.raises(E.ParseError, match=r"door is closed"):
+        xp()
