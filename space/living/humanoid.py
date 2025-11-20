@@ -96,12 +96,19 @@ class Humanoid(Living):
 
     @adj_map(obj="word")
     def can_open_word_obj(self, word: str, obj: Door):
-        # XXX: there's really no way to get the behavior we want here without
-        # some kind of adj-filter system for the object resolver in the parser.
-        return False, {"error": "XXX: we'd need adjective filters to do this"}
+        # the parser and obj.parse_match do consider 'word' as adjectives of
+        # obj and filter the obj choices appropriately (thanks to @adj_map). So
+        # if word is 'south' and there's a door to the south, then we can be
+        # pretty sure we've selected the right door.
 
-    def do_open_word_obj(self, word, obj: Door):
-        self.do_open_obj(obj)
+        ok, ctx = obj.can_open()
+        if ok:
+            if self.unit_distance_to(obj) <= self.reach:
+                return ok, {"obj": obj}
+            return False, {"error": f"{obj} is too far away"}
+        return ok, ctx
+
+    do_open_word_obj = do_open_obj
 
     def can_close_obj(self, obj: Door):
         ok, err = obj.can_close()
