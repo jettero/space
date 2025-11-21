@@ -11,6 +11,12 @@
 - before using introspection to figure out `prompt_toolkit` syntax, please scan the reference doc in `contrib/pt_doc.html`
 
 # HARD CONSTRAINTS
+- in client facing apps (shells, client facing portions of ssh servers, etc)
+  ^D/EOF should always indicate a clean exist quit situation; do not make the
+  user type quit/exit (although those should work too)
+- in all programs that persist (servers, clients, etc), ^C/KeyboardInterrupt
+  should always indicate the user or admin desire for a clean immediate exit.
+  Always handle KeyboadInterrupt
 - always tell me when you read this file (so I know for sure you see it on startup)
 - shorter is better and easier to read. don't spend 40 lines doing what you could do in 5
 - use the walrus operator (`if m := something`)
