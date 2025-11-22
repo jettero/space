@@ -21,6 +21,8 @@ DATA_ROOT = Path("data")
 USER_DIR = DATA_ROOT / "user"
 MCP_DIR = DATA_ROOT / "mcp"
 SERVER_CONFIG = MCP_DIR / "server.json"
+LOG_FILE_ENV = "SSHSERVER_LOG"
+LOG_FILE = Path(os.environ.get(LOG_FILE_ENV, "last-run.log"))
 
 
 class STFU(logging.Filter):
@@ -30,13 +32,27 @@ class STFU(logging.Filter):
         return True
 
 
-logging.basicConfig(level=logging.DEBUG, filename="last-run.log", filemode="w")
-for handler in logging.root.handlers:
+def configure_logging():
+    root = logging.getLogger()
+    if getattr(configure_logging, "_configured", False):
+        return
+    if root.handlers:
+        return
+    if LOG_FILE.exists():
+        LOG_FILE.unlink()
+    handler = logging.FileHandler(LOG_FILE, mode="w")
     handler.addFilter(STFU())
     handler.setFormatter(logging.Formatter("%(levelname)s %(name)s %(message)s"))
+    root.addHandler(handler)
+    root.setLevel(logging.DEBUG)
+    configure_logging._configured = True
 
+
+configure_logging()
 log = logging.getLogger("sshpoc")
 CTRL_D = "\x04"
+BRACKET_PASTE_START = "\x1b[200~"
+BRACKET_PASTE_END = "\x1b[201~"
 
 
 def canonical_key_text(value) -> str:
@@ -215,6 +231,8 @@ class Menu:
             session.print_line(f"  {option.key}) {option.label}")
         choice = await session.prompt_text("> ", raw_prompt=True)
         log.debug("Menu run choice=%s", choice)
+        if choice is None:
+            return False
         handler = self._options.get(choice.lower())
         if handler is None:
             session.print_line("Select one of the menu options.")
@@ -313,6 +331,8 @@ class MenuSession(asyncssh.SSHServerSession):
         self.output_writer = None
         self.output_reader = None
         self.output_forwarder = None
+        self._paste_active = False
+        self._paste_buffer: List[str] = []
         log.debug("MenuSession init username=%s has_record=%s", username, bool(user_record))
 
     def connection_made(self, chan):
@@ -331,18 +351,47 @@ class MenuSession(asyncssh.SSHServerSession):
     def data_received(self, data, datatype):
         is_bytes = isinstance(data, (bytes, bytearray))
         text = data.decode(errors="ignore") if is_bytes else str(data)
-        if text == CTRL_D:
+        log.debug("MenuSession raw_data username=%s repr=%r", self.username, text)
+        if CTRL_D in text:
             log.debug("MenuSession ctrl_d username=%s", self.username)
             self._exit_session()
             return
+        chunks: List[str] = []
+        remaining = text
+        while remaining:
+            if self._paste_active:
+                end = remaining.find(BRACKET_PASTE_END)
+                if end == -1:
+                    self._paste_buffer.append(remaining)
+                    remaining = ""
+                    break
+                self._paste_buffer.append(remaining[:end])
+                combined = "".join(self._paste_buffer)
+                if combined:
+                    chunks.append(combined)
+                self._paste_buffer.clear()
+                self._paste_active = False
+                remaining = remaining[end + len(BRACKET_PASTE_END) :]
+                continue
+            start = remaining.find(BRACKET_PASTE_START)
+            if start == -1:
+                chunks.append(remaining)
+                break
+            if start:
+                chunks.append(remaining[:start])
+            remaining = remaining[start + len(BRACKET_PASTE_START) :]
+            self._paste_active = True
+            self._paste_buffer = []
+        payload = "".join(chunks)
+        if not payload:
+            return
         if self.pipe_input is not None:
-            self.pipe_input.send_text(text)
-        log.debug("MenuSession data_received username=%s bytes=%s", self.username, len(text))
+            self.pipe_input.send_text(payload)
+        log.debug("MenuSession data_received username=%s text=%r", self.username, payload)
 
     def eof_received(self):
-        self._close_io()
-        if self.channel is not None:
-            self.channel.exit(0)
+        log.debug("MenuSession eof_received username=%s", self.username)
+        self._exit_session()
         return False
 
     def connection_lost(self, exc):
@@ -367,7 +416,7 @@ class MenuSession(asyncssh.SSHServerSession):
 
     async def prompt_text(
         self, label: str, default: Optional[str] = None, *, is_password: bool = False, raw_prompt=False
-    ) -> str:
+    ) -> Optional[str]:
         if self.prompt_session is None:
             return default or ""
         if raw_prompt:
@@ -375,11 +424,16 @@ class MenuSession(asyncssh.SSHServerSession):
         else:
             prompt_text = label if default is None else f"{label} [{default}]"
             prompt_text = f"{prompt_text}: "
-        result = await self.prompt_session.prompt_async(
-            prompt_text,
-            default=default or "",
-            is_password=is_password,
-        )
+        try:
+            result = await self.prompt_session.prompt_async(
+                prompt_text,
+                default=default or "",
+                is_password=is_password,
+            )
+        except EOFError:
+            log.debug("MenuSession prompt_text eof username=%s", self.username)
+            self._exit_session()
+            return None
         value = result.strip()
         if value:
             return value
@@ -402,6 +456,9 @@ class MenuSession(asyncssh.SSHServerSession):
             self.print_line(f"Logged in as {self.username}.")
             self.print_line("Type exit to disconnect or logout to return to the main menu.")
             command = await self.prompt_text("> ", raw_prompt=True)
+            if command is None:
+                active = False
+                continue
             normalized = command.lower()
             log.debug("account_menu command=%s", normalized)
             if normalized in {"exit", "quit"}:
@@ -424,6 +481,8 @@ class MenuSession(asyncssh.SSHServerSession):
             return False
         key_text = await self.prompt_text("Public SSH key")
         log.debug("handle_signup username=%s has_key=%s", username, bool(key_text))
+        if key_text is None:
+            return False
         if not key_text:
             self.print_line("Provide a public SSH key.")
             log.debug("handle_signup no_key username=%s", username)
@@ -529,12 +588,18 @@ class MenuSession(asyncssh.SSHServerSession):
                 pass
             self.output_writer = None
         self.prompt_session = None
+        self._paste_active = False
+        self._paste_buffer = []
         log.debug("MenuSession _close_io username=%s", self.username)
 
     def _exit_session(self, code: int = 0):
         self._close_io()
         if self.channel is not None:
-            self.channel.exit(code)
+            channel = self.channel
+            self.channel = None
+            channel.exit(code)
+            channel.close()
+            asyncio.create_task(channel.wait_closed())
 
 
 def parse_listen(value: str):

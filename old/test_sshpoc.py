@@ -1,5 +1,6 @@
 import asyncio
 import os
+import types
 
 import asyncssh
 import pytest
@@ -122,6 +123,12 @@ def test_signup_via_session_then_login(username, app):
         def exit(self, code):
             self.code = code
 
+        def close(self):
+            pass
+
+        async def wait_closed(self):
+            return
+
         def get_terminal_size(self):
             return 80, 24
 
@@ -163,6 +170,12 @@ def test_ctrl_d_closes_session(monkeypatch):
         def exit(self, code):
             self.code = code
 
+        def close(self):
+            pass
+
+        async def wait_closed(self):
+            return
+
         def get_terminal_size(self):
             return 80, 24
 
@@ -179,3 +192,143 @@ def test_ctrl_d_closes_session(monkeypatch):
     asyncio.run(drive())
     assert closed
     assert channel.code == 0
+
+
+def fake_prompt_session():
+    class Prompt:
+        async def prompt_async(self, *args, **kwargs):
+            raise EOFError
+
+    return types.SimpleNamespace(prompt_async=Prompt().prompt_async, app=types.SimpleNamespace(output=None))
+
+
+def fake_channel():
+    class Channel:
+        def __init__(self):
+            self.code = None
+
+        def exit(self, code):
+            self.code = code
+
+        def close(self):
+            pass
+
+        async def wait_closed(self):
+            return
+
+        def get_terminal_size(self):
+            return 80, 24
+
+        def get_terminal_type(self):
+            return "xterm"
+
+    return Channel()
+
+
+def test_ctrl_d_exits_guest_menu(monkeypatch):
+    monkeypatch.setattr(sshpoc, "print_formatted_text", lambda *args, **kwargs: None)
+    session = sshpoc.MenuSession(object(), "guest", None)
+    channel = fake_channel()
+    session.channel = channel
+    session.prompt_session = fake_prompt_session()
+
+    async def drive():
+        await session.guest_menu()
+
+    asyncio.run(drive())
+    assert channel.code == 0
+
+
+def test_ctrl_d_exits_account_menu(monkeypatch):
+    monkeypatch.setattr(sshpoc, "print_formatted_text", lambda *args, **kwargs: None)
+    session = sshpoc.MenuSession(object(), "member", {"username": "member"})
+    channel = fake_channel()
+    session.channel = channel
+    session.prompt_session = fake_prompt_session()
+
+    async def drive():
+        await session.account_menu()
+
+    asyncio.run(drive())
+    assert channel.code == 0
+
+
+def test_data_received_strips_bracketed_paste(monkeypatch):
+    session = sshpoc.MenuSession(object(), "guest", None)
+    received = []
+    session.pipe_input = types.SimpleNamespace(send_text=received.append)
+    session.channel = fake_channel()
+    session.data_received(b"\x1b[200~he", None)
+    session.data_received(b"ll", None)
+    session.data_received(b"o\x1b[201~", None)
+    assert received == ["hello"]
+
+
+def test_data_received_ctrl_d_inside_bracket(monkeypatch):
+    session = sshpoc.MenuSession(object(), "guest", None)
+    called = []
+    monkeypatch.setattr(session, "_exit_session", lambda code=0: called.append(code))
+    session.data_received(b"\x1b[200~\x04\x1b[201~", None)
+    assert called == [0]
+
+
+@pytest.mark.timeout(5)
+def test_ctrl_d_disconnects_guest_session_real_server(app, monkeypatch):
+    exits = []
+    exit_event = asyncio.Event()
+    original_exit = sshpoc.MenuSession._exit_session
+    raw_packets = []
+
+    original_data_received = sshpoc.MenuSession.data_received
+
+    def track_data(self, data, datatype):
+        raw_packets.append(bytes(data) if isinstance(data, (bytes, bytearray)) else data)
+        return original_data_received(self, data, datatype)
+
+    def track_exit(self, code=0):
+        exits.append(code)
+        if not exit_event.is_set():
+            exit_event.set()
+        return original_exit(self, code)
+
+    monkeypatch.setattr(sshpoc.MenuSession, "_exit_session", track_exit)
+    monkeypatch.setattr(sshpoc.MenuSession, "data_received", track_data)
+
+    async def drive():
+        server = await asyncssh.create_server(
+            lambda: sshpoc.SignupSSHServer(app),
+            "127.0.0.1",
+            0,
+            server_host_keys=app.server_keys,
+        )
+        try:
+            host, port = server.get_addresses()[0]
+            conn = await asyncssh.connect(host, port, username="guest", known_hosts=None)
+            try:
+                proc = await conn.create_process(term_type="xterm-256color")
+                await asyncio.wait_for(proc.stdout.read(1024), timeout=1)
+                proc.stdin.write(sshpoc.CTRL_D)
+                await proc.stdin.drain()
+                    try:
+                        await asyncio.wait_for(exit_event.wait(), timeout=1)
+                    except asyncio.TimeoutError:
+                        return list(exits), list(raw_packets)
+                    await asyncio.wait_for(proc.wait_closed(), timeout=1)
+                    assert proc.exit_status == 0
+                    return list(exits), list(raw_packets)
+                finally:
+                    conn.close()
+                    await conn.wait_closed()
+        finally:
+            server.close()
+            await server.wait_closed()
+
+    exit_codes, packets = asyncio.run(drive())
+    if exit_codes != [0]:
+        raise AssertionError(f"exit codes {exit_codes!r}, packets {packets!r}")
+    if not any(
+        (isinstance(packet, (bytes, bytearray)) and sshpoc.CTRL_D.encode() in packet)
+        or (isinstance(packet, str) and sshpoc.CTRL_D in packet)
+        for packet in packets
+    ):
+        raise AssertionError(f"missing ctrl-d in packets {packets!r}")
