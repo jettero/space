@@ -15,6 +15,7 @@ from prompt_toolkit.data_structures import Size
 from prompt_toolkit.input.defaults import create_pipe_input
 from prompt_toolkit.output.vt100 import Vt100_Output
 from prompt_toolkit.shortcuts import PromptSession, print_formatted_text
+from prompt_toolkit.key_binding import KeyBindings
 
 DATA_ROOT = Path("data")
 USER_DIR = DATA_ROOT / "user"
@@ -29,7 +30,7 @@ class STFU(logging.Filter):
         return True
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, filename="last-run.log", filemode="w")
 for handler in logging.root.handlers:
     handler.addFilter(STFU())
     handler.setFormatter(logging.Formatter("%(levelname)s %(name)s %(message)s"))
@@ -228,10 +229,7 @@ class SignupSSHServer(asyncssh.SSHServer):
         self._preauth = None
         self._preauth_user = None
         self._pending_username = None
-        self._pending_record = None
         self._connection_username = None
-        self._connection_record = None
-        self._authorized_public_keys = []
         log.debug("SignupSSHServer init")
 
     def begin_auth(self, username: str):
@@ -239,42 +237,33 @@ class SignupSSHServer(asyncssh.SSHServer):
         self._pending_username = username
         self._preauth = None
         self._preauth_user = None
-        self._pending_record = self.app.users.load(username)
         self._connection_username = username
-        self._connection_record = None
-        self._authorized_public_keys = []
-        if self._pending_record is None:
+        record = self.app.users.load(username)
+        if record is None:
             log.debug("begin_auth no_record username=%s", username)
             return False
-        keys = [canonical_key_text(item) for item in self._pending_record.get("ssh_keys", [])]
-        if keys:
-            self._authorized_public_keys = keys
+        if record.get("ssh_keys"):
             log.debug("begin_auth key_auth_required username=%s", username)
             return True
         log.debug("begin_auth no_auth_required username=%s", username)
+        self._preauth = username
+        self._preauth_user = record
         return False
 
     def public_key_auth_supported(self) -> bool:
-        supported = bool(self._pending_record and any(self._pending_record.get("ssh_keys") or []))
+        if not self._pending_username:
+            log.debug("public_key_auth_supported no_pending_username")
+            return False
+        record = self.app.users.load(self._pending_username)
+        supported = bool(record and record.get("ssh_keys"))
         log.debug("public_key_auth_supported username=%s supported=%s", self._pending_username, supported)
         return supported
 
     def validate_public_key(self, username: str, key: asyncssh.SSHKey) -> bool:
-        if self._authorized_public_keys:
-            key_text = canonical_key_text(key)
-            log.debug(
-                "validate_public_key checking username=%s key=%s authorized=%s",
-                username,
-                key_text,
-                key_text in self._authorized_public_keys,
-            )
-            if key_text not in self._authorized_public_keys:
-                return False
         success, record = self.app.authenticate_key(username, key)
         if success:
             self._preauth = username
             self._preauth_user = record
-            self._connection_record = record
             log.debug("validate_public_key success username=%s", username)
             return True
         log.debug("validate_public_key failure username=%s", username)
@@ -285,21 +274,22 @@ class SignupSSHServer(asyncssh.SSHServer):
             "auth_completed username=%s has_preauth=%s has_record=%s",
             self._pending_username,
             bool(self._preauth_user),
-            bool(self._pending_record),
+            bool(self._preauth_user),
         )
-        if self._preauth_user is None and self._pending_record is not None:
-            self._preauth = self._pending_username
-            self._preauth_user = self._pending_record
-            self._connection_record = self._pending_record
+        if self._preauth_user is None and self._pending_username:
+            record = self.app.users.load(self._pending_username)
+            if record is not None and not record.get("ssh_keys"):
+                self._preauth = self._pending_username
+                self._preauth_user = record
 
     def session_requested(self):
         username = self._preauth or self._pending_username or self._connection_username
-        record = self._preauth_user or self._connection_record
+        record = self._preauth_user
+        if username and record is None:
+            record = self.app.users.load(username)
         self._preauth = None
         self._preauth_user = None
         self._pending_username = self._connection_username
-        self._pending_record = None
-        self._authorized_public_keys = []
         log.debug("session_requested username=%s has_record=%s", username, bool(record))
         return MenuSession(self.app, username, record)
 
@@ -307,10 +297,7 @@ class SignupSSHServer(asyncssh.SSHServer):
         self._preauth = None
         self._preauth_user = None
         self._pending_username = None
-        self._pending_record = None
-        self._authorized_public_keys = []
         self._connection_username = None
-        self._connection_record = None
         log.debug("SignupSSHServer connection_lost exc=%s", exc)
 
 
@@ -344,11 +331,9 @@ class MenuSession(asyncssh.SSHServerSession):
     def data_received(self, data, datatype):
         is_bytes = isinstance(data, (bytes, bytearray))
         text = data.decode(errors="ignore") if is_bytes else str(data)
-        if CTRL_D in text:
+        if text == CTRL_D:
             log.debug("MenuSession ctrl_d username=%s", self.username)
-            self._close_io()
-            if self.channel is not None:
-                self.channel.exit(0)
+            self._exit_session()
             return
         if self.pipe_input is not None:
             self.pipe_input.send_text(text)
@@ -420,8 +405,7 @@ class MenuSession(asyncssh.SSHServerSession):
             normalized = command.lower()
             log.debug("account_menu command=%s", normalized)
             if normalized in {"exit", "quit"}:
-                if self.channel is not None:
-                    self.channel.exit(0)
+                self._exit_session()
                 active = False
             elif normalized in {"logout"}:
                 self.user_record = None
@@ -458,14 +442,12 @@ class MenuSession(asyncssh.SSHServerSession):
 
     async def handle_login(self):
         self.print_line("Reconnect with your SSH credentials to log in.")
-        if self.channel is not None:
-            self.channel.exit(0)
+        self._exit_session()
         log.debug("handle_login exit_prompt username=%s", self.username)
         return False
 
     async def handle_quit(self):
-        if self.channel is not None:
-            self.channel.exit(0)
+        self._exit_session()
         return False
 
     def _setup_prompt_toolkit(self):
@@ -491,7 +473,14 @@ class MenuSession(asyncssh.SSHServerSession):
             get_size=get_size,
             term=self._terminal_type(),
         )
-        self.prompt_session = PromptSession(input=self.pipe_input, output=output)
+        bindings = KeyBindings()
+
+        @bindings.add("c-d")
+        def _exit(event):
+            log.debug("MenuSession keybinding_ctrl_d username=%s", self.username)
+            self._exit_session()
+
+        self.prompt_session = PromptSession(input=self.pipe_input, output=output, key_bindings=bindings)
         self.output_forwarder = asyncio.create_task(self._forward_output())
 
     def _terminal_type(self):
@@ -541,6 +530,11 @@ class MenuSession(asyncssh.SSHServerSession):
             self.output_writer = None
         self.prompt_session = None
         log.debug("MenuSession _close_io username=%s", self.username)
+
+    def _exit_session(self, code: int = 0):
+        self._close_io()
+        if self.channel is not None:
+            self.channel.exit(code)
 
 
 def parse_listen(value: str):
