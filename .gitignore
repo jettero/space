@@ -6,6 +6,7 @@
 /mods
 /file*
 
+/tmp_*
 __pycache__
 *.png
 *.egg-info
