@@ -11,6 +11,10 @@
 - before using introspection to figure out `prompt_toolkit` syntax, please scan the reference doc in `contrib/pt_doc.html`
 
 # HARD CONSTRAINTS
+- when chasing described bugs and bad application behaviors, always construct a
+  test that demonstrates the bug and fails before attempting to fix the problem
+  -- otherwise you won't be able to tell if it's fixed. If the user hasn't said
+  where the test should go, ask. Do not simply guess.
 - in client facing apps (shells, client facing portions of ssh servers, etc)
   ^D/EOF should always indicate a clean exist quit situation; do not make the
   user type quit/exit (although those should work too)
