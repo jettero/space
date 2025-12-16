@@ -54,7 +54,7 @@ def parse(actor, input_text, parse_only=False):
             for i, iih in enumerate(route.can.ihint):
                 if iih.multi:
                     for j, jih in [(j, route.can.ihint[j]) for j in range(i + 1, len(route.can.ihint))]:
-                        if issubclass(jih.type, StdObj):
+                        if isinstance(jih.type, type) and issubclass(jih.type, StdObj):
                             for k, kih in [(k, route.can.ihint[k]) for k in range(j + 1, len(route.can.ihint))]:
                                 if kih.multi:
                                     # if we have more than enough tokens and more than one multi
