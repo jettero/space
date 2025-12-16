@@ -318,7 +318,7 @@ def implied_type(name):
 
 def type_rank(ih):
     score = 1.0
-    if issubclass(ih.type, StdObj):
+    if isinstance(ih.type, type) and issubclass(ih.type, StdObj):
         score += ih.type.stdobj_dist_val / 1000
     if ih.multi:
         score -= 0.000_001
