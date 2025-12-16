@@ -9,3 +9,5 @@ pylint
 pytest-parallel
 pytest-timeout
 coverage-enable-subprocess
+
+black
