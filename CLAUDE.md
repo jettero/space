@@ -1,1 +1,0 @@
-- see `AGENTS.md` like any rational agent should
