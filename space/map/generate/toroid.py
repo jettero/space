@@ -1,10 +1,10 @@
 # coding: utf-8
 
-from math import cos, sin, tau
+from math import atan2, cos, sin, tau
 
 from space.map import Map
 from space.map.cell import Floor, Corridor, Wall
-from .tools import Shape, circle, disk, line, spear_room, stadium_room
+from .tools import Shape, circle, disk, line, spear_room, thin_line
 
 
 def generate_station(
@@ -20,11 +20,9 @@ def generate_station(
     inner_radius = outer_radius - walkway_width
     hub_radius = max(6, inner_radius - 18)
     corridor_length = outer_radius
-    wall_thickness = 1.0
     shape = Shape()
     shape.merge(disk(center, hub_radius, Floor))
     shape.merge(circle(center, inner_radius, outer_radius, Corridor))
-    shape.merge(circle(center, outer_radius + 0.5, outer_radius + 1.5, Wall))
     for idx in range(room_count):
         angle = tau * idx / room_count
         shape.merge(
@@ -40,21 +38,65 @@ def generate_station(
         )
         angle_span = tau / room_count
         if room_kind == "stadium":
-            depth = room_depth
-            radius_mid = outer_radius + 2 + depth / 2
-            gap_angle = wall_thickness / max(radius_mid, 1.0)
-            theta_half = max(0.01, angle_span / 2 - gap_angle / 2)
-            arc_length = 2 * radius_mid * theta_half
-            shape.merge(
-                stadium_room(
-                    center,
-                    angle,
-                    radius_mid,
-                    depth,
-                    arc_length,
-                    Floor,
+            wall_thickness = 1.0
+            door_width = 2.0
+            wall_inner = outer_radius
+            wall_outer = outer_radius + wall_thickness
+            floor_outer = wall_outer + room_depth
+            limit = int(floor_outer) + 1
+            door_angle = door_width / max(wall_inner + 0.5, 1.0)
+            theta_half = angle_span / 2
+            door_half = door_angle / 2
+            walkway_gap = 0.6 / max(wall_outer, 1.0)
+            wall_cells = set()
+            floor_cells = set()
+            cx, cy = center
+            inner_sq = wall_inner * wall_inner
+            wall_sq = wall_outer * wall_outer
+            outer_sq = floor_outer * floor_outer
+            for y in range(int(cy - limit), int(cy + limit) + 1):
+                for x in range(int(cx - limit), int(cx + limit) + 1):
+                    dx = x - cx
+                    dy = y - cy
+                    dist_sq = dx * dx + dy * dy
+                    if dist_sq <= inner_sq or dist_sq > outer_sq:
+                        continue
+                    theta = atan2(dy, dx)
+                    delta = (theta - angle + tau) % tau
+                    if delta > tau / 2:
+                        delta -= tau
+                    abs_delta = abs(delta)
+                    if abs_delta > theta_half:
+                        continue
+                    if dist_sq <= wall_sq:
+                        if abs_delta <= door_half:
+                            floor_cells.add((x, y))
+                        elif abs_delta <= theta_half - walkway_gap:
+                            wall_cells.add((x, y))
+                        # otherwise leave empty so radial wall handles boundary
+                        continue
+                    if abs_delta < theta_half:
+                        floor_cells.add((x, y))
+            boundary_cells = set()
+            for sign in (-1, 1):
+                boundary_angle = angle + sign * theta_half
+                start = (
+                    round(cx + cos(boundary_angle) * wall_outer),
+                    round(cy + sin(boundary_angle) * wall_outer),
                 )
-            )
+                end = (
+                    round(cx + cos(boundary_angle) * floor_outer),
+                    round(cy + sin(boundary_angle) * floor_outer),
+                )
+                for pos in thin_line(start, end):
+                    if (pos[0] - cx) ** 2 + (pos[1] - cy) ** 2 < wall_sq:
+                        continue
+                    boundary_cells.add(pos)
+            floor_cells.difference_update(boundary_cells)
+            wall_cells.update(boundary_cells)
+            shape.add(Wall, wall_cells)
+            shape.add(Floor, floor_cells)
+            continue
         elif room_kind == "spear":
             length = room_depth + 4
             radius_mid = outer_radius + 2 + length / 2
