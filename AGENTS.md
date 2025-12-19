@@ -84,6 +84,9 @@
 - never modify files in `contrib/`, `.git/`
 
 ## Always
+- when you edit python files in this repo, always run `black -l 127` on them
+- after you're done with a series of edits and you think it's working right,
+  always run the full set of pytests to make sure you didn't break anything.
 - when creating tests, always work with what you have. don't re-invent the wheel
 - when running pytest, always run pytest directly don't bother with Makefiles
 - if you fail a test, be sure to always check `last-test-run.log` for hints
