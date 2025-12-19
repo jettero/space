@@ -4,7 +4,7 @@ from math import atan2, cos, sin, tau
 
 from space.map import Map
 from space.map.cell import Floor, Corridor, Wall
-from .tools import Shape, circle, disk, line, spear_room, thin_line
+from .tools import Shape, circle, disk, line, thin_line
 
 
 def generate_station(
@@ -25,12 +25,19 @@ def generate_station(
     shape.merge(circle(center, inner_radius, outer_radius, Corridor))
     for idx in range(room_count):
         angle = tau * idx / room_count
+        corridor_end = corridor_length
+        room_radius = room_center_dist = None
+        if room_kind == "spear":
+            room_radius = min(max(room_width // 3, 3), 6)
+            clearance = 2
+            room_center_dist = outer_radius + room_radius + clearance
+            corridor_end = max(corridor_length, room_center_dist - room_radius - 1)
         shape.merge(
             line(
                 center,
                 (
-                    round(center[0] + cos(angle) * corridor_length),
-                    round(center[1] + sin(angle) * corridor_length),
+                    round(center[0] + cos(angle) * corridor_end),
+                    round(center[1] + sin(angle) * corridor_end),
                 ),
                 corridor_width,
                 Corridor,
@@ -98,22 +105,16 @@ def generate_station(
             shape.add(Floor, floor_cells)
             continue
         elif room_kind == "spear":
-            length = room_depth + 4
-            radius_mid = outer_radius + 2 + length / 2
-            width = min(room_width, 16)
-            shape.merge(
-                spear_room(
-                    (
-                        round(center[0] + cos(angle) * radius_mid),
-                        round(center[1] + sin(angle) * radius_mid),
-                    ),
-                    angle,
-                    length,
-                    width,
-                    Floor,
-                    back_cut=0.2,
-                )
+            room_center = (
+                round(center[0] + cos(angle) * room_center_dist),
+                round(center[1] + sin(angle) * room_center_dist),
             )
+            shape.merge(disk(room_center, room_radius, Floor))
+            door_steps = min(2, room_radius)
+            for step in range(1, door_steps + 1):
+                px = round(center[0] + cos(angle) * (corridor_end + step))
+                py = round(center[1] + sin(angle) * (corridor_end + step))
+                shape.add(Floor, {(px, py)})
         else:
             raise ValueError(f"unknown room_kind: {room_kind}")
     return build_map(shape, Wall)
