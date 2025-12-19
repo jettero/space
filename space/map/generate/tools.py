@@ -1,7 +1,7 @@
 # coding: utf-8
 
 from collections import defaultdict
-from math import cos, sin, sqrt
+from math import atan2, cos, pi, sin, sqrt
 
 
 class Shape:
@@ -42,7 +42,7 @@ def circle(center, inner_radius, outer_radius, cell_cls):
     inner_sq = inner_radius * inner_radius
     outer_sq = outer_radius * outer_radius
     points = set()
-    bound = outer_radius + 1
+    bound = int(outer_radius) + 1
     for y in range(cy - bound, cy + bound + 1):
         for x in range(cx - bound, cx + bound + 1):
             if inner_sq <= (x - cx) * (x - cx) + (y - cy) * (y - cy) <= outer_sq:
@@ -77,12 +77,13 @@ def line(start, end, width, cell_cls):
     return Shape().add(cell_cls, pts)
 
 
-def stadium_room(center, angle, depth, width, cell_cls, corner_radius=2):
+def spear_room(center, angle, length, width, cell_cls, back_cut=0.35):
     cx, cy = center
     radial = (cos(angle), sin(angle))
     tangential = (-radial[1], radial[0])
-    half_width = width / 2
-    limit = int(depth + half_width + corner_radius) + 2
+    semi_major = length / 2
+    semi_minor = width / 2
+    limit = int(length + width) + 2
     pts = set()
     for y in range(cy - limit, cy + limit + 1):
         for x in range(cx - limit, cx + limit + 1):
@@ -90,12 +91,32 @@ def stadium_room(center, angle, depth, width, cell_cls, corner_radius=2):
             dy = y - cy
             rel_r = dx * radial[0] + dy * radial[1]
             rel_t = dx * tangential[0] + dy * tangential[1]
-            if rel_r < -1 or rel_r > depth:
+            if rel_r < -semi_major * back_cut or rel_r > semi_major:
                 continue
-            if abs(rel_t) > half_width:
+            if semi_minor == 0:
                 continue
-            if rel_r > depth - corner_radius:
-                if (rel_r - depth + corner_radius) ** 2 + rel_t * rel_t > corner_radius * corner_radius:
-                    continue
-            pts.add((x, y))
+            if ((rel_r - semi_major / 2) / semi_major) ** 2 + (rel_t / semi_minor) ** 2 <= 1:
+                pts.add((x, y))
+    return Shape().add(cell_cls, pts)
+
+
+def stadium_room(origin, angle, radius, depth, arc_length, cell_cls):
+    ox, oy = origin
+    inner_radius = max(0.0, radius - depth / 2)
+    outer_radius = radius + depth / 2
+    mid_radius = (inner_radius + outer_radius) / 2
+    theta_half = arc_length / (2 * mid_radius) if mid_radius > 0 else pi
+    limit = int(outer_radius + 2)
+    pts = set()
+    for y in range(int(oy - limit), int(oy + limit) + 1):
+        for x in range(int(ox - limit), int(ox + limit) + 1):
+            dx = x - ox
+            dy = y - oy
+            dist = sqrt(dx * dx + dy * dy)
+            if dist < inner_radius or dist > outer_radius:
+                continue
+            theta = atan2(dy, dx)
+            delta = (theta - angle + pi) % (2 * pi) - pi
+            if abs(delta) <= theta_half:
+                pts.add((x, y))
     return Shape().add(cell_cls, pts)

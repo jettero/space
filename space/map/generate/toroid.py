@@ -4,24 +4,27 @@ from math import cos, sin, tau
 
 from space.map import Map
 from space.map.cell import Floor, Corridor, Wall
-from .tools import Shape, circle, disk, line, stadium_room
+from .tools import Shape, circle, disk, line, spear_room, stadium_room
 
 
 def generate_station(
     center=(0, 0),
     outer_radius=40,
-    walkway_width=5,
+    walkway_width=3,
     corridor_width=3,
     room_count=12,
-    room_width=6,
-    room_depth=6,
+    room_width=20,
+    room_depth=5,
+    room_kind="stadium",
 ):
     inner_radius = outer_radius - walkway_width
     hub_radius = max(6, inner_radius - 18)
-    corridor_length = outer_radius + room_depth
+    corridor_length = outer_radius
+    wall_thickness = 1.0
     shape = Shape()
     shape.merge(disk(center, hub_radius, Floor))
     shape.merge(circle(center, inner_radius, outer_radius, Corridor))
+    shape.merge(circle(center, outer_radius + 0.5, outer_radius + 1.5, Wall))
     for idx in range(room_count):
         angle = tau * idx / room_count
         shape.merge(
@@ -35,18 +38,42 @@ def generate_station(
                 Corridor,
             )
         )
-        shape.merge(
-            stadium_room(
-                (
-                    round(center[0] + cos(angle) * (outer_radius + room_depth / 2 + 1)),
-                    round(center[1] + sin(angle) * (outer_radius + room_depth / 2 + 1)),
-                ),
-                angle,
-                room_depth,
-                room_width,
-                Floor,
+        angle_span = tau / room_count
+        if room_kind == "stadium":
+            depth = room_depth
+            radius_mid = outer_radius + 2 + depth / 2
+            gap_angle = wall_thickness / max(radius_mid, 1.0)
+            theta_half = max(0.01, angle_span / 2 - gap_angle / 2)
+            arc_length = 2 * radius_mid * theta_half
+            shape.merge(
+                stadium_room(
+                    center,
+                    angle,
+                    radius_mid,
+                    depth,
+                    arc_length,
+                    Floor,
+                )
             )
-        )
+        elif room_kind == "spear":
+            length = room_depth + 4
+            radius_mid = outer_radius + 2 + length / 2
+            width = min(room_width, 16)
+            shape.merge(
+                spear_room(
+                    (
+                        round(center[0] + cos(angle) * radius_mid),
+                        round(center[1] + sin(angle) * radius_mid),
+                    ),
+                    angle,
+                    length,
+                    width,
+                    Floor,
+                    back_cut=0.2,
+                )
+            )
+        else:
+            raise ValueError(f"unknown room_kind: {room_kind}")
     return build_map(shape, Wall)
 
 
