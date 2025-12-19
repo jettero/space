@@ -275,6 +275,14 @@ class Map(baseobj):
         # when we have doors, we should add those iff the door is open
         return random.choice(list(self.iter_cells(of_type=of_type)))
 
+    def randomly_drop(self, obj, retries=20):
+        for _ in range(retries):
+            try:
+                self.random_location().add_item(obj)
+                return
+            except ContainerError:
+                pass
+
     def __iter__(self):
         for j, row in enumerate(self.cells):
             for i, cell in enumerate(row):

@@ -3,14 +3,27 @@
 # pylint: disable=invalid-name,unused-import,no-member
 
 import sys
+from pathlib import Path
+
 from t.troom import a_map, o
 from space.master import MasterControlProgram as MCP
+from space.map import import_map_from_path
 
 profile = False
 
 GET_BAUBLE = ["open door; sSW6s2w; get bauble; 2NEnn"]
 
 c = sys.argv[1:]
+
+for arg in list(c):
+    candidate = Path(arg)
+    if candidate.suffix == ".map" and candidate.is_file():
+        c.remove(arg)
+        a_map = import_map_from_path(candidate)
+        for dood in o:
+            a_map.randomly_drop(dood)
+        break
+
 if c[0:2] in (["get"], ["ubi"], ["get", "bauble"], ["bauble"], ["ubi"]):
     c = GET_BAUBLE
 elif c[0:2] in (["lotsa", "say"], ["say", "alot"]):
