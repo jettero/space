@@ -25,13 +25,12 @@ def generate_station(
     shape.merge(circle(center, inner_radius, outer_radius, Corridor))
     for idx in range(room_count):
         angle = tau * idx / room_count
-        corridor_end = corridor_length
-        room_radius = room_center_dist = None
         if room_kind == "spear":
             room_radius = min(max(room_width // 3, 3), 6)
-            clearance = 2
-            room_center_dist = outer_radius + room_radius + clearance
+            room_center_dist = outer_radius + room_radius + 2
             corridor_end = max(corridor_length, room_center_dist - room_radius - 1)
+        else:
+            corridor_end = corridor_length
         shape.merge(
             line(
                 center,
@@ -110,8 +109,7 @@ def generate_station(
                 round(center[1] + sin(angle) * room_center_dist),
             )
             shape.merge(disk(room_center, room_radius, Floor))
-            door_steps = min(2, room_radius)
-            for step in range(1, door_steps + 1):
+            for step in range(1, min(2, room_radius) + 1):
                 px = round(center[0] + cos(angle) * (corridor_end + step))
                 py = round(center[1] + sin(angle) * (corridor_end + step))
                 shape.add(Floor, {(px, py)})

@@ -15,9 +15,8 @@ GET_BAUBLE = ["open door; sSW6s2w; get bauble; 2NEnn"]
 
 c = sys.argv[1:]
 
-for arg in list(c):
-    candidate = Path(arg)
-    if candidate.suffix == ".map" and candidate.is_file():
+for arg in c:
+    if (candidate := Path(arg)).suffix == ".map" and candidate.is_file():
         c.remove(arg)
         a_map = import_map_from_path(candidate)
         for dood in o:

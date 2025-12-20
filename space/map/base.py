@@ -278,8 +278,7 @@ class Map(baseobj):
     def randomly_drop(self, obj, retries=20):
         for _ in range(retries):
             try:
-                self.random_location().add_item(obj)
-                return
+                return self.random_location().add_item(obj)
             except ContainerError:
                 pass
 

@@ -5,4 +5,4 @@ from .base import sparse
 from .rdc import generate
 from .boxedin import generate as boxed_in
 from .lumpy import generate as lumpy_room
-from .toroid import generate_station as toroid_station
+from .toroid import generate_station
