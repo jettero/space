@@ -2,20 +2,38 @@
 
 - Goal: keep physics-grade LOS for parser/logic while clipping ASCII output to a
   manageable viewport.
-- Problem: full LOS draws overwhelm the terminal; cropping risks hiding
-  interactable tiles.
-- Approach:
-  - Continue computing the full visible set for LOS MapView so parser remains
-    unchanged.
-  - Add a secondary MapView (≈30 m radius) for rendering; it reuses the same
-    visibility data but limits the drawn window.
-  - Modify MapView rendering to detect when visible tiles extend past the render
-    window and emit directional continuation glyphs (← → ↑ ↓) right next to
-    visible blue-background tiles. (The blue background indicates line of site.)
-  - Ensure the continuation glyphs inherit the "visible" styling (blue) so
-    players see they're touching genuine LOS cells.
-  - Parser keeps referencing the full MapView; UI swaps in the cropped
-    MapView+indicators for display.
+- Problem: full LOS draws overwhelm the terminal.
+
+## Current Plan - Simple Terminal-Aware Rendering
+
+### Approach
+- Parser continues using full `visicalc_submap()` - unchanged
+- Rendering bounds applied at display time in `MapMessage.map_drawing_text()`
+- Terminal size queried from shell during message rendering
+- Map clipped to 80% of terminal width/height, centered on player
+- Inventory list renders below map (may push total output off screen - acceptable)
+
+### Implementation Steps
+
+1. **Add `terminal_size` property to BaseShell** (space/shell/base.py)
+   - Returns `(80, 25)` as fallback for non-interactive shells
+
+2. **Override `terminal_size` in Shell** (space/shell/prompt.py)
+   - Returns `os.get_terminal_size()` as `(cols, rows)`
+
+3. **Modify `MapMessage.map_drawing_text()`** (space/msg.py:73)
+   - Get `cols, rows = self.tb.shell.terminal_size`
+   - Calculate `display_cols = int(cols * 0.8)`, `display_rows = int(rows * 0.8)`
+   - Create centered bounds around `self.tb.location.pos` with display dimensions
+   - Wrap `self.map` in `MapView(self.map, display_bounds)`
+   - Return bounded view's `colorized_text_drawing` or `text_drawing`
+
+### Why This Works
+- No changes to visibility calculation or LOS logic
+- No changes to parser - still gets full visicalc MapView
+- Terminal size determined at render time (supports eventual event-driven rendering)
+- Simple: single method change + two property additions
+- MapView already supports nesting (MapView of MapView)
 
 ## Previous Attempt - Failed Implementation
 
