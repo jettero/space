@@ -45,6 +45,10 @@ class BaseShell:
             v.shell = self
             self._owner = weakify(v)
 
+    @property
+    def terminal_size(self):
+        return (80, 25)
+
     def receive(self, something):
         if isinstance(something, Message):
             return self.receive_message(something)

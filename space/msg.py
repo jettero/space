@@ -71,9 +71,27 @@ class MapMessage(Message):
         return "\n".join(ret)
 
     def map_drawing_text(self, color=True):
+        from .map.base import MapView
+        from .map.util import Bounds
+
+        cols, rows = self.tb.shell.terminal_size
+        # Each tile renders as 3 chars wide (space + abbr + space), 1 char tall
+        display_cols_tiles = int(cols * 0.8) // 3
+        display_rows_tiles = int(rows * 0.8)
+
+        px, py = self.tb.location.pos
+        half_width = display_cols_tiles // 2
+        half_height = display_rows_tiles // 2
+
+        display_bounds = Bounds(px - half_width, py - half_height, px + half_width, py + half_height)
+
+        # Get the underlying map if self.map is a MapView
+        underlying_map = self.map.a_map if isinstance(self.map, MapView) else self.map
+        bounded_view = MapView(underlying_map, display_bounds)
+
         if color:
-            return self.map.colorized_text_drawing
-        return self.map.text_drawing
+            return bounded_view.colorized_text_drawing
+        return bounded_view.text_drawing
 
     def render_text(self, color=True):
         return self.map_drawing_text(color) + "\n" + self.inventory_text(color)

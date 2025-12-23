@@ -127,6 +127,10 @@ class Shell(BaseShell):
     logging_opts = None
     message_limit = 800
 
+    @property
+    def terminal_size(self):
+        return os.get_terminal_size()
+
     def preflight(self, init=None):
         completer = ShellCompleter(self)
         custom_bindings = KeyBindings()
