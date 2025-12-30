@@ -14,6 +14,9 @@ profile = False
 GET_BAUBLE = ["open door; sSW6s2w; get bauble; 2NEnn"]
 
 c = sys.argv[1:]
+if "--profile" in c:
+    c.remove("--profile")
+    profile = True
 
 for arg in c:
     if (candidate := Path(arg)).suffix == ".map" and candidate.is_file():
