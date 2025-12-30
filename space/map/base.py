@@ -10,7 +10,7 @@ from ..container import Containable, Container
 from .cell import Cell, Floor, Corridor, MapObj, Wall
 from .cell.blocked import BlockedCell
 from .dir_util import convert_pos, DIRS, DDIRS
-from .util import LineSeg, Box, Bounds, test_maxdist
+from .util import LineSeg, Bounds, test_maxdist
 
 import space.exceptions as E
 
@@ -29,12 +29,15 @@ class Map(baseobj):
     def __init__(self, *a):
         x, y = self.atosz(a)
         self.cells = []
+        self._bounds = None
         self.set_min_size(x, y)
         self.invalidate()
 
     @property
     def bounds(self):
-        return Bounds(self.cells)
+        if self._bounds is None:
+            self._bounds = Bounds(self.cells)
+        return self._bounds
 
     def __repr__(self):
         return f"{self.cname}({self.bounds})#{self.id}"
@@ -162,6 +165,7 @@ class Map(baseobj):
     def set_min_size(self, x, y):
         self._set_min_rows(y)
         self._set_min_cols(x)
+        self._bounds = None
 
     def in_bounds(self, *a):
         return self.bounds.contains(*a)
@@ -218,6 +222,7 @@ class Map(baseobj):
             for _ in range(sx):
                 for row in self.cells:
                     row.insert(0, None)
+            self._bounds = None
         for row in self.cells:
             for cell in row:
                 if cell is not None:
@@ -448,6 +453,7 @@ class Map(baseobj):
             for p, c in self:
                 if c is not None:
                     c.pos = p
+        self._bounds = None
 
     def __eq__(self, other_map):
         if not isinstance(other_map, Map):
@@ -480,18 +486,14 @@ class Map(baseobj):
                             todo.append(n)
         return cliques
 
-    def fast_voxel(self, pos1, pos2, ok_type=None, bad_type=None):
-        """return positions mapped by Fast Voxel: Amanatides, Woo"""
+    def _ray_visible(self, pos1, pos2):
+        """Check if pos2 is visible from pos1 via ray tracing. Returns True if visible."""
+        from .cell.blocked import BlockedCell
+        from ..door import Door
+        from .util import Box
 
         if pos1 == pos2:
-            raise ValueError(f"direction undfined for {pos1} == {pos2}")
-
-        def type_break(cell):
-            if ok_type is not None and not isinstance(cell, ok_type):
-                return True
-            if bad_type is not None and isinstance(cell, bad_type):
-                return True
-            return False
+            return True
 
         bnd = self.bounds
         b1, b2 = Box(pos1), Box(pos2)
@@ -499,43 +501,60 @@ class Map(baseobj):
         cur = b1.center.copy()
         step = l2d.sign()
 
+        target = (int(pos2[0]), int(pos2[1]))
+
         if l2d.x == 0:
-            # voxel divides by 0 while computing tdelta if l2d.x is 0
-            while cur.y < bnd.Y:
-                c = self[cur]
-                if type_break(c):
-                    break
-                yield c
+            while bnd.y <= cur.y <= bnd.Y:
+                x, y = int(cur.x), int(cur.y)
+                if (x, y) == target:
+                    return True
+                c = self.get(x, y)
+                if c is None:
+                    cur.y += step.y
+                    continue
+                if isinstance(c, Wall):
+                    return False
+                if isinstance(c, BlockedCell):
+                    d = c.door
+                    if isinstance(d, Door) and not d.open:
+                        return False
                 cur.y += step.y
+            return False
 
         elif l2d.y == 0:
-            # voxel divides by 0 while computing tdelta if l2d.y is 0
-            while cur.x < bnd.X:
-                c = self[cur]
-                if type_break(c):
-                    break
-                yield c
+            while bnd.x <= cur.x <= bnd.X:
+                x, y = int(cur.x), int(cur.y)
+                if (x, y) == target:
+                    return True
+                c = self.get(x, y)
+                if c is None:
+                    cur.x += step.x
+                    continue
+                if isinstance(c, Wall):
+                    return False
+                if isinstance(c, BlockedCell):
+                    d = c.door
+                    if isinstance(d, Door) and not d.open:
+                        return False
                 cur.x += step.x
+            return False
 
         else:
-            # NOTE: the paper doesn't demonstrate how to compute tdelta and tmax.
-            # You have to work that out for yourself …
-
-            # tdelta is the amount of l2d it takes to cross one whole cell
             tdelta = step * ((b1.lr - b1.ul) / l2d)
-
-            # tmax starts as the amount of l2d it takes to get to the next cell (b1.lr)
             tmax = tdelta / 2
-            # tmax_other = (b1.lr-b1.center) / l2d
-            # assert tmax == tmax_other
 
-            while cur.x <= bnd.X and cur.y <= bnd.Y:
-                # The loop is actually in the paper
-
-                c = self[cur]
-                if type_break(c):
-                    break
-                yield c
+            while bnd.x <= cur.x <= bnd.X and bnd.y <= cur.y <= bnd.Y:
+                x, y = int(cur.x), int(cur.y)
+                if (x, y) == target:
+                    return True
+                c = self.get(x, y)
+                if c is not None:
+                    if isinstance(c, Wall):
+                        return False
+                    if isinstance(c, BlockedCell):
+                        d = c.door
+                        if isinstance(d, Door) and not d.open:
+                            return False
 
                 if tmax.x < tmax.y:
                     tmax.x += tdelta.x
@@ -544,39 +563,58 @@ class Map(baseobj):
                     tmax.y += tdelta.y
                     cur.y += step.y
 
-    def _visicalc(self, pos1, pos2):
-        # Stop line-of-sight at walls and closed doors; mark cells up to barrier visible
-        from .cell.blocked import BlockedCell
-        from ..door import Door
-
-        for c in self.fast_voxel(pos1, pos2, bad_type=Wall):
-            c.visible = True
-            # stop at closed doors, but allow LOS through open doors
-            if isinstance(c, BlockedCell):
-                d = c.door
-                if isinstance(d, Door) and not d.open:
-                    break
-            # also stop if the very next step is a wall (already handled by bad_type)
+            return False
 
     def visicalc(self, whom, maxdist=None):
         c1 = self[whom]
         if not isinstance(c1, Cell):
             raise ValueError(f"{whom} is not on the map apparently")
-        cells = set(self.iter_cells()) - set([c1])
-        c1.visible = True
-        for c in cells:
+
+        # Reset all cells to not visible
+        for c in self.iter_cells():
             c.visible = False
-        while cells:
-            loop_cell = cells.pop()
-            self._visicalc(c1.pos, loop_cell.pos)
-        if maxdist:
-            maxdist = test_maxdist(maxdist)
-            for c in self.iter_cells():
-                if c is c1:
-                    continue
-                if c.visible:
-                    if not maxdist(c1.pos, c.pos):
-                        c.visible = False
+        c1.visible = True
+
+        px, py = c1.pos
+        bnds = self.bounds
+        max_d = maxdist if maxdist is not None else max(bnds.X - bnds.x, bnds.Y - bnds.y)
+        max_d_sq = max_d * max_d
+
+        # BFS from player position, ray-tracing to verify visibility
+        checked = {(px, py)}
+        frontier = [(px, py)]
+
+        # 8-directional neighbors
+        neighbors = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+
+        while frontier:
+            next_frontier = []
+            for fx, fy in frontier:
+                for dx, dy in neighbors:
+                    nx, ny = fx + dx, fy + dy
+
+                    # Skip already checked
+                    if (nx, ny) in checked:
+                        continue
+                    checked.add((nx, ny))
+
+                    # Skip out of bounds
+                    if not (bnds.x <= nx <= bnds.X and bnds.y <= ny <= bnds.Y):
+                        continue
+
+                    # Skip outside maxdist radius
+                    dist_sq = (nx - px) ** 2 + (ny - py) ** 2
+                    if dist_sq > max_d_sq:
+                        continue
+
+                    # Ray trace from player to this cell
+                    if self._ray_visible((px, py), (nx, ny)):
+                        cell = self.get(nx, ny)
+                        if cell is not None:
+                            cell.visible = True
+                            next_frontier.append((nx, ny))
+
+            frontier = next_frontier
 
     def maxdist_submap(self, whom, maxdist=None):
         # have to visicalc so we mark cells visible/not-visible correctly
@@ -633,6 +671,7 @@ class Map(baseobj):
         return MapView(self, bounds=bnds)
 
     def invalidate(self):
+        self._bounds = None
         self.visicalc_submap.cache_clear()
 
     # Hearing-like submap: attenuates through barriers instead of pruning LOS
