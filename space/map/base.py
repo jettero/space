@@ -9,7 +9,7 @@ from ..obj import baseobj
 from ..container import Containable, Container
 from .cell import Cell, Floor, Corridor, MapObj, Wall
 from .cell.blocked import BlockedCell
-from .dir_util import convert_pos, DIRS, DDIRS
+from .dir_util import convert_pos, DIRS, DDIRS, translate_dir
 from .util import LineSeg, Bounds, test_maxdist
 
 import space.exceptions as E
@@ -486,7 +486,7 @@ class Map(baseobj):
                             todo.append(n)
         return cliques
 
-    def _ray_visible(self, pos1, pos2):
+    def line_of_sight(self, pos1, pos2):
         """Check if pos2 is visible from pos1 via ray tracing. Returns True if visible."""
         from .cell.blocked import BlockedCell
         from ..door import Door
@@ -565,9 +565,6 @@ class Map(baseobj):
 
             return False
 
-    # 8-directional neighbor offsets for BFS expansion
-    _NEIGHBOR_OFFSETS = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-
     def visicalc(self, whom, maxdist=None):
         """Calculate visible cells from whom's position using BFS + ray tracing.
 
@@ -592,24 +589,24 @@ class Map(baseobj):
 
         while frontier:
             next_frontier = []
-            for fx, fy in frontier:
-                for dx, dy in self._NEIGHBOR_OFFSETS:
-                    nx, ny = fx + dx, fy + dy
+            for pos in frontier:
+                for d in DDIRS:
+                    npos = translate_dir(d, pos)
 
-                    if (nx, ny) in visited:
+                    if npos in visited:
                         continue
-                    visited.add((nx, ny))
+                    visited.add(npos)
 
-                    if not bnds.contains(nx, ny):
+                    if not bnds.contains(npos):
                         continue
-                    if (nx - ox) ** 2 + (ny - oy) ** 2 > max_d_sq:
+                    if (npos[0] - ox) ** 2 + (npos[1] - oy) ** 2 > max_d_sq:
                         continue
 
-                    if self._ray_visible((ox, oy), (nx, ny)):
-                        cell = self.get(nx, ny)
+                    if self.line_of_sight((ox, oy), npos):
+                        cell = self.get(*npos)
                         if cell is not None:
                             cell.visible = True
-                            next_frontier.append((nx, ny))
+                            next_frontier.append(npos)
 
             frontier = next_frontier
 

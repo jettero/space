@@ -76,6 +76,12 @@
 - avoid re-scoping your task; I had to cancel the last run where you were told
   to only edit `space/args.py` and you modified over 20 files you were not
   instructed to edit. These changes just end up getting reversed.
+- avoid creating new infrastructure when existing infrastructure already handles
+  it. Look for existing constants, utilities, and helpers first. If something
+  similar exists, extend or adapt it instead of duplicating it.
+- avoid using leading underscores on module-level constants that aren't truly
+  private. If it's data that other modules might reasonably use (like direction
+  mappings, common patterns, lookup tables), make it public.
 
 ## Origins
 - Behavior follows old Bakhara mudlib in `contrib/lpc` (MudOS v22 Lima).
