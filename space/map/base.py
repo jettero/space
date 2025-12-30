@@ -565,50 +565,47 @@ class Map(baseobj):
 
             return False
 
-    def visicalc(self, whom, maxdist=None):
-        c1 = self[whom]
-        if not isinstance(c1, Cell):
-            raise ValueError(f"{whom} is not on the map apparently")
+    # 8-directional neighbor offsets for BFS expansion
+    _NEIGHBOR_OFFSETS = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
-        # Reset all cells to not visible
+    def visicalc(self, whom, maxdist=None):
+        """Calculate visible cells from whom's position using BFS + ray tracing.
+
+        Expands outward from the viewer, only checking neighbors of already-visible
+        cells. Each candidate is verified via ray trace to handle walls/closed doors.
+        """
+        origin = self[whom]
+        if not isinstance(origin, Cell):
+            raise ValueError(f"{whom} is not on the map")
+
         for c in self.iter_cells():
             c.visible = False
-        c1.visible = True
+        origin.visible = True
 
-        px, py = c1.pos
+        ox, oy = origin.pos
         bnds = self.bounds
-        max_d = maxdist if maxdist is not None else max(bnds.X - bnds.x, bnds.Y - bnds.y)
+        max_d = maxdist or max(bnds.X - bnds.x, bnds.Y - bnds.y)
         max_d_sq = max_d * max_d
 
-        # BFS from player position, ray-tracing to verify visibility
-        checked = {(px, py)}
-        frontier = [(px, py)]
-
-        # 8-directional neighbors
-        neighbors = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        visited = {(ox, oy)}
+        frontier = [(ox, oy)]
 
         while frontier:
             next_frontier = []
             for fx, fy in frontier:
-                for dx, dy in neighbors:
+                for dx, dy in self._NEIGHBOR_OFFSETS:
                     nx, ny = fx + dx, fy + dy
 
-                    # Skip already checked
-                    if (nx, ny) in checked:
+                    if (nx, ny) in visited:
                         continue
-                    checked.add((nx, ny))
+                    visited.add((nx, ny))
 
-                    # Skip out of bounds
-                    if not (bnds.x <= nx <= bnds.X and bnds.y <= ny <= bnds.Y):
+                    if not bnds.contains(nx, ny):
                         continue
-
-                    # Skip outside maxdist radius
-                    dist_sq = (nx - px) ** 2 + (ny - py) ** 2
-                    if dist_sq > max_d_sq:
+                    if (nx - ox) ** 2 + (ny - oy) ** 2 > max_d_sq:
                         continue
 
-                    # Ray trace from player to this cell
-                    if self._ray_visible((px, py), (nx, ny)):
+                    if self._ray_visible((ox, oy), (nx, ny)):
                         cell = self.get(nx, ny)
                         if cell is not None:
                             cell.visible = True
