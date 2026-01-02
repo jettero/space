@@ -21,7 +21,6 @@ def generate_station(
     hub_radius = max(6, inner_radius - 18)
     corridor_length = outer_radius
     shape = Shape()
-    shape.merge(disk(center, hub_radius, Floor))
     shape.merge(circle(center, inner_radius, outer_radius, Corridor))
     for idx in range(room_count):
         angle = tau * idx / room_count
@@ -115,6 +114,7 @@ def generate_station(
                 shape.add(Floor, {(px, py)})
         else:
             raise ValueError(f"unknown room_kind: {room_kind}")
+    shape.merge(disk(center, hub_radius, Floor))
     return build_map(shape, Wall)
 
 
