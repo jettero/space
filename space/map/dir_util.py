@@ -19,6 +19,10 @@ R_DIR = {
     "s": "n",
     "e": "w",
     "w": "e",
+    "NE": "SW",
+    "SW": "NE",
+    "NW": "SE",
+    "SE": "NW",
 }
 
 O_DIR = {
@@ -34,10 +38,8 @@ O_DIR = {
 
 
 def reverse_dir(dir_name):
-    r = ""
-    for i in dir_name:
-        r += R_DIR[i]
-    return r
+    tokens = re.findall(r"([nsew]|N[EW]|S[EW])", dir_name)
+    return "".join(R_DIR[token] for token in tokens)
 
 
 def orthoganal_dirs(dir_name):
@@ -56,15 +58,18 @@ def convert_pos(pos):
 
 
 def translate_dir(dir_name, pos):
-    dir_name = dir_name.lower()
     pos = convert_pos(pos)
     cpos = pos[:]
-    for i in dir_name:
-        try:
-            i, v = DTR[i]
-            cpos[i] += v
-        except KeyError as e:
-            raise E.BadDirection(f"'{dir_name}' is a bad direction") from e
+    tokens = re.findall(r"([nsew]|N[EW]|S[EW])", dir_name)
+    if not tokens or "".join(tokens) != dir_name:
+        raise E.BadDirection(f"'{dir_name}' is a bad direction")
+    for token in tokens:
+        for char in token.lower():
+            try:
+                axis, delta = DTR[char]
+                cpos[axis] += delta
+            except KeyError as e:
+                raise E.BadDirection(f"'{dir_name}' is a bad direction") from e
     if cpos == pos:
         raise E.UselessDirection(f"'{dir_name}' seems useless")
     return tuple(cpos)
