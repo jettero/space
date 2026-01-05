@@ -22,6 +22,13 @@ class ERoom:
         self.e_map, self.o = eroom.gen_eroom()
 
 
+class VRoom:
+    def __init__(self):
+        import vroom
+
+        self.v_map, self.o = vroom.gen_vroom()
+
+
 @pytest.fixture
 def troom():
     return TRoom()
@@ -40,6 +47,11 @@ def a_map(troom):
 @pytest.fixture
 def eroom():
     return ERoom()
+
+
+@pytest.fixture
+def vroom():
+    return VRoom()
 
 
 @pytest.fixture

@@ -1,11 +1,10 @@
 # coding: utf-8
 
 
-def test_visicalc_from_nw_room(objs):
-    m = objs.me.location.map
-    m[2, 2] = objs.me
+def test_visicalc_from_nw_room(vroom):
+    vroom.v_map[2, 2] = vroom.o.me
 
-    visible = {pos for pos, c in m.visicalc_submap(objs.me) if c and c.visible}
+    visible = {pos for pos, c in vroom.v_map.visicalc_submap(vroom.o.me) if c and c.visible}
     correct = {
         (1, 1),
         (1, 2),
@@ -58,19 +57,18 @@ def test_visicalc_from_nw_room(objs):
     assert visible == correct
 
 
-def test_visicalc_from_ne_room_door_closed(objs):
-    m = objs.me.location.map
-
-    visible = {pos for pos, c in m.visicalc_submap(objs.me) if c and c.visible}
+def test_visicalc_from_ne_room_door_closed(vroom):
+    vroom.v_map[8, 1] = vroom.o.me
+    visible = {pos for pos, c in vroom.v_map.visicalc_submap(vroom.o.me) if c and c.visible}
     correct = {(1, 1), (1, 2)}
     assert visible == correct
 
 
-def test_visicalc_from_ne_room_door_open(objs):
-    m = objs.me.location.map
-    m.get(8, 2).do_open()
+def test_visicalc_from_ne_room_door_open(vroom):
+    vroom.v_map[8, 1] = vroom.o.me
+    vroom.v_map.get(8, 2).do_open()
 
-    visible = {pos for pos, c in m.visicalc_submap(objs.me) if c and c.visible}
+    visible = {pos for pos, c in vroom.v_map.visicalc_submap(vroom.o.me) if c and c.visible}
     correct = {
         (1, 6),
         (1, 7),
@@ -96,10 +94,9 @@ def test_visicalc_from_ne_room_door_open(objs):
     assert visible == correct
 
 
-def test_visicalc_from_middle_area(objs):
-    m = objs.dig_dug.location.map
-
-    visible = {pos for pos, c in m.visicalc_submap(objs.dig_dug) if c and c.visible}
+def test_visicalc_from_middle_area(vroom):
+    vroom.v_map[8, 3] = vroom.o.me
+    visible = {pos for pos, c in vroom.v_map.visicalc_submap(vroom.o.me) if c and c.visible}
     correct = {
         (1, 2),
         (1, 3),
@@ -151,10 +148,9 @@ def test_visicalc_from_middle_area(objs):
     assert visible == correct
 
 
-def test_visicalc_from_lower_room(objs):
-    m = objs.ubi.location.map
-
-    visible = {pos for pos, c in m.visicalc_submap(objs.ubi) if c and c.visible}
+def test_visicalc_from_lower_room(vroom):
+    vroom.v_map[4, 9] = vroom.o.me
+    visible = {pos for pos, c in vroom.v_map.visicalc_submap(vroom.o.me) if c and c.visible}
     correct = {
         (1, 1),
         (1, 2),
@@ -203,10 +199,9 @@ def test_visicalc_from_lower_room(objs):
     assert visible == correct
 
 
-def test_visicalc_from_skeleton_position(objs):
-    m = objs.stupid.location.map
-
-    visible = {pos for pos, c in m.visicalc_submap(objs.stupid) if c and c.visible}
+def test_visicalc_from_skeleton_position(vroom):
+    vroom.v_map[1, 2] = vroom.o.me
+    visible = {pos for pos, c in vroom.v_map.visicalc_submap(vroom.o.me) if c and c.visible}
     correct = {
         (1, 1),
         (1, 2),
@@ -254,11 +249,11 @@ def test_visicalc_from_skeleton_position(objs):
     assert visible == correct
 
 
-def test_visicalc_maxdist(objs):
-    m = objs.dig_dug.location.map
-    m.get(8, 2).do_open()
+def test_visicalc_maxdist(vroom):
+    vroom.v_map.get(8, 2).do_open()
+    vroom.v_map[8, 3] = vroom.o.me
 
-    visible = {pos for pos, c in m.visicalc_submap(objs.dig_dug, maxdist=3) if c and c.visible}
+    visible = {pos for pos, c in vroom.v_map.visicalc_submap(vroom.o.me, maxdist=3) if c and c.visible}
     correct = {
         (0, 3),
         (1, 3),
