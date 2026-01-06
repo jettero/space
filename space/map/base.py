@@ -480,6 +480,72 @@ class Map(baseobj):
                             todo.append(n)
         return cliques
 
+    def uberfast_voxel(self, pos1, pos2, ok_type=None, bad_type=None):
+        """
+        return positions mapped by Fast Voxel: Amanatides, Woo (optimized, no object allocation)
+
+        This should be an exact duplicate of fast_voxel which uses abstractions
+        like VV/Box/LineSeg for readability, but which abstractions slow the
+        algorithm down horrifically.
+        """
+        x1, y1 = pos1[0], pos1[1]
+        x2, y2 = pos2[0], pos2[1]
+        if x1 == x2 and y1 == y2:
+            raise ValueError(f"direction undefined for {pos1} == {pos2}")
+
+        bnd = self.bounds
+        cells = self.cells
+        dx, dy = x2 - x1, y2 - y1
+        length = (dx * dx + dy * dy) ** 0.5
+        ldx, ldy = dx / length, dy / length
+        step_x = 1 if ldx > 0 else (-1 if ldx < 0 else 0)
+        step_y = 1 if ldy > 0 else (-1 if ldy < 0 else 0)
+        cur_x, cur_y = x1 + 0.5, y1 + 0.5
+
+        if ldx == 0:
+            while cur_y < bnd.Y:
+                ix, iy = int(cur_x), int(cur_y)
+                if not (bnd.x <= ix <= bnd.X and bnd.y <= iy <= bnd.Y):
+                    break
+                c = cells[iy][ix]
+                if ok_type is not None and not isinstance(c, ok_type):
+                    break
+                if bad_type is not None and isinstance(c, bad_type):
+                    break
+                yield c
+                cur_y += step_y
+        elif ldy == 0:
+            while cur_x < bnd.X:
+                ix, iy = int(cur_x), int(cur_y)
+                if not (bnd.x <= ix <= bnd.X and bnd.y <= iy <= bnd.Y):
+                    break
+                c = cells[iy][ix]
+                if ok_type is not None and not isinstance(c, ok_type):
+                    break
+                if bad_type is not None and isinstance(c, bad_type):
+                    break
+                yield c
+                cur_x += step_x
+        else:
+            tdelta_x, tdelta_y = abs(step_x / ldx), abs(step_y / ldy)
+            tmax_x, tmax_y = tdelta_x / 2, tdelta_y / 2
+            while cur_x <= bnd.X and cur_y <= bnd.Y:
+                ix, iy = int(cur_x), int(cur_y)
+                if not (bnd.x <= ix <= bnd.X and bnd.y <= iy <= bnd.Y):
+                    break
+                c = cells[iy][ix]
+                if ok_type is not None and not isinstance(c, ok_type):
+                    break
+                if bad_type is not None and isinstance(c, bad_type):
+                    break
+                yield c
+                if tmax_x < tmax_y:
+                    tmax_x += tdelta_x
+                    cur_x += step_x
+                else:
+                    tmax_y += tdelta_y
+                    cur_y += step_y
+
     def fast_voxel(self, pos1, pos2, ok_type=None, bad_type=None):
         """return positions mapped by Fast Voxel: Amanatides, Woo"""
 
@@ -549,7 +615,7 @@ class Map(baseobj):
         from .cell.blocked import BlockedCell
         from ..door import Door
 
-        for c in self.fast_voxel(pos1, pos2, bad_type=Wall):
+        for c in self.uberfast_voxel(pos1, pos2, bad_type=Wall):
             c.visible = True
             # stop at closed doors, but allow LOS through open doors
             if isinstance(c, BlockedCell):

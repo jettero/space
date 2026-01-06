@@ -115,6 +115,7 @@
 ## gotchas
 - space.obj.strongify() exists to look-for and eliminate a Heisenbug. It shouldn't really ever be necessary to use it.
 - if I type a vim command by accdident, ignore it. Examples: `ZZy`, `:q`, `:q!`, `:wq`, `:wq!`; sometimes I'm just in the wrong window
+- use pytest fixtures, not generator functions directly. Don't call `gen_vroom()` or similar - use the `vroom` fixture. Tests get fixtures via function args; for ad-hoc debugging, write a minimal test instead of inline python.
 
 ## Single-use Variables (Agent Only)
 - You (the agent) must not introduce single-use temporary variables.
