@@ -74,14 +74,29 @@ class MapMessage(Message):
         from .map.base import MapView
         from .map.util import Bounds
 
+        # Get the map's actual bounds (already computed from visicalc_submap)
+        map_bounds = self.map.bounds
+
+        # Calculate terminal-based max bounds
         cols, rows = self.tb.shell.terminal_size
         # Each tile renders as 3 chars wide (space + abbr + space), 1 char tall
-        display_cols_tiles = int(cols * 0.8) // 3
-        display_rows_tiles = int(rows * 0.8)
+        max_cols_tiles = int(cols * 0.8) // 3
+        max_rows_tiles = int(rows * 0.8)
 
+        # Check if the map fits within terminal constraints
+        map_width = map_bounds.XX
+        map_height = map_bounds.YY
+
+        # If the map already fits, just render it directly
+        if map_width <= max_cols_tiles and map_height <= max_rows_tiles:
+            if color:
+                return self.map.colorized_text_drawing
+            return self.map.text_drawing
+
+        # Map is too big - clip to terminal size centered on player
         px, py = self.tb.location.pos
-        half_width = display_cols_tiles // 2
-        half_height = display_rows_tiles // 2
+        half_width = max_cols_tiles // 2
+        half_height = max_rows_tiles // 2
 
         display_bounds = Bounds(px - half_width, py - half_height, px + half_width, py + half_height)
 

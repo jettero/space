@@ -2,6 +2,7 @@
 
 from space.map import Wall
 
+
 def test_visicalc_from_nw_room(vroom):
     vroom.v_map[2, 2] = vroom.o.me
 
@@ -275,6 +276,7 @@ def test_visicalc_maxdist(vroom):
         (5, 4),
     }
     assert visible == correct
+
 
 def test_uberfast_matches_fast_diagonal(vroom):
     m = vroom.v_map
