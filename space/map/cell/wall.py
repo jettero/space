@@ -54,10 +54,21 @@ class Wall(MapObj):
         return r
 
     @property
+    def dcode(self):
+        if self.useless:
+            return ""
+        dirs = {d for d in ("ne", "nw", "se", "sw") if isinstance((n := self.mpos(d)), Wall) and not n.useless}
+        fwd = {"ne", "sw"} & dirs
+        bwd = {"nw", "se"} & dirs
+        return "╳" if fwd and bwd else "╱" if fwd else "╲" if bwd else ""
+
+    @property
     def abbr(self):
         if self._override is not None:
             return self._override
-        return self.conv[self.wcode]
+        if (wc := self.wcode) in ("", "n", "s", "e", "w") and (dg := self.dcode):
+            return dg
+        return self.conv[wc]
 
     @abbr.setter
     def abbr(self, v):

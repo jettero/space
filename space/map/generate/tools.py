@@ -1,7 +1,20 @@
 # coding: utf-8
 
 from collections import defaultdict
-from math import atan2, cos, pi, sin, sqrt
+
+STEP = {
+    "n": (0, -1),
+    "s": (0, 1),
+    "e": (1, 0),
+    "w": (-1, 0),
+    "ne": (1, -1),
+    "nw": (-1, -1),
+    "se": (1, 1),
+    "sw": (-1, 1),
+}
+
+AXIS = ("n", "s", "e", "w")
+DIAG = ("ne", "nw", "se", "sw")
 
 
 class Shape:
@@ -26,120 +39,64 @@ class Shape:
         return new_shape
 
 
-def disk(center, radius, cell_cls):
+def _octagon_points(cx, cy, r1, r2):
+    """Filled octagon: square (|dx|,|dy|<=r1) intersected with diamond (|dx|+|dy|<=r2).
+
+    Yields 4 axis-aligned edges (at +-r1) and 4 exact-45 degree corner
+    chamfers (along |dx|+|dy|==r2), so every boundary edge rasterizes to a
+    clean staircase.
+    """
+
+    return {
+        (x, y) for y in range(cy - r1, cy + r1 + 1) for x in range(cx - r1, cx + r1 + 1) if abs(x - cx) + abs(y - cy) <= r2
+    }
+
+
+def octagon(center, r1, r2, cell_cls):
+    if not r1 < r2 < 2 * r1:
+        raise ValueError(f"octagon needs r1 < r2 < 2*r1 (got r1={r1}, r2={r2})")
+    return Shape().add(cell_cls, _octagon_points(center[0], center[1], r1, r2))
+
+
+def octagon_ring(center, r1, r2, thickness, cell_cls):
     cx, cy = center
-    radius_sq = radius * radius
-    points = set()
-    for y in range(cy - radius, cy + radius + 1):
-        for x in range(cx - radius, cx + radius + 1):
-            if (x - cx) * (x - cx) + (y - cy) * (y - cy) <= radius_sq:
-                points.add((x, y))
-    return Shape().add(cell_cls, points)
+    outer = _octagon_points(cx, cy, r1, r2)
+    inner = _octagon_points(cx, cy, r1 - thickness, r2 - thickness)
+    return Shape().add(cell_cls, outer - inner)
 
 
-def circle(center, inner_radius, outer_radius, cell_cls):
+def rectangle(center, width, height, cell_cls):
     cx, cy = center
-    inner_sq = inner_radius * inner_radius
-    outer_sq = outer_radius * outer_radius
-    points = set()
-    bound = int(outer_radius) + 1
-    for y in range(cy - bound, cy + bound + 1):
-        for x in range(cx - bound, cx + bound + 1):
-            if inner_sq <= (x - cx) * (x - cx) + (y - cy) * (y - cy) <= outer_sq:
-                points.add((x, y))
-    return Shape().add(cell_cls, points)
+    hw, hh = width // 2, height // 2
+    return Shape().add(
+        cell_cls,
+        {(x, y) for y in range(cy - hh, cy + hh + 1) for x in range(cx - hw, cx + hw + 1)},
+    )
 
 
-def line(start, end, width, cell_cls):
-    sx, sy = start
-    ex, ey = end
-    dx = ex - sx
-    dy = ey - sy
-    span = max(abs(dx), abs(dy))
-    if span == 0:
-        return Shape().add(cell_cls, {(sx, sy)})
-    half = width / 2
-    denom = sqrt(dx * dx + dy * dy)
+def axis_corridor(center, direction, length, width, cell_cls):
+    cx, cy = center
+    dx, dy = STEP[direction]
+    half = width // 2
     pts = set()
-    min_x = min(sx, ex) - width
-    max_x = max(sx, ex) + width
-    min_y = min(sy, ey) - width
-    max_y = max(sy, ey) + width
-    for y in range(min_y, max_y + 1):
-        for x in range(min_x, max_x + 1):
-            if ((x - sx) * (x - ex) + (y - sy) * (y - ey)) > 0:
-                continue
-            if denom == 0:
-                pts.add((x, y))
-                continue
-            if ((dy * x - dx * y + ex * sy - ey * sx) / denom) ** 2 <= half * half:
-                pts.add((x, y))
+    for step in range(length + 1):
+        bx, by = cx + dx * step, cy + dy * step
+        for off in range(-half, half + 1):
+            pts.add((bx, by + off) if dx else (bx + off, by))
     return Shape().add(cell_cls, pts)
 
 
-def spear_room(center, angle, length, width, cell_cls, back_cut=0.35):
+def diagonal_corridor(center, direction, length, width, cell_cls):
+    """A solid, 4-connected diagonal band: `width` parallel exact-45 degree
+    lines offset one cell apart, giving 45 degree long edges and axis-aligned
+    caps. Width must be >= 2 for 4-connectivity (odd widths center on `center`).
+    """
+
     cx, cy = center
-    radial = (cos(angle), sin(angle))
-    tangential = (-radial[1], radial[0])
-    semi_major = length / 2
-    semi_minor = width / 2
-    limit = int(length + width) + 2
+    dx, dy = STEP[direction]
+    half = width // 2
     pts = set()
-    for y in range(cy - limit, cy + limit + 1):
-        for x in range(cx - limit, cx + limit + 1):
-            dx = x - cx
-            dy = y - cy
-            rel_r = dx * radial[0] + dy * radial[1]
-            rel_t = dx * tangential[0] + dy * tangential[1]
-            if rel_r < -semi_major * back_cut or rel_r > semi_major:
-                continue
-            if semi_minor == 0:
-                continue
-            if ((rel_r - semi_major / 2) / semi_major) ** 2 + (rel_t / semi_minor) ** 2 <= 1:
-                pts.add((x, y))
+    for k in range(-half, half + 1):
+        for t in range(length + 1):
+            pts.add((cx + dx * t + k, cy + dy * t))
     return Shape().add(cell_cls, pts)
-
-
-def stadium_room(origin, angle, radius, depth, arc_length, cell_cls):
-    ox, oy = origin
-    inner_radius = max(0.0, radius - depth / 2)
-    outer_radius = radius + depth / 2
-    mid_radius = (inner_radius + outer_radius) / 2
-    theta_half = arc_length / (2 * mid_radius) if mid_radius > 0 else pi
-    limit = int(outer_radius + 2)
-    pts = set()
-    for y in range(int(oy - limit), int(oy + limit) + 1):
-        for x in range(int(ox - limit), int(ox + limit) + 1):
-            dx = x - ox
-            dy = y - oy
-            dist = sqrt(dx * dx + dy * dy)
-            if dist < inner_radius or dist > outer_radius:
-                continue
-            theta = atan2(dy, dx)
-            delta = (theta - angle + pi) % (2 * pi) - pi
-            if abs(delta) <= theta_half:
-                pts.add((x, y))
-    return Shape().add(cell_cls, pts)
-
-
-def thin_line(start, end):
-    x0, y0 = start
-    x1, y1 = end
-    dx = abs(x1 - x0)
-    dy = -abs(y1 - y0)
-    sx = 1 if x0 < x1 else -1
-    sy = 1 if y0 < y1 else -1
-    err = dx + dy
-    pts = set()
-    while True:
-        pts.add((x0, y0))
-        if x0 == x1 and y0 == y1:
-            break
-        e2 = 2 * err
-        if e2 >= dy:
-            err += dy
-            x0 += sx
-        if e2 <= dx:
-            err += dx
-            y0 += sy
-    return pts

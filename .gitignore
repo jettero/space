@@ -15,5 +15,6 @@ __pycache__
 *.rej
 *.log
 /tmp
+/.scratch
 /profile.txt
 /t/tmp
