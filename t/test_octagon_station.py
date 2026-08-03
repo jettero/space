@@ -60,6 +60,11 @@ def test_station_no_dangling_stubs(station):
     assert not stubs, f"dangling single-direction wall stubs at {stubs[:5]}"
 
 
+def test_station_renders_one_char_per_cell(station):
+    for line in station.text_drawing.splitlines():
+        assert len(line) == station.bounds.XX
+
+
 def test_unknown_room_kind_rejected():
     with pytest.raises(ValueError):
         generate_station(room_kind="stadium")

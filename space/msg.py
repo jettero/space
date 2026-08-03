@@ -79,8 +79,8 @@ class MapMessage(Message):
 
         # Calculate terminal-based max bounds
         cols, rows = self.tb.shell.terminal_size
-        # Each tile renders as 3 chars wide (space + abbr + space), 1 char tall
-        max_cols_tiles = int(cols * 0.8) // 3
+        # Each tile renders as 1 char wide, 1 char tall
+        max_cols_tiles = int(cols * 0.8)
         max_rows_tiles = int(rows * 0.8)
 
         # Check if the map fits within terminal constraints

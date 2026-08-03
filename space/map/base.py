@@ -42,7 +42,7 @@ class Map(baseobj):
     def __str__(self):
         if not self.cells:
             return ""
-        r = ["   " + "".join([f"{i:2d} " for i, _ in enumerate(self.cells[0])])] + [
+        r = ["   " + "".join([str(i % 10) for i, _ in enumerate(self.cells[0])])] + [
             f"{i:2} " + l for i, l in enumerate(self.colorized_text_drawing.splitlines())
         ]
         return "\n".join(r)
@@ -83,19 +83,8 @@ class Map(baseobj):
     def _text_drawing(self, cell_join=None, lines_join=None):
         lines = list()
 
-        def _c(x):
-            if x is None:
-                return "   "
-            if isinstance(x, Wall):
-                wc = x.wcode
-                r = x.conv["ew"] if "w" in wc else " "
-                r += x.abbr
-                r += x.conv["ew"] if "e" in wc else " "
-                return r
-            return f" {x.abbr} "
-
         for row in self.cells:
-            line = [_c(c) for c in row]
+            line = [" " if c is None else c.abbr for c in row]
             if cell_join is not None:
                 line = cell_join.join(line)
             lines.append(line)
