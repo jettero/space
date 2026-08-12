@@ -19,12 +19,31 @@ def text_message(fmt, *a, **kw):
 
 
 class Message:
+    rigid = False
+    ephemeral = False
+
     def __init__(self, *a, **kw):
         self.a = a
         self.kw = kw
 
     def render_text(self, color=True):
         raise NotImplementedError()
+
+    def render_lines(self, color: bool = True, drawings: bool = True) -> list:
+        """
+        Render the message as a list of (text, rigid, ephemeral) triples,
+        one per physical line of the message.
+
+        rigid says the line is tabular art that must not be reflowed --
+        a window pane clips it rather than wrapping it.  ephemeral says
+        the line is superseded by the next message of the same kind and
+        may be dropped from scrollback once it scrolls out of relevance.
+
+        drawings=False asks a message that carries map art to leave the art
+        out (and skip drawing it at all); everything else is unaffected.
+        """
+
+        return [(text, self.rigid, self.ephemeral) for text in self.render_text(color=color).split("\n")]
 
     def __str__(self):
         return self.render_text()
@@ -74,42 +93,34 @@ class MapMessage(Message):
         from .map.base import MapView
         from .map.util import Bounds
 
-        # Get the map's actual bounds (already computed from visicalc_submap)
-        map_bounds = self.map.bounds
-
-        # Calculate terminal-based max bounds
         cols, rows = self.tb.shell.terminal_size
-        # Each tile renders as 1 char wide, 1 char tall
         max_cols_tiles = int(cols * 0.8)
         max_rows_tiles = int(rows * 0.8)
 
-        # Check if the map fits within terminal constraints
-        map_width = map_bounds.XX
-        map_height = map_bounds.YY
-
-        # If the map already fits, just render it directly
-        if map_width <= max_cols_tiles and map_height <= max_rows_tiles:
-            if color:
-                return self.map.colorized_text_drawing
-            return self.map.text_drawing
-
-        # Map is too big - clip to terminal size centered on player
-        px, py = self.tb.location.pos
-        half_width = max_cols_tiles // 2
-        half_height = max_rows_tiles // 2
-
-        display_bounds = Bounds(px - half_width, py - half_height, px + half_width, py + half_height)
-
-        # Get the underlying map if self.map is a MapView
-        underlying_map = self.map.a_map if isinstance(self.map, MapView) else self.map
-        bounded_view = MapView(underlying_map, display_bounds)
+        drawn = self.map
+        if drawn.bounds.XX > max_cols_tiles or drawn.bounds.YY > max_rows_tiles:
+            drawn = MapView(drawn, Bounds.centered(self.tb.location.pos, max_cols_tiles, max_rows_tiles))
 
         if color:
-            return bounded_view.colorized_text_drawing
-        return bounded_view.text_drawing
+            return drawn.colorized_text_drawing
+        return drawn.text_drawing
 
     def render_text(self, color=True):
         return self.map_drawing_text(color) + "\n" + self.inventory_text(color)
+
+    def render_lines(self, color: bool = True, drawings: bool = True) -> list:
+        """
+        The map drawing is rigid (never reflowed) and ephemeral (a newer map
+        replaces it).  The distance/object listing under it is ordinary prose
+        and sticks around like any other message.
+
+        With drawings=False the art is neither drawn nor returned -- a shell
+        showing a minimap has already been handed the map itself and wants
+        only the listing.
+        """
+
+        drawn = [(text, True, True) for text in self.map_drawing_text(color).split("\n")] if drawings else []
+        return drawn + [(text, False, False) for text in self.inventory_text(color).split("\n")]
 
     def __str__(self):
         return f'"""\n{self.render_text()}\n"""'
@@ -121,6 +132,8 @@ class BoxMessage(Message):
     Build a boxed block with a centered title and left-aligned body lines.
     The box width expands to fit the longest line or provided width.
     """
+
+    rigid = True
 
     def __init__(self, title, body_lines, width=None):
         super().__init__()

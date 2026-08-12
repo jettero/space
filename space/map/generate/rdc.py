@@ -486,9 +486,7 @@ def prune_deadends(a_map, keep_door_depth=3, min_prune_len=2):
         x, y = p
         c = a_map[x, y]
         return sum(
-            1
-            for d in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1))
-            if a_map.in_bounds(*d) and isinstance(a_map[d], Cell)
+            1 for d in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)) if a_map.in_bounds(*d) and isinstance(a_map[d], Cell)
         )
 
     def touches_door(p):
@@ -512,9 +510,7 @@ def prune_deadends(a_map, keep_door_depth=3, min_prune_len=2):
         changed = False
         # collect all current tips
         tips = [
-            (i, j)
-            for (i, j), c in list(a_map)
-            if isinstance(c, Cell) and degree((i, j)) == 1 and not is_room_cell((i, j))
+            (i, j) for (i, j), c in list(a_map) if isinstance(c, Cell) and degree((i, j)) == 1 and not is_room_cell((i, j))
         ]
         if tips:
             log.debug("prune_deadends: found %d tip(s)", len(tips))

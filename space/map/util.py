@@ -122,6 +122,20 @@ class Bounds:
         else:
             raise ValueError("Bounds(cells) or Bounds(x,y,X,Y)")
 
+    @classmethod
+    def centered(cls, pos, cols, rows):
+        """
+        Bounds of a cols×rows box centred on pos.
+
+        The box is allowed to hang off the edge of whatever map it gets
+        applied to -- MapView renders anything outside the real bounds as
+        blank, so a view built on these bounds is always exactly cols×rows.
+        """
+
+        x = pos[0] - (cols - 1) // 2
+        y = pos[1] - (rows - 1) // 2
+        return cls(x, y, x + cols - 1, y + rows - 1)
+
     @property
     def XX(self):
         if None in (self.x, self.X):

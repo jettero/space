@@ -86,6 +86,10 @@ class Living(ReceivesMessages, CanMove, StdObj):
 
     @property
     def abbr(self):
+        # XXX: whether we use super().abbr or return `@` should be based on
+        # who's viewing the map, not who's turn it is. The below is a bug. It
+        # made sense for a second, but causes shennanigans in Map, MapView, and
+        # Shell
         if self.active:
             return "@"
         return super().abbr

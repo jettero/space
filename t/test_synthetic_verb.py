@@ -8,7 +8,6 @@ from space.stdobj import StdObj
 from space.verb import Verb, register_outside_verb
 from space.parser import find_routes
 
-
 MARKERS = list()
 
 

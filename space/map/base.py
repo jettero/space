@@ -784,9 +784,7 @@ class MapView(Map):
         """
         vb = self.bounds
         ab = self.a_map.bounds
-        return [
-            [self.a_map.cells[j][i] if ab.x <= i <= ab.X and ab.y <= j <= ab.Y else None for i in vb.x_iter] for j in vb.y_iter
-        ]
+        return [[self.a_map.cells[j - ab.y][i - ab.x] if ab.contains(i, j) else None for i in vb.x_iter] for j in vb.y_iter]
 
         # note: we used to do the below, but we changed it 2023-06-19 to
         # faciliate genearting submaps of a specific size, even if the submap

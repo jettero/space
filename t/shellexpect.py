@@ -370,7 +370,19 @@ def render_terminal(text, width=80, height=25):
 
 DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 25
-_KEY_MAP = {"shift-up": Keys.ShiftUp, "tab": Keys.Tab}
+_KEY_MAP = {
+    "shift-up": (Keys.ShiftUp, "key_scroll_up"),
+    "shift-down": (Keys.ShiftDown, "key_scroll_down"),
+    "tab": (Keys.Tab, "key_complete_common_prefix"),
+    "fold": (Keys.ControlO, "key_fold_minimap"),
+    "fold-tab": (Keys.ControlI, "key_fold_minimap"),
+    "refresh": (Keys.ControlL, "key_refresh"),
+    "left": (Keys.Left, "key_pan_west"),
+    "right": (Keys.Right, "key_pan_east"),
+    "up": (Keys.Up, "key_pan_north"),
+    "down": (Keys.Down, "key_pan_south"),
+    "escape": (Keys.Escape, "key_close_map"),
+}
 
 
 def build_output(width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT):
@@ -387,9 +399,9 @@ def build_output(width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT):
 
 
 def find_binding(shell, name):
-    key = _KEY_MAP[name]
+    key, handler_name = _KEY_MAP[name]
     for binding in shell.application.key_bindings.get_bindings_for_keys((key,)):
-        if binding.handler.__qualname__.startswith("Shell.preflight"):
+        if binding.handler.__name__ == handler_name:
             return binding.handler
     raise KeyError(f"binding not found: {name}")
 
@@ -401,9 +413,9 @@ class ShellEnv:
         self.stream, self.output = build_output(width, height)
         self.context = create_app_session(output=self.output)
         self.context.__enter__()
+        self.frames = ""
         self.shell = Shell()
-        for window in (self.shell.input_window, self.shell.message_window):
-            window.content.buffer._load_history_task = True
+        self.shell.input_window.content.buffer._load_history_task = True
 
     def __enter__(self):
         return self
@@ -426,6 +438,16 @@ class ShellEnv:
 
     def render_lines(self):
         return render_terminal(self.render(), width=self.width, height=self.height)
+
+    def screen(self):
+        """
+        Render and replay every frame emitted so far.  prompt_toolkit renders
+        differentially, so a second render() on its own only describes what
+        changed; feeding the whole stream to the emulator gives the terminal
+        state a human would actually be looking at.
+        """
+        self.frames += self.render()
+        return render_terminal(self.frames, width=self.width, height=self.height)
 
     def trigger(self, name, buffer=None):
         handler = find_binding(self.shell, name)
