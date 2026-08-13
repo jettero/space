@@ -26,7 +26,6 @@ import logging, re
 from .base import BaseShell, IntentionalQuit
 from .minimap import Minimap
 from .pane import Record, anchor_step, clip_fragments, drop_fragments, layout_rows, splice_fragments
-from space.find import set_this_body, this_body
 from space.msg import MapMessage
 from space.verb import VERBS
 
@@ -333,22 +332,11 @@ class Shell(BaseShell):
 
     def draw_map(self, a_map) -> list:
         """
-        Render a map the way our owner sees it, one text line per cell row.
-
-        Establishing the viewer matters: Living.abbr resolves to "@" only for
-        the active body, and set_this_body() is the only thing that sets that.
-        The parser does it around a turn, so a player's own turn leaves them
-        active until something else acts -- which means a display cannot
-        inherit the flag, it has to declare it.  A display is a player command
-        that happens not to go through the parser, so it names its viewpoint
-        and puts back whatever it found.
+        Render a map at our color setting, one text line per cell row.  The
+        map already knows who it is drawn for.
         """
 
-        prior = this_body()
-        set_this_body(self.owner)
-        drawing = a_map.colorized_text_drawing if self.color else a_map.text_drawing
-        set_this_body(prior)
-        return drawing.split("\n")
+        return (a_map.colorized_text_drawing if self.color else a_map.text_drawing).split("\n")
 
     def build_map_buffer(self):
         """
