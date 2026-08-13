@@ -84,16 +84,6 @@ class Living(ReceivesMessages, CanMove, StdObj):
     sight_range = None  # our visual range is forever
     hearing_range = None  # we hear forever too
 
-    @property
-    def abbr(self):
-        # XXX: whether we use super().abbr or return `@` should be based on
-        # who's viewing the map, not who's turn it is. The below is a bug. It
-        # made sense for a second, but causes shennanigans in Map, MapView, and
-        # Shell
-        if self.active:
-            return "@"
-        return super().abbr
-
     class Choices(AttrChoices):
         _ordered = ("gender", "height", "mass")
 
