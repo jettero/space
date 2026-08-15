@@ -43,7 +43,7 @@ class Map(baseobj):
         if not self.cells:
             return ""
         r = ["   " + "".join([str(i % 10) for i, _ in enumerate(self.cells[0])])] + [
-            f"{i:2} " + l for i, l in enumerate(self.colorized_text_drawing.splitlines())
+            f"{i:2} " + l for i, l in enumerate(self.text_drawing(color=True).splitlines())
         ]
         return "\n".join(r)
 
@@ -80,11 +80,12 @@ class Map(baseobj):
                 if isinstance(cell, Container) and obj in cell:
                     return cell
 
-    def _text_drawing(self, cell_join=None, lines_join=None):
+    def _text_drawing(self, viewer=None, cell_join=None, lines_join=None):
         lines = list()
+        here = viewer.location if viewer is not None else None
 
         for row in self.cells:
-            line = [" " if c is None else c.abbr for c in row]
+            line = [" " if c is None else "@" if c is here else c.abbr for c in row]
             if cell_join is not None:
                 line = cell_join.join(line)
             lines.append(line)
@@ -92,15 +93,21 @@ class Map(baseobj):
             return lines_join.join(lines)
         return lines
 
-    @property
-    def text_drawing(self):
-        """cells as text"""
+    def text_drawing(self, viewer=None, color=False) -> str:
+        """
+        The cells as text, one line per row, drawn for `viewer` -- who
+        sees themself as "@".  Nobody is looking when viewer is None, so
+        every living draws as its own glyph.
 
-        return self._text_drawing(cell_join="", lines_join="\n")
+        With color, each cell also carries an ANSI prefix: dim for walls
+        and plain floor, brown for doors, and a background wash on
+        anything the last visicalc marked can_see.
+        """
 
-    @property
-    def colorized_text_drawing(self):
-        text_drawing = self._text_drawing()
+        if not color:
+            return self._text_drawing(viewer, cell_join="", lines_join="\n")
+
+        text_drawing = self._text_drawing(viewer)
 
         last_color = ""
         boring_color = {"fg": 240}

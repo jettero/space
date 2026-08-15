@@ -25,7 +25,7 @@ def test_a_view_of_a_view_composes_its_offset(a_map):
 def test_a_view_of_a_view_pads_past_the_inner_edge(a_map):
     outer = MapView(a_map, Bounds(3, 2, 6, 5), filter_cells=False)
     inner = MapView(outer, Bounds(5, 4, 9, 8), filter_cells=False)
-    lines = inner.text_drawing.split("\n")
+    lines = inner.text_drawing().split("\n")
     assert len(lines) == 5
     assert {len(x) for x in lines} == {5}
     assert [row[2:] for row in inner.cells] == [[None] * 3] * 5
@@ -36,6 +36,6 @@ def test_a_view_of_a_view_pads_past_the_inner_edge(a_map):
 def test_a_view_is_exactly_the_size_of_its_bounds(a_map, me, cols, rows):
     x, y = me.location.pos
     view = MapView(me.vmap, Bounds(x - cols // 2, y - rows // 2, x - cols // 2 + cols - 1, y - rows // 2 + rows - 1))
-    lines = view.text_drawing.split("\n")
+    lines = view.text_drawing().split("\n")
     assert len(lines) == rows
     assert {len(x) for x in lines} == {cols}

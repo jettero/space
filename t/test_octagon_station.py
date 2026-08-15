@@ -61,7 +61,7 @@ def test_station_no_dangling_stubs(station):
 
 
 def test_station_renders_one_char_per_cell(station):
-    for line in station.text_drawing.splitlines():
+    for line in station.text_drawing().splitlines():
         assert len(line) == station.bounds.XX
 
 

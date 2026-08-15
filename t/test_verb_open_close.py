@@ -11,6 +11,13 @@ def me(objs):
     return objs.me
 
 
+@pytest.mark.parametrize(
+    "cmd", ["open door", "open a door", "open south door", "look door", "look at a door", "look south door"]
+)
+def test_door_phrasings(me, cmd):
+    assert me.parse(cmd)
+
+
 def test_open_door(me):
     xp = me.parse("open door")
     assert xp

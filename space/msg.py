@@ -101,9 +101,7 @@ class MapMessage(Message):
         if drawn.bounds.XX > max_cols_tiles or drawn.bounds.YY > max_rows_tiles:
             drawn = MapView(drawn, Bounds.centered(self.tb.location.pos, max_cols_tiles, max_rows_tiles))
 
-        if color:
-            return drawn.colorized_text_drawing
-        return drawn.text_drawing
+        return drawn.text_drawing(self.tb, color=color)
 
     def render_text(self, color=True):
         return self.map_drawing_text(color) + "\n" + self.inventory_text(color)

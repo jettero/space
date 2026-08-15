@@ -336,7 +336,7 @@ class Shell(BaseShell):
         map already knows who it is drawn for.
         """
 
-        return (a_map.colorized_text_drawing if self.color else a_map.text_drawing).split("\n")
+        return a_map.text_drawing(self.owner, color=self.color).split("\n")
 
     def build_map_buffer(self):
         """
