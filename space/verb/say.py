@@ -6,6 +6,7 @@ from .base import Verb
 
 class Action(Verb):
     name = "say"
+    noise = ()
 
     def do_say_words(self, words):
         text = words.strip()

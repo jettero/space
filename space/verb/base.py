@@ -14,6 +14,7 @@ class VerbError(E.TargetError):
 class Verb:
     name = "verb"
     nick = None
+    noise = ("a", "an", "the")
 
     def __init__(self):
         if self.name == "verb":

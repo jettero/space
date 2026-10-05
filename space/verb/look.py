@@ -9,3 +9,4 @@ log = logging.getLogger(__name__)
 class Action(Verb):
     name = "look"
     nick = ["l"]
+    noise = ("a", "an", "the", "at")

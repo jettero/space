@@ -9,6 +9,7 @@ from space.pv import INFINITY
 from ..vv import VV
 from ..stdobj import StdObj
 from ..obj import register_haver_leaf
+from ..pfilter import adj_map
 from ..damage import Damage, Kinetic
 from ..roll import Roll, AttrChoices
 
@@ -198,6 +199,19 @@ class Living(ReceivesMessages, CanMove, StdObj):
 
     def can_look_living(self, living):
         return False, {"error": "XXX: this should work sometimes"}
+
+    def can_look_obj(self, obj: StdObj):
+        return True, {"obj": obj}
+
+    def do_look_obj(self, obj):
+        self.simple_action("$N $vlook at $o.", obj)
+        self.tell(obj.desc)
+
+    @adj_map(obj="word")
+    def can_look_word_obj(self, word: str, obj: StdObj):
+        return self.can_look_obj(obj)
+
+    do_look_word_obj = do_look_obj
 
     def can_look_words(self, words: tuple[str, ...]):
         w = tuple(x.lower() for x in words)

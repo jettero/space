@@ -28,6 +28,7 @@ def parse(actor, input_text, parse_only=False):
 
     vtok, *tokens = parts
     verbs = find_verb(vtok)
+    tokens = [t for t in tokens if not all(t.lower() in v.noise for v in verbs)]
     log.debug("-=: parse(%s, %s) verbs=%s", actor, repr(input_text), repr(verbs))
     vmap = a_map.visicalc_submap(actor)
     objs = [o for o in vmap.objects] + actor.inventory
