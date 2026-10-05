@@ -19,6 +19,22 @@ reqs mods: test-requirements.txt requirements.txt
 	pip install -Ur test-requirements.txt
 	@ date > reqs; date > mods
 
+APPSERV := contrib/appserv
+APPSERV_BIN := $(APPSERV)/target/debug/appserv
+APPSERV_PREFIX := $(CURDIR)/$(APPSERV)/data
+
+appserv:
+	$(MAKE) -C $(APPSERV) target/debug/appserv
+
+$(APPSERV_PREFIX)/.space-deps: requirements.txt | appserv
+	$(APPSERV_BIN) --prefix $(APPSERV_PREFIX) --pip "install -r $(CURDIR)/requirements.txt"
+	@ date > $@
+
+start: appserv $(APPSERV_PREFIX)/.space-deps
+	$(APPSERV_BIN) --prefix $(APPSERV_PREFIX) --entry as_entry.py --prepend-path $(CURDIR) --bind 127.0.0.1:2222 $(if $(MAP),--py-arg $(CURDIR)/$(MAP))
+
+.PHONY: appserv start
+
 %.png: %.dot
 	dot -Tpng $< -o $@
 
