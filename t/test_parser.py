@@ -143,6 +143,7 @@ def test_pstate_nodes(me, room):
     [
         ("look", "do_look", {}),
         ("say hi", "do_say_words", {"words": "hi"}),
+        ("say a thing", "do_say_words", {"words": "a thing"}),
         ("l", "do_look", {}),
         ("look at room", "do_look_words", {}),
         ("look at the room", "do_look_words", {}),

@@ -12,7 +12,18 @@ def me(objs):
 
 
 @pytest.mark.parametrize(
-    "cmd", ["open door", "open a door", "open south door", "look door", "look at a door", "look south door"]
+    "cmd",
+    [
+        "open door",
+        "open a door",
+        "open the door",
+        "open south door",
+        "open the south door",
+        "look door",
+        "look at a door",
+        "look south door",
+        "look at the south door",
+    ],
 )
 def test_door_phrasings(me, cmd):
     assert me.parse(cmd)
