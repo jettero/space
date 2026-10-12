@@ -42,6 +42,16 @@ def test_hearicalc_door_attenuation_threshold(a_map):
     assert sub_quiet.bounds is not None
 
 
+def test_hearicalc_view_is_whoms(objs):
+    m = objs.me.location.map
+    loud = m.hearicalc_submap(objs.me, maxdist=6, min_hearability=0.25)
+    quiet = m.hearicalc_submap(objs.me, maxdist=6, min_hearability=0.35)
+    assert loud.whom is quiet.whom is objs.me
+    assert objs.me in quiet.objects
+    assert objs.dig_dug in loud.objects
+    assert objs.dig_dug not in quiet.objects
+
+
 def test_hearicalc_compounds_barriers(e_map):
     from t.eroom import o as eo
 

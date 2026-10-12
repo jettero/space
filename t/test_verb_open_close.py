@@ -4,6 +4,7 @@
 import pytest
 
 import space.exceptions as E
+from space.shell.list import Shell as ListShell
 
 
 @pytest.fixture
@@ -76,6 +77,14 @@ def test_open_door_and_move_through_it(me):
     assert xp and xp.fn.__name__ == "do_move_words"
     xp()
     assert me.location.pos == (8, 2)
+
+
+def test_open_open_door_after_someone_else_acts(me, objs):
+    me.shell = ListShell()
+    me.do("open door")
+    objs.stupid.simple_action("$N $vgnash $p teeth.")
+    me.do("open door")
+    assert me.shell.msgs[-1] == "door is already open"
 
 
 def test_close_door(me):

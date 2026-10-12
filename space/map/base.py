@@ -18,6 +18,9 @@ log = logging.getLogger(__name__)
 
 
 class Map(baseobj):
+    whom = None
+    seen = frozenset()
+
     @classmethod
     def atosz(cls, a):
         if len(a) >= 2:
@@ -101,7 +104,7 @@ class Map(baseobj):
 
         With color, each cell also carries an ANSI prefix: dim for walls
         and plain floor, brown for doors, and a background wash on
-        anything the last visicalc marked can_see.
+        anything in self.seen.
         """
 
         if not color:
@@ -136,7 +139,7 @@ class Map(baseobj):
                     color.update(door_color)
                 else:
                     color.update(boring_color if isinstance(cell, Wall) or cell.abbr == "." else neutral_color)
-                if "can_see" in cell.tags:
+                if cell.pos in self.seen:
                     color.update(can_see_color)
                 last_color = _assign_color(i, j, **color)
             text_drawing[j] += rst
@@ -607,42 +610,36 @@ class Map(baseobj):
                     cur.y += step.y
 
     def _visicalc(self, pos1, pos2):
-        # Stop line-of-sight at walls and closed doors; mark cells up to barrier visible
+        # Stop line-of-sight at walls and closed doors; return positions up to barrier
         from .cell.blocked import BlockedCell
         from ..door import Door
 
+        seen = set()
         for c in self.uberfast_voxel(pos1, pos2, bad_type=Wall):
-            c.visible = True
+            seen.add(c.pos)
             # stop at closed doors, but allow LOS through open doors
             if isinstance(c, BlockedCell):
                 d = c.door
                 if isinstance(d, Door) and not d.open:
                     break
             # also stop if the very next step is a wall (already handled by bad_type)
+        return seen
 
     def visicalc(self, whom, maxdist=None):
         c1 = self[whom]
         if not isinstance(c1, Cell):
             raise ValueError(f"{whom} is not on the map apparently")
-        cells = set(self.iter_cells()) - set([c1])
-        c1.visible = True
-        for c in cells:
-            c.visible = False
-        while cells:
-            loop_cell = cells.pop()
-            self._visicalc(c1.pos, loop_cell.pos)
+        seen = {c1.pos}
+        for c in self.iter_cells():
+            if c is not c1:
+                seen |= self._visicalc(c1.pos, c.pos)
         if maxdist:
             maxdist = test_maxdist(maxdist)
-            for c in self.iter_cells():
-                if c is c1:
-                    continue
-                if c.visible:
-                    if not maxdist(c1.pos, c.pos):
-                        c.visible = False
+            seen = {p for p in seen if p == c1.pos or maxdist(c1.pos, p)}
+        return seen
 
     def maxdist_submap(self, whom, maxdist=None):
-        # have to visicalc so we mark cells visible/not-visible correctly
-        self.visicalc(whom, maxdist=maxdist)
+        seen = self.visicalc(whom, maxdist=maxdist)
 
         # we don't actually use the visicalc to bound the map view though
         wlp = whom.location.pos
@@ -655,26 +652,22 @@ class Map(baseobj):
             bnds,
             tuple(bnds),
         )
-        return MapView(self, bounds=bnds)
+        return MapView(self, bounds=bnds, whom=whom, seen=frozenset(seen))
 
     @lru_cache(maxsize=None)
     def visicalc_submap(self, whom, maxdist=None):
-        self.visicalc(whom, maxdist=maxdist)
+        seen = self.visicalc(whom, maxdist=maxdist)
         wlp = whom.location.pos
         bnds = Bounds(*(wlp * 2))
-        for p, cell in self:
-            try:
-                if cell.visible:
-                    if p[0] < bnds.x:
-                        bnds.x = p[0]
-                    if p[0] > bnds.X:
-                        bnds.X = p[0]
-                    if p[1] < bnds.y:
-                        bnds.y = p[1]
-                    if p[1] > bnds.Y:
-                        bnds.Y = p[1]
-            except AttributeError:
-                pass
+        for p in seen:
+            if p[0] < bnds.x:
+                bnds.x = p[0]
+            if p[0] > bnds.X:
+                bnds.X = p[0]
+            if p[1] < bnds.y:
+                bnds.y = p[1]
+            if p[1] > bnds.Y:
+                bnds.Y = p[1]
         actual_bnds = self.bounds
         maxdist = test_maxdist(maxdist)
         if bnds.x > actual_bnds.x and maxdist(wlp, (bnds.x - 1, wlp[1])):
@@ -692,18 +685,17 @@ class Map(baseobj):
             bnds,
             tuple(bnds),
         )
-        return MapView(self, bounds=bnds)
+        return MapView(self, bounds=bnds, whom=whom, seen=frozenset(seen))
 
     def invalidate(self):
         self.visicalc_submap.cache_clear()
 
-    # Hearing-like submap: attenuates through barriers instead of pruning LOS
-    def hearicalc_submap(self, whom, maxdist=None, min_hearability=0.1):
-        """Return a MapView bounded to maxdist that includes cells reachable
-        with cumulative hearability >= min_hearability.
+    # Hearing-like visicalc: attenuates through barriers instead of pruning LOS
+    def hearicalc(self, whom, maxdist=None, min_hearability=0.1):
+        """Return the positions within maxdist reachable with cumulative
+        hearability >= min_hearability.
 
-        For now, mirrors visicalc_submap bounds behavior, but computes inclusion
-        by propagating hearability without pruning at doors/walls. Pass-through
+        Propagates hearability without pruning at doors/walls. Pass-through
         factors are derived from barrier attenuation attributes when present.
         """
         from .cell.wall import Wall
@@ -755,15 +747,18 @@ class Map(baseobj):
                     best[np] = na
                     heapq.heappush(pq, (-na, np))
 
-        # Build bounds from visited cells
-        from .util import Bounds
+        return set(best)
 
-        if not best:
-            return MapView(self, bounds=Bounds(*(wlp * 2)))
-        xs = [p[0] for p in best]
-        ys = [p[1] for p in best]
-        bnds = Bounds(min(xs), min(ys), max(xs), max(ys))
-        return MapView(self, bounds=bnds)
+    def hearicalc_submap(self, whom, maxdist=None, min_hearability=0.1):
+        """
+        A MapView of what `whom` can hear: bounded to the heard positions,
+        with `seen` holding them, so `.cells`/`.objects` are whom's hearing.
+        """
+
+        heard = self.hearicalc(whom, maxdist=maxdist, min_hearability=min_hearability)
+        xs = [p[0] for p in heard]
+        ys = [p[1] for p in heard]
+        return MapView(self, bounds=Bounds(min(xs), min(ys), max(xs), max(ys)), whom=whom, seen=frozenset(heard))
 
 
 class MapClique(set):
@@ -773,10 +768,12 @@ class MapClique(set):
 
 
 class MapView(Map):
-    def __init__(self, a_map, bounds=None, filter_cells=True):  # pylint: disable=super-init-not-called
+    def __init__(self, a_map, bounds=None, filter_cells=True, whom=None, seen=None):  # pylint: disable=super-init-not-called
         self.a_map = a_map
         self._bounds = bounds
         self._filter = filter_cells
+        self.whom = whom if whom is not None else a_map.whom
+        self.seen = seen if seen is not None else a_map.seen
 
     @property
     def bounds(self):
@@ -824,20 +821,11 @@ class MapView(Map):
             # log.debug('_fake_none(%s) -> (%s,%s)', p, qi,qj)
             cells[qj][qi] = None
 
-        if self._filter is True:
+        if self._filter:
             for cell in self.iter_cells(of_type=Cell):
-                if cell is None or "can_see" in cell.tags:
-                    continue
-                _fake_none(cell.pos)
+                if cell.pos not in self.seen:
+                    _fake_none(cell.pos)
             for cell in self.iter_cells(of_type=Wall):
-                ok = False
-                for _, ncell in cell.iter_neighbors(dirs=DDIRS):
-                    if ncell is not None and "can_see" in ncell.tags:
-                        ok = True
-                        break
-                if ok:
-                    continue
-                _fake_none(cell.pos)
-        elif callable(self._filter):
-            raise Exception("TODO")
+                if not any(ncell is not None and ncell.pos in self.seen for _, ncell in cell.iter_neighbors(dirs=DDIRS)):
+                    _fake_none(cell.pos)
         return cells

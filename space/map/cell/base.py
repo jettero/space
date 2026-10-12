@@ -143,28 +143,6 @@ class MapObj:
     def neighbors(self, of_type=None):
         return [v for k, v in self.iter_neighbors(of_type=of_type)]
 
-    @property
-    def visible(self):
-        return "can_see" in self.tags
-
-    @visible.setter
-    def visible(self, v):
-        if v:
-            self.tags.add("can_see")
-        else:
-            self.tags.remove("can_see")
-
-    @property
-    def concealed(self):
-        return "can_see" not in self.tags
-
-    @concealed.setter
-    def concealed(self, v):
-        if v:
-            self.tags.remove("can_see")
-        else:
-            self.tags.add("can_see")
-
 
 def _get_set_dir(dir_name):
     def _g(self):

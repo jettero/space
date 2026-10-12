@@ -6,7 +6,8 @@ from space.map import Wall
 def test_visicalc_from_nw_room(vroom):
     vroom.v_map[2, 2] = vroom.o.me
 
-    visible = {pos for pos, c in vroom.v_map.visicalc_submap(vroom.o.me) if c and c.visible}
+    view = vroom.v_map.visicalc_submap(vroom.o.me)
+    visible = {pos for pos, c in view if c and c.pos in view.seen}
     correct = {
         (1, 1),
         (1, 2),
@@ -61,7 +62,8 @@ def test_visicalc_from_nw_room(vroom):
 
 def test_visicalc_from_ne_room_door_closed(vroom):
     vroom.v_map[8, 1] = vroom.o.me
-    visible = {pos for pos, c in vroom.v_map.visicalc_submap(vroom.o.me) if c and c.visible}
+    view = vroom.v_map.visicalc_submap(vroom.o.me)
+    visible = {pos for pos, c in view if c and c.pos in view.seen}
     correct = {(1, 1), (1, 2)}
     assert visible == correct
 
@@ -70,7 +72,8 @@ def test_visicalc_from_ne_room_door_open(vroom):
     vroom.v_map[8, 1] = vroom.o.me
     vroom.v_map.get(8, 2).do_open()
 
-    visible = {pos for pos, c in vroom.v_map.visicalc_submap(vroom.o.me) if c and c.visible}
+    view = vroom.v_map.visicalc_submap(vroom.o.me)
+    visible = {pos for pos, c in view if c and c.pos in view.seen}
     correct = {
         (1, 6),
         (1, 7),
@@ -98,7 +101,8 @@ def test_visicalc_from_ne_room_door_open(vroom):
 
 def test_visicalc_from_middle_area(vroom):
     vroom.v_map[8, 3] = vroom.o.me
-    visible = {pos for pos, c in vroom.v_map.visicalc_submap(vroom.o.me) if c and c.visible}
+    view = vroom.v_map.visicalc_submap(vroom.o.me)
+    visible = {pos for pos, c in view if c and c.pos in view.seen}
     correct = {
         (1, 2),
         (1, 3),
@@ -152,7 +156,8 @@ def test_visicalc_from_middle_area(vroom):
 
 def test_visicalc_from_lower_room(vroom):
     vroom.v_map[4, 9] = vroom.o.me
-    visible = {pos for pos, c in vroom.v_map.visicalc_submap(vroom.o.me) if c and c.visible}
+    view = vroom.v_map.visicalc_submap(vroom.o.me)
+    visible = {pos for pos, c in view if c and c.pos in view.seen}
     correct = {
         (1, 1),
         (1, 2),
@@ -203,7 +208,8 @@ def test_visicalc_from_lower_room(vroom):
 
 def test_visicalc_from_skeleton_position(vroom):
     vroom.v_map[1, 2] = vroom.o.me
-    visible = {pos for pos, c in vroom.v_map.visicalc_submap(vroom.o.me) if c and c.visible}
+    view = vroom.v_map.visicalc_submap(vroom.o.me)
+    visible = {pos for pos, c in view if c and c.pos in view.seen}
     correct = {
         (1, 1),
         (1, 2),
@@ -255,7 +261,8 @@ def test_visicalc_maxdist(vroom):
     vroom.v_map.get(8, 2).do_open()
     vroom.v_map[8, 3] = vroom.o.me
 
-    visible = {pos for pos, c in vroom.v_map.visicalc_submap(vroom.o.me, maxdist=3) if c and c.visible}
+    view = vroom.v_map.visicalc_submap(vroom.o.me, maxdist=3)
+    visible = {pos for pos, c in view if c and c.pos in view.seen}
     correct = {
         (0, 3),
         (1, 3),
