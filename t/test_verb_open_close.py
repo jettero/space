@@ -87,6 +87,12 @@ def test_open_open_door_after_someone_else_acts(me, objs):
     assert me.shell.msgs[-1] == "door is already open"
 
 
+def test_close_closed_door(me):
+    me.shell = ListShell()
+    me.do("open door; close door; close door")
+    assert me.shell.msgs[-1] == "door is already closed"
+
+
 def test_close_door(me):
     assert (xp := me.parse("open door"))
     xp()

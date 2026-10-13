@@ -52,6 +52,28 @@ def test_hearicalc_view_is_whoms(objs):
     assert objs.dig_dug not in quiet.objects
 
 
+def test_hearicalc_returns_hearability(objs):
+    heard = objs.me.location.map.hearicalc(objs.me, maxdist=6)
+    assert isinstance(heard, dict)
+    assert heard[objs.me.location.pos] == 1.0
+    assert heard[objs.dig_dug.location.pos] == pytest.approx(0.3)
+
+
+def test_hearicalc_open_door_passes_all(objs):
+    objs.me.do("open door")
+    assert objs.me.location.map.hearicalc(objs.me, maxdist=6)[objs.dig_dug.location.pos] == pytest.approx(1.0)
+
+
+def test_hearicalc_maxdist(objs):
+    m = objs.dig_dug.location.map
+    assert m.hearicalc(objs.dig_dug, maxdist=8)[objs.stupid.location.pos] == pytest.approx(1.0)
+    assert objs.stupid.location.pos not in m.hearicalc(objs.dig_dug, maxdist=6)
+
+
+def test_hearicalc_prunes_walls(objs):
+    assert {(9, 1), (7, 1), (8, 0)}.isdisjoint(objs.me.location.map.hearicalc(objs.me, maxdist=6))
+
+
 def test_hearicalc_compounds_barriers(e_map):
     from t.eroom import o as eo
 

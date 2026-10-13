@@ -191,13 +191,14 @@ class ReceivesMessages(HasShell, Talks):
 
     def compose(self, forwhom, msg, who, *obs):
         has = set()
+        plain = {}
 
         def sub_token(m):
             t = m.group(0)
 
             if t.startswith("$v"):
-                verb = t[2:]
-                if who and who[0] == forwhom:
+                idx, verb = (int(t[2]), t[3:]) if t[2:3].isdigit() else (0, t[2:])
+                if plain.get(idx, who[idx] is not None and who[idx] == forwhom):
                     return verb
                 if verb == "are":
                     return "is"
@@ -231,72 +232,129 @@ class ReceivesMessages(HasShell, Talks):
             if not isinstance(subj, StdObj):
                 return capitalize(str(subj)) if cap else str(subj)
 
+            if tag == "m":
+                return capitalize(subj.s)
+
             seen = subj in has
             has.add(subj)
 
-            if mode in "ns":
-                name = "you" if subj == forwhom else (subj.subjective if seen else subj.a_short)
+            def out(name):
+                if mode in "ns" and tag != "o":
+                    plain[idx] = name in ("you", "they")
                 return capitalize(name) if cap else name
+
+            if forwhom is not None and subj != forwhom and not forwhom.can_see(subj):
+                from .living.gender import GenderNeutral as G
+
+                some = "someone" if isinstance(subj, ReceivesMessages) else "something"
+                hidden = {
+                    "n": (G.subjective, some),
+                    "s": (G.subjective, some),
+                    "t": (G.objective, some),
+                    "o": (G.objective, some),
+                    "p": (G.possessive, some + "'s"),
+                    "r": (G.reflexive, some + "-self"),
+                }
+                if mode in hidden:
+                    return out(hidden[mode][0] if seen else hidden[mode][1])
+
+            if mode in "ns":
+                return out("you" if subj == forwhom else (subj.subjective if seen else subj.a_short))
 
             if mode in "to":
-                name = "you" if subj == forwhom else (subj.objective if seen else subj.a_short)
-                return capitalize(name) if cap else name
+                return out("you" if subj == forwhom else (subj.objective if seen else subj.a_short))
 
             if mode == "p":
-                name = "your" if subj == forwhom else (subj.possessive if seen else subj.p_short)
-                return capitalize(name) if cap else name
+                return out("your" if subj == forwhom else (subj.possessive if seen else subj.p_short))
 
             if mode == "r":
                 # Returning a_short in the proper-noun case is probably right.
                 # English doesn't have a reflexive tag for proper nouns, but
                 # it's funnier to penalize the joker that thought $r was right
                 # where it wasn't.
-                name = "yourself" if subj == forwhom else (subj.reflexive if seen else subj.a_short + "-self")
-                return capitalize(name) if cap else name
+                return out("yourself" if subj == forwhom else (subj.reflexive if seen else subj.a_short + "-self"))
 
             raise TypeError(f"{t} not understood")
 
         return re.sub(r"\$[MNVTTPPOOnnvttoPpRr][a-z0-9]*", sub_token, msg)
 
-    def action(self, who: Actors, msg, *obs):
+    def hv_calc(
+        self, who: Actors, sound=False, range=6, min_hearability=0.1, distinct=0.6
+    ):  # pylint: disable=redefined-builtin
+        """
+        Split the ReceivesMessages on the actor's map into three disjoint
+        sets: (normal, neutral, muffled).
+
+        normal is the actor, the target, and everything either of them can
+        see; seeing includes hearing.  Without sound that's all there is.
+        With sound, listeners who can't see but whose hearability (see
+        hearicalc, bounded by range and min_hearability) is >= distinct are
+        neutral; the rest that can hear at all are muffled.
+        """
+
+        m = who.actor.location.map
+        srcs = [x for x in who if x is not None]
+        normal = set(srcs) | {x for src in srcs for x in m.visicalc_submap(src).objects if isinstance(x, ReceivesMessages)}
+        if not sound:
+            return normal, set(), set()
+        heard = m.hearicalc(who.actor, maxdist=range, min_hearability=min_hearability)
+        rest = {
+            x: heard[x.location.pos]
+            for x in m.objects_of_type(ReceivesMessages)
+            if x not in normal and x.location.pos in heard
+        }
+        return normal, {x for x, h in rest.items() if h >= distinct}, {x for x, h in rest.items() if h < distinct}
+
+    def action(
+        self,
+        who: Actors,
+        msg,
+        *obs,
+        sound=False,
+        muffled_msg="$N $vhear muffled sounds.",
+        range=6,  # pylint: disable=redefined-builtin
+        min_hearability=0.1,
+        distinct=0.6,
+    ):
+        """
+        Compose msg for everyone it reaches (see hv_calc for the tiers).
+        Returns Messages(us, them, other) where other is {receiver: text}:
+        normal bystanders get the narrator's text, neutral listeners get
+        msg composed for themselves (unseen subjects become "someone"), and
+        muffled listeners get muffled_msg composed with themselves as $N.
+        """
+
         us = self.compose(who.actor, msg, who, *obs)
         them = self.compose(who.target, msg, who, *obs) if who.target is not None else None
+        normal, neutral, muffled = self.hv_calc(who, sound, range, min_hearability, distinct)
         others = self.compose(None, msg, who, *obs)
-        return Messages(us, them, others)
+        other = {x: others for x in normal - set(who)}
+        other |= {x: self.compose(x, msg, who, *obs) for x in neutral}
+        other |= {x: self.compose(x, muffled_msg, Actors(x, None)) for x in muffled}
+        return Messages(us, them, other)
 
-    def inform(self, who: Actors, msgs: Messages, range=6, min_hearability=0.1):  # pylint: disable=redefined-builtin
-        seen = set()
+    def inform(self, who: Actors, msgs: Messages):
         if msgs.us is not None:
             who.actor.tell(msgs.us)
-            seen.add(who.actor)
-        if msgs.them is not None and who.target is not None and who.target not in seen:
+        if msgs.them is not None and who.target is not None and who.target is not who.actor:
             who.target.tell(msgs.them)
-            seen.add(who.target)
-        for src in who:
-            if src is None:
-                continue
-            for targ in src.location.map.visicalc_submap(src).objects:
-                if isinstance(targ, ReceivesMessages) and targ not in seen:
-                    targ.tell(msgs.other)
-                    seen.add(targ)
+        for x, text in msgs.other.items():
+            x.tell(text)
 
-    def simple_action(self, msg, *obs, range=6, min_hearability=0.1):  # pylint: disable=redefined-builtin
+    def simple_action(self, msg, *obs, **kw):
         who = Actors(self, None)
-        self.inform(who, self.action(who, msg, *obs), range=range, min_hearability=min_hearability)
+        self.inform(who, self.action(who, msg, *obs, **kw))
 
     def my_action(self, msg, *obs):
-        who = Actors(self, None)
-        us, _, _ = self.action(who, msg, *obs)
-        self.tell(us)
+        self.tell(self.compose(self, msg, Actors(self, None), *obs))
 
-    def other_action(self, msg, *obs, range=6, min_hearability=0.1):  # pylint: disable=redefined-builtin
+    def other_action(self, msg, *obs, **kw):
         who = Actors(self, None)
-        _, _, others = self.action(who, msg, *obs)
-        self.inform(who, Messages(None, None, others), range=range, min_hearability=min_hearability)
+        self.inform(who, self.action(who, msg, *obs, **kw)._replace(us=None, them=None))
 
-    def targeted_action(self, msg, target, *obs, range=6, min_hearability=0.1):  # pylint: disable=redefined-builtin
+    def targeted_action(self, msg, target, *obs, **kw):
         who = Actors(self, target)
-        self.inform(who, self.action(who, msg, *obs), range=range, min_hearability=min_hearability)
+        self.inform(who, self.action(who, msg, *obs, **kw))
 
     def do_receive(self, msg, your_turn=False):
         """Receive text from the mob shell

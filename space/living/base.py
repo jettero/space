@@ -321,6 +321,9 @@ class Living(ReceivesMessages, CanMove, StdObj):
     def vmap(self):
         return self.location.map.visicalc_submap(self)
 
+    def can_see(self, obj):
+        return self.location.pos in self.location.map.visicalc_submap(obj.haver or obj).seen
+
     @property
     def nearby_objects(self):
         return list(x for x in self.nearby_things if not isinstance(x, Living))

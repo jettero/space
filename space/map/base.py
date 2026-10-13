@@ -1,5 +1,6 @@
 # coding: utf-8
 
+import heapq
 import logging
 import random
 from collections import namedtuple
@@ -692,21 +693,18 @@ class Map(baseobj):
 
     # Hearing-like visicalc: attenuates through barriers instead of pruning LOS
     def hearicalc(self, whom, maxdist=None, min_hearability=0.1):
-        """Return the positions within maxdist reachable with cumulative
-        hearability >= min_hearability.
+        """Return {pos: hearability} for the positions within maxdist
+        reachable with cumulative hearability >= min_hearability.
 
         Propagates hearability without pruning at doors/walls. Pass-through
         factors are derived from barrier attenuation attributes when present.
         """
-        from .cell.wall import Wall
-        from .cell.cell import Cell
-
         wlp = whom.location.pos
         maxdist = test_maxdist(maxdist)
 
         # Dijkstra-like frontier by best hearability
-        import heapq
 
+        # XXX: must compute attenuation more like real sound (distance falloff, dB losses)
         def passthrough(c_from, c_to):
             # open tiles: full pass-through
             if c_from is None or c_to is None:
@@ -747,7 +745,7 @@ class Map(baseobj):
                     best[np] = na
                     heapq.heappush(pq, (-na, np))
 
-        return set(best)
+        return best
 
     def hearicalc_submap(self, whom, maxdist=None, min_hearability=0.1):
         """

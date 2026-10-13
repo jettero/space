@@ -111,7 +111,7 @@ class Humanoid(Living):
             if self.unit_distance_to(obj) <= self.reach:
                 return ok, {"obj": obj}
             return False, {"error": f"{obj} is too far away"}
-        if (reason := meta.get("reason")) == "already-closed":
+        if (reason := ctx.get("reason")) == "already-closed":
             return False, {"error": f"{obj} is already closed"}
         if reason == "stuck":
             return False, {"error": f"{obj} appears to be stuck"}
