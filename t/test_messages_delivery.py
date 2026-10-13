@@ -2,6 +2,7 @@
 
 import pytest
 from space.msg import ReceivesMessages, Actors
+from space.living.behavior import VL
 from space.shell.list import Shell as ListShell
 
 
@@ -106,6 +107,19 @@ def test_nothing_below_min_hearability(closed):
 def test_nothing_out_of_range(closed):
     closed.dig_dug.do("say hi")
     assert closed.stupid.shell.msgs == []
+
+
+def test_voiceline_through_door(closed):
+    closed.dig_dug.voiceline_frequency = True
+    closed.dig_dug.do_receive(":EOF:YOUR_TURN:", your_turn=True)
+    assert closed.me.shell.msgs == ["You hear muffled sounds."]
+
+
+def test_voiceline_kw(closed):
+    closed.dig_dug.voiceline_frequency = True
+    closed.dig_dug.voicelines = [VL("$N $vhum.", kw=dict(sound=True, muffled_msg="$N $vhear humming."))]
+    closed.dig_dug.do_receive(":EOF:YOUR_TURN:", your_turn=True)
+    assert closed.me.shell.msgs == ["You hear humming."]
 
 
 def test_actor_gets_one_line(closed):

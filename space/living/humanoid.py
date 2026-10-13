@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 import space.exceptions as E
 from .base import Living
-from .behavior import PointLessVoiceLines
+from .behavior import PointLessVoiceLines, VL
 from .gender import Male, Female, Unknown
 from .slots import Slots as BaseSlots, BeltSlot, HandSlot, LegsSlot, TorsoSlot, HeadSlot, FeetSlot, PackSlot
 from ..door import Door
@@ -137,7 +137,7 @@ class Human(PointLessVoiceLines, Humanoid):
         super().__init__(proper_name=proper_name, short=short, **kw)
 
     voicelines = [
-        '$N $vsay, "Hi there!"',
+        VL('$N $vsay, "Hi there!"', kw=dict(sound=True)),
     ]
 
 
@@ -150,7 +150,7 @@ class Skeleton(PointLessVoiceLines, Humanoid):
         super().__init__(long=long, short=short, **kw)
 
     voicelines = [
-        "$N $vgnash $p teeth in impotent rage.",
+        VL("$N $vgnash $p teeth in impotent rage.", kw=dict(sound=True, range=2)),
     ]
 
     class Choices(Living.Choices):

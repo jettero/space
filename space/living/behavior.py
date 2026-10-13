@@ -7,16 +7,21 @@ PointLessVoiceLines emits occasional weighted voice lines during turns.
 
 import logging
 import random
+from collections import namedtuple
 from ..roll import Chance
 
 log = logging.getLogger(__name__)
+
+VL = namedtuple("VL", ["msg", "weight", "kw"], defaults=(1, {}))
 
 
 class PointLessVoiceLines:
     """Mixin that makes a mob occasionally emit silly voice lines.
 
     Attributes
-    - voicelines: list of (message, weight) tuples. Message is a "$N $v..." string.
+    - voicelines: list of VL(msg, weight=1, kw={}). msg is a "$N $v..." string;
+      kw goes to simple_action (sound, range, min_hearability, distinct, muffled_msg).
+      A bare string or plain tuple is promoted to a VL; an empty kw is silent.
     - voiceline_frequency: space.roll.Chance("1d6=1")
 
     Conventions
@@ -51,30 +56,27 @@ class PointLessVoiceLines:
             return
 
         log.debug("do_receive() selecting voiceline")
-        if line := self._pick_weighted_voiceline():
-            self.simple_action(line)
+        if vl := self._pick_weighted_voiceline():
+            self.simple_action(vl.msg, **vl.kw)
 
     def _pick_weighted_voiceline(self):
-        pairs = []
+        lines = []
         total = 0
 
         for it in self.voicelines:
-            if isinstance(it, str):
-                msg, w = it, 1
-            else:
-                msg, w = it
-            if w <= 0:
+            vl = VL(it) if isinstance(it, str) else VL(*it)
+            if vl.weight <= 0:
                 continue
-            pairs.append((msg, w))
-            total += w
+            lines.append(vl)
+            total += vl.weight
 
-        log.debug("_pick_weighted_voiceline() lines=%d total-line-weights=%d", len(pairs), total)
+        log.debug("_pick_weighted_voiceline() lines=%d total-line-weights=%d", len(lines), total)
         if total <= 0:
             return
 
         pick = random.randrange(total)
         cum = 0
-        for msg, w in pairs:
-            cum += w
+        for vl in lines:
+            cum += vl.weight
             if pick < cum:
-                return msg
+                return vl
