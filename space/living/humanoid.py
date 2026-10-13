@@ -9,6 +9,7 @@ from .behavior import PointLessVoiceLines, VL
 from .gender import Male, Female, Unknown
 from .slots import Slots as BaseSlots, BeltSlot, HandSlot, LegsSlot, TorsoSlot, HeadSlot, FeetSlot, PackSlot
 from ..door import Door
+from ..msg import Sound, SAY
 from ..stdobj import StdObj
 from ..pfilter import adj_map
 
@@ -137,7 +138,7 @@ class Human(PointLessVoiceLines, Humanoid):
         super().__init__(proper_name=proper_name, short=short, **kw)
 
     voicelines = [
-        VL('$N $vsay, "Hi there!"', kw=dict(sound=True)),
+        VL('$N $vsay, "Hi there!"', kw=dict(sound=SAY)),
     ]
 
 
@@ -150,7 +151,7 @@ class Skeleton(PointLessVoiceLines, Humanoid):
         super().__init__(long=long, short=short, **kw)
 
     voicelines = [
-        VL("$N $vgnash $p teeth in impotent rage.", kw=dict(sound=True, range=2)),
+        VL("$N $vgnash $p teeth in impotent rage.", kw=dict(sound=Sound("gnash", range=2))),
     ]
 
     class Choices(Living.Choices):

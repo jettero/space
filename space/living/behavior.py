@@ -1,27 +1,40 @@
 # coding: utf-8
 
-"""Behavioral mixins for NPC/mob Lifings.
+"""Behavioral mixins for NPC/mob Livings.
 
 PointLessVoiceLines emits occasional weighted voice lines during turns.
 """
 
 import logging
 import random
-from collections import namedtuple
 from ..roll import Chance
 
 log = logging.getLogger(__name__)
 
-VL = namedtuple("VL", ["msg", "weight", "kw"], defaults=(1, {}))
+
+class VL:
+    """
+    A voice line: msg is a "$N $v..." template, weight its relative odds
+    of being picked, and kw the simple_action keywords (sound, range,
+    min_hearability, distinct, muffled_msg).  No kw means a fresh empty
+    dict: silent, sight-only.
+    """
+
+    def __init__(self, msg: str, weight: int = 1, kw: dict | None = None):
+        self.msg = msg
+        self.weight = weight
+        self.kw = {} if kw is None else kw
+
+    def __repr__(self):
+        return f"VL({self.msg!r}, {self.weight}, {self.kw})"
 
 
 class PointLessVoiceLines:
     """Mixin that makes a mob occasionally emit silly voice lines.
 
     Attributes
-    - voicelines: list of VL(msg, weight=1, kw={}). msg is a "$N $v..." string;
-      kw goes to simple_action (sound, range, min_hearability, distinct, muffled_msg).
-      A bare string or plain tuple is promoted to a VL; an empty kw is silent.
+    - voicelines: list of VL(msg, weight=1, kw=None); see VL.
+      A bare string or plain tuple is promoted to a VL.
     - voiceline_frequency: space.roll.Chance("1d6=1")
 
     Conventions
@@ -64,7 +77,7 @@ class PointLessVoiceLines:
         total = 0
 
         for it in self.voicelines:
-            vl = VL(it) if isinstance(it, str) else VL(*it)
+            vl = it if isinstance(it, VL) else VL(it) if isinstance(it, str) else VL(*it)
             if vl.weight <= 0:
                 continue
             lines.append(vl)

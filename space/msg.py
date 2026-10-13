@@ -187,6 +187,37 @@ class HasShell:
         self.shell.receive(msg)
 
 
+class Sound:
+    """
+    How an action carries to listeners who can't see it (see hv_calc).
+
+    range is the hearicalc maxdist, min_hearability the floor below which
+    nothing is heard, distinct the hearability needed to make out the words,
+    and muffled_msg what listeners between the two get, composed with
+    themselves as $N.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        range: int = 6,  # pylint: disable=redefined-builtin
+        min_hearability: float = 0.1,
+        distinct: float = 0.6,
+        muffled_msg: str = "$N $vhear muffled sounds.",
+    ):
+        self.name = name
+        self.range = range
+        self.min_hearability = min_hearability
+        self.distinct = distinct
+        self.muffled_msg = muffled_msg
+
+    def __repr__(self):
+        return f"Sound({self.name!r}, range={self.range}, min_hearability={self.min_hearability}, distinct={self.distinct})"
+
+
+SAY = Sound("say")
+
+
 class ReceivesMessages(HasShell, Talks):
 
     def compose(self, forwhom, msg, who, *obs):
@@ -278,59 +309,47 @@ class ReceivesMessages(HasShell, Talks):
 
         return re.sub(r"\$[MNVTTPPOOnnvttoPpRr][a-z0-9]*", sub_token, msg)
 
-    def hv_calc(
-        self, who: Actors, sound=False, range=6, min_hearability=0.1, distinct=0.6
-    ):  # pylint: disable=redefined-builtin
+    def hv_calc(self, who: Actors, sound: Sound | None = None):
         """
         Split the ReceivesMessages on the actor's map into three disjoint
         sets: (normal, neutral, muffled).
 
         normal is the actor, the target, and everything either of them can
-        see; seeing includes hearing.  Without sound that's all there is.
-        With sound, listeners who can't see but whose hearability (see
-        hearicalc, bounded by range and min_hearability) is >= distinct are
-        neutral; the rest that can hear at all are muffled.
+        see; seeing includes hearing.  Without a sound that's all there is.
+        With one, listeners who can't see but whose hearability (see
+        hearicalc, bounded by sound.range and sound.min_hearability) is >=
+        sound.distinct are neutral; the rest that can hear at all are muffled.
         """
 
         m = who.actor.location.map
         srcs = [x for x in who if x is not None]
         normal = set(srcs) | {x for src in srcs for x in m.visicalc_submap(src).objects if isinstance(x, ReceivesMessages)}
-        if not sound:
+        if sound is None:
             return normal, set(), set()
-        heard = m.hearicalc(who.actor, maxdist=range, min_hearability=min_hearability)
+        heard = m.hearicalc(who.actor, maxdist=sound.range, min_hearability=sound.min_hearability)
         rest = {
             x: heard[x.location.pos]
             for x in m.objects_of_type(ReceivesMessages)
             if x not in normal and x.location.pos in heard
         }
-        return normal, {x for x, h in rest.items() if h >= distinct}, {x for x, h in rest.items() if h < distinct}
+        return normal, {x for x, h in rest.items() if h >= sound.distinct}, {x for x, h in rest.items() if h < sound.distinct}
 
-    def action(
-        self,
-        who: Actors,
-        msg,
-        *obs,
-        sound=False,
-        muffled_msg="$N $vhear muffled sounds.",
-        range=6,  # pylint: disable=redefined-builtin
-        min_hearability=0.1,
-        distinct=0.6,
-    ):
+    def action(self, who: Actors, msg, *obs, sound: Sound | None = None):
         """
         Compose msg for everyone it reaches (see hv_calc for the tiers).
         Returns Messages(us, them, other) where other is {receiver: text}:
         normal bystanders get the narrator's text, neutral listeners get
         msg composed for themselves (unseen subjects become "someone"), and
-        muffled listeners get muffled_msg composed with themselves as $N.
+        muffled listeners get sound.muffled_msg composed with themselves as $N.
         """
 
         us = self.compose(who.actor, msg, who, *obs)
         them = self.compose(who.target, msg, who, *obs) if who.target is not None else None
-        normal, neutral, muffled = self.hv_calc(who, sound, range, min_hearability, distinct)
+        normal, neutral, muffled = self.hv_calc(who, sound)
         others = self.compose(None, msg, who, *obs)
         other = {x: others for x in normal - set(who)}
         other |= {x: self.compose(x, msg, who, *obs) for x in neutral}
-        other |= {x: self.compose(x, muffled_msg, Actors(x, None)) for x in muffled}
+        other |= {x: self.compose(x, sound.muffled_msg, Actors(x, None)) for x in muffled}
         return Messages(us, them, other)
 
     def inform(self, who: Actors, msgs: Messages):
