@@ -45,7 +45,11 @@ class Action(Verb):
             core = core.rstrip()
             if core.startswith("(") and core.endswith(")") and len(core) >= 2:
                 inner = core[1:-1].strip()
-                self.simple_action('$N $vinterject parenthetically, "$O"', inner, sound=SAY)
+                self.simple_action(
+                    '$N $vinterject parenthetically, "$O"',
+                    inner,
+                    sound=SAY.copy(unheard_msg="$N $vinterject something parenthetically."),
+                )
                 return
             if verb is None:
                 if core and core[-1] not in ".!?":
@@ -56,7 +60,7 @@ class Action(Verb):
             text = core
 
         if style is not None:
-            self.simple_action(f'$N {style}, "$O"', text, sound=SAY)
+            self.simple_action(f'$N {style}, "$O"', text, sound=SAY.copy(unheard_msg=f"$N {style} something."))
         else:
             v = verb or "say"
-            self.simple_action(f'$N $v{v}, "$O"', text, sound=SAY)
+            self.simple_action(f'$N $v{v}, "$O"', text, sound=SAY.copy(unheard_msg=f"$N $v{v} something."))

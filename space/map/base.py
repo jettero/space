@@ -692,12 +692,13 @@ class Map(baseobj):
         self.visicalc_submap.cache_clear()
 
     # Hearing-like visicalc: attenuates through barriers instead of pruning LOS
-    def hearicalc(self, whom, maxdist=None, min_hearability=0.1):
+    def hearicalc(self, whom, maxdist=None, min_hearability=0.1, hearability=1.0):
         """Return {pos: hearability} for the positions within maxdist
         reachable with cumulative hearability >= min_hearability.
 
-        Propagates hearability without pruning at doors/walls. Pass-through
-        factors are derived from barrier attenuation attributes when present.
+        Propagates hearability, starting at `hearability` on whom's cell,
+        without pruning at doors/walls. Pass-through factors are derived
+        from barrier attenuation attributes when present.
         """
         wlp = whom.location.pos
         maxdist = test_maxdist(maxdist)
@@ -714,8 +715,8 @@ class Map(baseobj):
         best = {}
         pq = []
         start = (wlp[0], wlp[1])
-        best[start] = 1.0
-        heapq.heappush(pq, (-1.0, start))
+        best[start] = hearability
+        heapq.heappush(pq, (-hearability, start))
 
         def neighbors(p):
             x, y = p

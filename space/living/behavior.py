@@ -8,6 +8,7 @@ PointLessVoiceLines emits occasional weighted voice lines during turns.
 import logging
 import random
 from ..roll import Chance
+from ..msg import Sound
 
 log = logging.getLogger(__name__)
 
@@ -15,25 +16,24 @@ log = logging.getLogger(__name__)
 class VL:
     """
     A voice line: msg is a "$N $v..." template, weight its relative odds
-    of being picked, and kw the simple_action keywords (sound, range,
-    min_hearability, distinct, muffled_msg).  No kw means a fresh empty
-    dict: silent, sight-only.
+    of being picked, and sound how it carries (a space.msg.Sound such as
+    SAY).  No sound means silent, sight-only.
     """
 
-    def __init__(self, msg: str, weight: int = 1, kw: dict | None = None):
+    def __init__(self, msg: str, weight: int = 1, sound: Sound | None = None):
         self.msg = msg
         self.weight = weight
-        self.kw = {} if kw is None else kw
+        self.sound = sound
 
     def __repr__(self):
-        return f"VL({self.msg!r}, {self.weight}, {self.kw})"
+        return f"VL({self.msg!r}, {self.weight}, {self.sound})"
 
 
 class PointLessVoiceLines:
     """Mixin that makes a mob occasionally emit silly voice lines.
 
     Attributes
-    - voicelines: list of VL(msg, weight=1, kw=None); see VL.
+    - voicelines: list of VL(msg, weight=1, sound=None); see VL.
       A bare string or plain tuple is promoted to a VL.
     - voiceline_frequency: space.roll.Chance("1d6=1")
 
@@ -70,7 +70,7 @@ class PointLessVoiceLines:
 
         log.debug("do_receive() selecting voiceline")
         if vl := self._pick_weighted_voiceline():
-            self.simple_action(vl.msg, **vl.kw)
+            self.simple_action(vl.msg, sound=vl.sound)
 
     def _pick_weighted_voiceline(self):
         lines = []

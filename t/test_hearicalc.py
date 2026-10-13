@@ -59,6 +59,13 @@ def test_hearicalc_returns_hearability(objs):
     assert heard[objs.dig_dug.location.pos] == pytest.approx(0.3)
 
 
+def test_hearicalc_starting_hearability(objs):
+    heard = objs.me.location.map.hearicalc(objs.me, maxdist=6, hearability=2.5)
+    assert heard[objs.me.location.pos] == 2.5
+    assert heard[objs.dig_dug.location.pos] == pytest.approx(0.75)
+    assert objs.dig_dug.location.pos not in objs.me.location.map.hearicalc(objs.me, maxdist=6, hearability=0.3)
+
+
 def test_hearicalc_open_door_passes_all(objs):
     objs.me.do("open door")
     assert objs.me.location.map.hearicalc(objs.me, maxdist=6)[objs.dig_dug.location.pos] == pytest.approx(1.0)

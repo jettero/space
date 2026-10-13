@@ -58,12 +58,19 @@ def test_say_variants(me, dd, sp):
     assert len(dd.shell.msgs) > 0 and dd.shell.msgs[-1] == sp.them
 
 
-# def test_shout_basic(a_map, objs):
-#     objs.me.shell = ListShell()
-#     objs.dig_dug.shell = ListShell()
-#     objs.me.do('shout halp')
-#     assert objs.me.shell.msgs[-1] == 'You shout, "Halp!"'
-#     assert objs.dig_dug.shell.msgs[-1] == 'Paul shouts, "Halp!"'
+def test_shout_basic(me, dd):
+    me.do("shout halp")
+    assert me.shell.msgs[-1] == 'You shout, "Halp!"'
+    assert dd.shell.msgs[-1] == 'Paul shouts, "Halp!"'
+
+    me.do("shout halp?")
+    assert me.shell.msgs[-1] == 'You shout, "Halp?"'
+
+
+def test_whisper_basic(me, dd):
+    me.do("whisper psst")
+    assert me.shell.msgs[-1] == 'You whisper, "Psst."'
+    assert dd.shell.msgs[-1] == 'Paul whispers, "Psst."'
 
 
 # def test_emote_basic(a_map, objs):

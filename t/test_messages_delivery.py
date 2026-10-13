@@ -1,7 +1,7 @@
 # coding: utf-8
 
 import pytest
-from space.msg import ReceivesMessages, Actors, Sound, SAY
+from space.msg import ReceivesMessages, Actors, Sound, SAY, SILENCE
 from space.living.behavior import VL
 from space.shell.list import Shell as ListShell
 
@@ -39,27 +39,71 @@ def opened(objs):
 
 
 def test_hv_calc_sound_off(closed):
-    assert closed.me.hv_calc(Actors(closed.me, None)) == ({closed.me}, set(), set())
+    assert closed.me.hv_calc(Actors(closed.me, None)) == ({closed.me}, set(), set(), set())
 
 
 def test_hv_calc_closed_door(closed):
-    normal, neutral, muffled = closed.me.hv_calc(Actors(closed.me, None), sound=SAY)
+    normal, unheard, neutral, muffled = closed.me.hv_calc(Actors(closed.me, None), sound=SAY)
     assert normal == {closed.me}
+    assert not unheard
     assert not neutral
     assert muffled == {closed.dig_dug}
 
 
 def test_hv_calc_open_door(opened):
-    normal, neutral, muffled = opened.me.hv_calc(Actors(opened.me, None), sound=SAY)
+    normal, unheard, neutral, muffled = opened.me.hv_calc(Actors(opened.me, None), sound=SAY)
     assert opened.dig_dug in normal
-    assert opened.dig_dug not in neutral | muffled
+    assert opened.dig_dug not in unheard | neutral | muffled
 
 
 def test_hv_calc_disjoint_tiers(closed):
-    normal, neutral, muffled = closed.dig_dug.hv_calc(Actors(closed.dig_dug, None), sound=Sound("test", range=8))
+    normal, unheard, neutral, muffled = closed.dig_dug.hv_calc(Actors(closed.dig_dug, None), sound=Sound("test", range=8))
     assert normal == {closed.dig_dug}
+    assert not unheard
     assert neutral == {closed.stupid}
     assert muffled == {closed.me}
+
+
+def test_hv_calc_unheard(me, ss):
+    normal, unheard, neutral, muffled = me.hv_calc(Actors(me, None), sound=SAY)
+    assert ss in unheard
+    assert ss not in normal | neutral | muffled
+
+
+@pytest.mark.parametrize(
+    "cmd, far",
+    [
+        ("whisper psst", "Paul whispers something."),
+        ("say hi", "Paul says something."),
+        ("say hi!", "Paul exclaims something."),
+        ("say hi?", "Paul asks something."),
+        ("say hi :)", "Paul happily declares something."),
+        ("say hi :P", "Paul sticks out his tongue and says something."),
+        ("say (psst)", "Paul interjects something parenthetically."),
+        ("shout halp", 'Paul shouts, "Halp!"'),
+    ],
+)
+def test_seen_but_unheard(me, dd, ss, cmd, far):
+    me.do(cmd)
+    assert ss.shell.msgs == [far]
+    assert dd.shell.msgs[-1].startswith("Paul") and '"' in dd.shell.msgs[-1]
+
+
+def test_unheard_nonspeech_gets_normal(me, ss):
+    me.simple_action("$N $vstomp.", sound=Sound("stomp"))
+    assert ss.shell.msgs == ["Paul stomps."]
+
+
+def test_silence(me, dd, ss):
+    me.simple_action('$N $vmouth, "$O"', "hi.", sound=SILENCE.copy(unheard_msg="$N $vmouth something."))
+    assert me.shell.msgs == ['You mouth, "Hi."']
+    assert dd.shell.msgs == ss.shell.msgs == ["Paul mouths something."]
+
+
+def test_sound_copy():
+    s = SAY.copy(unheard_msg="$N $vmumble something.")
+    assert (s.name, s.range, s.hearability, s.muffled_msg) == (SAY.name, SAY.range, SAY.hearability, SAY.muffled_msg)
+    assert s.unheard_msg == "$N $vmumble something." != SAY.unheard_msg
 
 
 def test_normal_see_and_hear_once(opened):
@@ -78,15 +122,30 @@ def test_neutral_later_mention(closed):
 
 
 def test_neutral_through_door(closed):
-    closed.me.simple_action('$N $vsay, "$O"', "hi.", sound=Sound("test", distinct=0.25))
+    closed.me.simple_action('$N $vsay, "$O"', "hi.", sound=Sound("test", hearability=2.5))
     assert closed.dig_dug.shell.msgs == ['Someone says, "Hi."']
 
 
 def test_muffled_say(closed):
     closed.me.do("say hi")
-    assert closed.dig_dug.shell.msgs == ["You hear muffled sounds."]
+    assert closed.dig_dug.shell.msgs == ["You hear muffled voices."]
     closed.dig_dug.do("say hi")
-    assert closed.me.shell.msgs[-1] == "You hear muffled sounds."
+    assert closed.me.shell.msgs[-1] == "You hear muffled voices."
+
+
+def test_shout_through_door(closed):
+    closed.me.do("shout halp")
+    assert closed.dig_dug.shell.msgs == ['Someone shouts, "Halp!"']
+
+
+def test_shout_out_of_say_range(closed):
+    closed.dig_dug.do("shout halp")
+    assert closed.stupid.shell.msgs == ['Someone shouts, "Halp!"']
+
+
+def test_whisper_stops_at_door(closed):
+    closed.me.do("whisper psst")
+    assert closed.dig_dug.shell.msgs == []
 
 
 def test_muffled_custom(closed):
@@ -100,7 +159,7 @@ def test_nothing_without_sound(closed):
 
 
 def test_nothing_below_min_hearability(closed):
-    closed.me.simple_action('$N $vsay, "$O"', "hi.", sound=Sound("test", min_hearability=0.35))
+    closed.me.simple_action('$N $vsay, "$O"', "hi.", sound=Sound("test", hearability=0.3))
     assert closed.dig_dug.shell.msgs == []
 
 
@@ -112,18 +171,22 @@ def test_nothing_out_of_range(closed):
 def test_voiceline_through_door(closed):
     closed.dig_dug.voiceline_frequency = True
     closed.dig_dug.do_receive(":EOF:YOUR_TURN:", your_turn=True)
-    assert closed.me.shell.msgs == ["You hear muffled sounds."]
+    assert closed.me.shell.msgs == ["You hear muffled voices."]
 
 
-def test_voiceline_kw(closed):
+def test_voiceline_sound(closed):
     closed.dig_dug.voiceline_frequency = True
-    closed.dig_dug.voicelines = [VL("$N $vhum.", kw=dict(sound=Sound("hum", muffled_msg="$N $vhear humming.")))]
+    closed.dig_dug.voicelines = [VL("$N $vhum.", sound=Sound("hum", muffled_msg="$N $vhear humming."))]
     closed.dig_dug.do_receive(":EOF:YOUR_TURN:", your_turn=True)
     assert closed.me.shell.msgs == ["You hear humming."]
 
 
+def test_vl_repr():
+    assert repr(VL("$N $vhum.", sound=SAY)) == "VL('$N $vhum.', 1, Sound('say', range=6, hearability=1.0))"
+
+
 def test_sound_repr():
-    assert repr(Sound("test", range=8)) == "Sound('test', range=8, min_hearability=0.1, distinct=0.6)"
+    assert repr(Sound("test", range=8)) == "Sound('test', range=8, hearability=1.0)"
 
 
 def test_actor_gets_one_line(closed):

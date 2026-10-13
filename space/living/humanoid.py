@@ -138,7 +138,7 @@ class Human(PointLessVoiceLines, Humanoid):
         super().__init__(proper_name=proper_name, short=short, **kw)
 
     voicelines = [
-        VL('$N $vsay, "Hi there!"', kw=dict(sound=SAY)),
+        VL('$N $vsay, "Hi there!"', sound=SAY),
     ]
 
 
@@ -151,7 +151,7 @@ class Skeleton(PointLessVoiceLines, Humanoid):
         super().__init__(long=long, short=short, **kw)
 
     voicelines = [
-        VL("$N $vgnash $p teeth in impotent rage.", kw=dict(sound=Sound("gnash", range=2))),
+        VL("$N $vgnash $p teeth in impotent rage.", sound=Sound("gnash", range=2)),
     ]
 
     class Choices(Living.Choices):
