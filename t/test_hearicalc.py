@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import pytest
+from space.map.base import SHADOW
 
 
 def test_hearicalc_exists_and_basic(e_map):
@@ -34,46 +35,46 @@ def test_hearicalc_door_attenuation_threshold(a_map):
     m = me.location.map
     # place a target just across a typical door in e_map fixture if present
     # we reuse visicalc bounds as a proxy for adjacency; hearicalc should not prune
-    sub_loud = m.hearicalc_submap(me, maxdist=6, min_hearability=0.25)
-    sub_quiet = m.hearicalc_submap(me, maxdist=6, min_hearability=0.35)
-    # With a single door (pass-through ~0.3 default), listeners should be
-    # included at 0.25 but excluded at 0.35
+    sub_loud = m.hearicalc_submap(me, maxdist=6, min_propagation=5)
+    sub_quiet = m.hearicalc_submap(me, maxdist=6, min_propagation=15)
     assert sub_loud.bounds is not None
     assert sub_quiet.bounds is not None
 
 
 def test_hearicalc_view_is_whoms(objs):
     m = objs.me.location.map
-    loud = m.hearicalc_submap(objs.me, maxdist=6, min_hearability=0.25)
-    quiet = m.hearicalc_submap(objs.me, maxdist=6, min_hearability=0.35)
+    level = m.hearicalc(objs.me)[objs.dig_dug.location.pos]
+    loud = m.hearicalc_submap(objs.me, min_propagation=level - 1)
+    quiet = m.hearicalc_submap(objs.me, min_propagation=level + 1)
     assert loud.whom is quiet.whom is objs.me
     assert objs.me in quiet.objects
     assert objs.dig_dug in loud.objects
     assert objs.dig_dug not in quiet.objects
 
 
-def test_hearicalc_returns_hearability(objs):
+def test_hearicalc_returns_levels(objs):
     heard = objs.me.location.map.hearicalc(objs.me, maxdist=6)
     assert isinstance(heard, dict)
-    assert heard[objs.me.location.pos] == 1.0
-    assert heard[objs.dig_dug.location.pos] == pytest.approx(0.3)
+    assert heard[objs.me.location.pos] == 60
 
 
-def test_hearicalc_starting_hearability(objs):
-    heard = objs.me.location.map.hearicalc(objs.me, maxdist=6, hearability=2.5)
-    assert heard[objs.me.location.pos] == 2.5
-    assert heard[objs.dig_dug.location.pos] == pytest.approx(0.75)
-    assert objs.dig_dug.location.pos not in objs.me.location.map.hearicalc(objs.me, maxdist=6, hearability=0.3)
+def test_hearicalc_spl(objs):
+    m, pos = objs.me.location.map, objs.dig_dug.location.pos
+    loud = m.hearicalc(objs.me, spl=80)
+    assert loud[objs.me.location.pos] == 80
+    assert loud[pos] - m.hearicalc(objs.me)[pos] == pytest.approx(20)
 
 
-def test_hearicalc_open_door_passes_all(objs):
+def test_hearicalc_open_door(objs):
+    m, pos = objs.me.location.map, objs.dig_dug.location.pos
+    closed = m.hearicalc(objs.me)[pos]
     objs.me.do("open door")
-    assert objs.me.location.map.hearicalc(objs.me, maxdist=6)[objs.dig_dug.location.pos] == pytest.approx(1.0)
+    assert m.hearicalc(objs.me)[pos] - closed == pytest.approx(objs.door.attenuation + SHADOW)
 
 
 def test_hearicalc_maxdist(objs):
     m = objs.dig_dug.location.map
-    assert m.hearicalc(objs.dig_dug, maxdist=8)[objs.stupid.location.pos] == pytest.approx(1.0)
+    assert objs.stupid.location.pos in m.hearicalc(objs.dig_dug, maxdist=8)
     assert objs.stupid.location.pos not in m.hearicalc(objs.dig_dug, maxdist=6)
 
 
@@ -87,5 +88,5 @@ def test_hearicalc_compounds_barriers(e_map):
     me = eo.me
     m = me.location.map
     # Ensure traversal works and does not explode when encountering walls/doors
-    sub = m.hearicalc_submap(me, maxdist=8, min_hearability=0.05)
+    sub = m.hearicalc_submap(me, maxdist=8, min_propagation=5)
     assert sub is not None

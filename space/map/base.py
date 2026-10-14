@@ -2,6 +2,7 @@
 
 import heapq
 import logging
+import math
 import random
 from collections import namedtuple
 from functools import lru_cache
@@ -16,6 +17,8 @@ from .util import LineSeg, Box, Bounds, test_maxdist
 import space.exceptions as E
 
 log = logging.getLogger(__name__)
+
+SHADOW = 10
 
 
 class Map(baseobj):
@@ -692,69 +695,49 @@ class Map(baseobj):
         self.visicalc_submap.cache_clear()
 
     # Hearing-like visicalc: attenuates through barriers instead of pruning LOS
-    def hearicalc(self, whom, maxdist=None, min_hearability=0.1, hearability=1.0):
-        """Return {pos: hearability} for the positions within maxdist
-        reachable with cumulative hearability >= min_hearability.
-
-        Propagates hearability, starting at `hearability` on whom's cell,
-        without pruning at doors/walls. Pass-through factors are derived
-        from barrier attenuation attributes when present.
+    def hearicalc(self, whom, maxdist=None, min_propagation=10, spl=60):
         """
+        Return {pos: level} for the positions where a sound of spl dB SPL
+        made by whom is still at least min_propagation dB SPL.
+
+        The level at a cell is spl, less the attenuation (dB) of every cell
+        entered along the least-loss path, less the falloff 20·log10(r) for
+        r the straight-line distance in meters (clamped at 1 m), less
+        SHADOW when whom can't see the cell.  The model is approximate on
+        purpose: fun and plausible, not physics.
+
+        maxdist and min_propagation only bound the computation.
+        """
+
         wlp = whom.location.pos
         maxdist = test_maxdist(maxdist)
+        seen = self.visicalc_submap(whom).seen
 
-        # Dijkstra-like frontier by best hearability
+        def level(p, loss):
+            return spl - loss - 20 * math.log10(max(1, LineSeg(wlp, p).distance.v)) - (0 if p in seen else SHADOW)
 
-        # XXX: must compute attenuation more like real sound (distance falloff, dB losses)
-        def passthrough(c_from, c_to):
-            # open tiles: full pass-through
-            if c_from is None or c_to is None:
-                return 0.0
-            return max(0.0, 1.0 - c_to.attenuation)
-
-        best = {}
-        pq = []
         start = (wlp[0], wlp[1])
-        best[start] = hearability
-        heapq.heappush(pq, (-hearability, start))
-
-        def neighbors(p):
-            x, y = p
-            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                np = (x + dx, y + dy)
-                yield np
-
+        best = {start: 0}
+        pq = [(0, start)]
+        heard = {}
         while pq:
-            neg_aud, p = heapq.heappop(pq)
-            aud = -neg_aud
-            if aud < min_hearability:
+            loss, p = heapq.heappop(pq)
+            if p in heard or not maxdist(wlp, p) or (lv := level(p, loss)) < min_propagation:
                 continue
-            if not maxdist(wlp, p):
-                continue
-            c_from = self.get(*p)
-            for np in neighbors(p):
-                if not maxdist(wlp, np):
-                    continue
-                c_to = self.get(*np)
-                k = passthrough(c_from, c_to)
-                if k <= 0.0:
-                    continue
-                na = aud * k
-                if na < min_hearability:
-                    continue
-                if na > best.get(np, 0.0):
-                    best[np] = na
-                    heapq.heappush(pq, (-na, np))
+            heard[p] = lv
+            for np in ((p[0] + 1, p[1]), (p[0] - 1, p[1]), (p[0], p[1] + 1), (p[0], p[1] - 1)):
+                if (c := self.get(*np)) is not None and (nl := loss + c.attenuation) < best.get(np, math.inf):
+                    best[np] = nl
+                    heapq.heappush(pq, (nl, np))
+        return heard
 
-        return best
-
-    def hearicalc_submap(self, whom, maxdist=None, min_hearability=0.1):
+    def hearicalc_submap(self, whom, maxdist=None, min_propagation=10):
         """
         A MapView of what `whom` can hear: bounded to the heard positions,
         with `seen` holding them, so `.cells`/`.objects` are whom's hearing.
         """
 
-        heard = self.hearicalc(whom, maxdist=maxdist, min_hearability=min_hearability)
+        heard = self.hearicalc(whom, maxdist=maxdist, min_propagation=min_propagation)
         xs = [p[0] for p in heard]
         ys = [p[1] for p in heard]
         return MapView(self, bounds=Bounds(min(xs), min(ys), max(xs), max(ys)), whom=whom, seen=frozenset(heard))

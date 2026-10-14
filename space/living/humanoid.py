@@ -151,7 +151,7 @@ class Skeleton(PointLessVoiceLines, Humanoid):
         super().__init__(long=long, short=short, **kw)
 
     voicelines = [
-        VL("$N $vgnash $p teeth in impotent rage.", sound=Sound("gnash", range=2)),
+        VL("$N $vgnash $p teeth in impotent rage.", sound=Sound("gnash", spl=20)),
     ]
 
     class Choices(Living.Choices):

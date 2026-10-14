@@ -195,9 +195,9 @@ class Sound:
     """
     How an action carries to listeners who can't see it (see hv_calc).
 
-    range is how far it carries (the hearicalc maxdist), hearability how
-    loud it starts (barriers multiply it down from there), and muffled_msg
-    what listeners who hear it but can't see or make out the words get,
+    spl is how loud it is at the source in dB SPL (hearicalc takes it down
+    from there by distance, barriers and corners), and muffled_msg what
+    listeners who hear it but can't see or make out the words get,
     composed with themselves as $N.
 
     unheard_msg is what onlookers who can see it but can't make out the
@@ -208,14 +208,12 @@ class Sound:
     def __init__(
         self,
         name: str,
-        range: int = 6,  # pylint: disable=redefined-builtin
-        hearability: float = 1.0,
+        spl: int = 60,
         muffled_msg: str = "$N $vhear muffled sounds.",
         unheard_msg: str | None = None,
     ):
         self.name = name
-        self.range = range
-        self.hearability = hearability
+        self.spl = spl
         self.muffled_msg = muffled_msg
         self.unheard_msg = unheard_msg
 
@@ -227,17 +225,14 @@ class Sound:
         return Sound(**(vars(self) | kw))
 
     def __repr__(self):
-        return f"Sound({self.name!r}, range={self.range}, hearability={self.hearability})"
+        return f"Sound({self.name!r}, spl={self.spl})"
 
 
-SILENCE = Sound("silence", hearability=0)
-WHISPER = Sound(
-    "whisper", range=4, hearability=0.3, muffled_msg="$N $vhear whispering.", unheard_msg="$N $vwhisper something."
-)
-SAY = Sound("say", muffled_msg="$N $vhear muffled voices.", unheard_msg="$N $vsay something.")
-SHOUT = Sound(
-    "shout", range=12, hearability=2.5, muffled_msg="$N $vhear muffled shouting.", unheard_msg="$N $vshout something."
-)
+DISTINCT = 24
+SILENCE = Sound("silence", spl=0)
+WHISPER = Sound("whisper", spl=40, muffled_msg="$N $vhear whispering.", unheard_msg="$N $vwhisper something.")
+SAY = Sound("say", spl=60, muffled_msg="$N $vhear muffled voices.", unheard_msg="$N $vsay something.")
+SHOUT = Sound("shout", spl=80, muffled_msg="$N $vhear muffled shouting.", unheard_msg="$N $vshout something.")
 
 
 class ReceivesMessages(HasShell, Talks):
@@ -331,18 +326,17 @@ class ReceivesMessages(HasShell, Talks):
 
         return re.sub(r"\$[MNVTTPPOOnnvttoPpRr][a-z0-9]*", sub_token, msg)
 
-    def hv_calc(self, who: Actors, sound: Sound | None = None, distinct=0.6):
+    def hv_calc(self, who: Actors, sound: Sound | None = None, distinct=DISTINCT):
         """
         Split the ReceivesMessages on the actor's map into four disjoint
         sets: (normal, unheard, neutral, muffled).
 
         normal is the actor, the target, and everything either of them can
-        see; without a sound that's all there is.  With one, hearability
-        comes from hearicalc (starting at sound.hearability, bounded by
-        sound.range): onlookers whose hearability is below distinct move
-        from normal to unheard; listeners who can't see but whose
-        hearability is >= distinct are neutral; the rest that can hear at
-        all are muffled.
+        see; without a sound that's all there is.  With one, the level (dB
+        SPL) at each listener comes from hearicalc starting at sound.spl:
+        onlookers whose level is below distinct move from normal to
+        unheard; listeners who can't see but whose level is >= distinct
+        are neutral; the rest that hear it at all are muffled.
         """
 
         m = who.actor.location.map
@@ -350,7 +344,7 @@ class ReceivesMessages(HasShell, Talks):
         normal = set(srcs) | {x for src in srcs for x in m.visicalc_submap(src).objects if isinstance(x, ReceivesMessages)}
         if sound is None:
             return normal, set(), set(), set()
-        heard = m.hearicalc(who.actor, maxdist=sound.range, hearability=sound.hearability)
+        heard = m.hearicalc(who.actor, spl=sound.spl)
         unheard = {x for x in normal - set(srcs) if heard.get(x.location.pos, 0) < distinct}
         rest = {
             x: heard[x.location.pos]

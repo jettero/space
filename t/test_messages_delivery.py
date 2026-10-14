@@ -1,7 +1,7 @@
 # coding: utf-8
 
 import pytest
-from space.msg import ReceivesMessages, Actors, Sound, SAY, SILENCE
+from space.msg import ReceivesMessages, Actors, Sound, SAY, SILENCE, WHISPER
 from space.living.behavior import VL
 from space.shell.list import Shell as ListShell
 
@@ -57,7 +57,7 @@ def test_hv_calc_open_door(opened):
 
 
 def test_hv_calc_disjoint_tiers(closed):
-    normal, unheard, neutral, muffled = closed.dig_dug.hv_calc(Actors(closed.dig_dug, None), sound=Sound("test", range=8))
+    normal, unheard, neutral, muffled = closed.dig_dug.hv_calc(Actors(closed.dig_dug, None), sound=Sound("test"))
     assert normal == {closed.dig_dug}
     assert not unheard
     assert neutral == {closed.stupid}
@@ -65,7 +65,7 @@ def test_hv_calc_disjoint_tiers(closed):
 
 
 def test_hv_calc_unheard(me, ss):
-    normal, unheard, neutral, muffled = me.hv_calc(Actors(me, None), sound=SAY)
+    normal, unheard, neutral, muffled = me.hv_calc(Actors(me, None), sound=WHISPER)
     assert ss in unheard
     assert ss not in normal | neutral | muffled
 
@@ -74,12 +74,6 @@ def test_hv_calc_unheard(me, ss):
     "cmd, far",
     [
         ("whisper psst", "Paul whispers something."),
-        ("say hi", "Paul says something."),
-        ("say hi!", "Paul exclaims something."),
-        ("say hi?", "Paul asks something."),
-        ("say hi :)", "Paul happily declares something."),
-        ("say hi :P", "Paul sticks out his tongue and says something."),
-        ("say (psst)", "Paul interjects something parenthetically."),
         ("shout halp", 'Paul shouts, "Halp!"'),
     ],
 )
@@ -102,7 +96,7 @@ def test_silence(me, dd, ss):
 
 def test_sound_copy():
     s = SAY.copy(unheard_msg="$N $vmumble something.")
-    assert (s.name, s.range, s.hearability, s.muffled_msg) == (SAY.name, SAY.range, SAY.hearability, SAY.muffled_msg)
+    assert (s.name, s.spl, s.muffled_msg) == (SAY.name, SAY.spl, SAY.muffled_msg)
     assert s.unheard_msg == "$N $vmumble something." != SAY.unheard_msg
 
 
@@ -112,17 +106,17 @@ def test_normal_see_and_hear_once(opened):
 
 
 def test_neutral_say(closed):
-    closed.dig_dug.simple_action('$N $vsay, "$O"', "hi.", sound=Sound("test", range=8))
+    closed.dig_dug.simple_action('$N $vsay, "$O"', "hi.", sound=Sound("test"))
     assert closed.stupid.shell.msgs == ['Someone says, "Hi."']
 
 
 def test_neutral_later_mention(closed):
-    closed.dig_dug.simple_action("$N $vstick out $p tongue.", sound=Sound("test", range=8))
+    closed.dig_dug.simple_action("$N $vstick out $p tongue.", sound=Sound("test"))
     assert closed.stupid.shell.msgs == ["Someone sticks out their tongue."]
 
 
 def test_neutral_through_door(closed):
-    closed.me.simple_action('$N $vsay, "$O"', "hi.", sound=Sound("test", hearability=2.5))
+    closed.me.simple_action('$N $vsay, "$O"', "hi.", sound=Sound("test", spl=80))
     assert closed.dig_dug.shell.msgs == ['Someone says, "Hi."']
 
 
@@ -158,14 +152,9 @@ def test_nothing_without_sound(closed):
     assert closed.dig_dug.shell.msgs == []
 
 
-def test_nothing_below_min_hearability(closed):
-    closed.me.simple_action('$N $vsay, "$O"', "hi.", sound=Sound("test", hearability=0.3))
+def test_nothing_below_min_propagation(closed):
+    closed.me.simple_action('$N $vsay, "$O"', "hi.", sound=Sound("test", spl=40))
     assert closed.dig_dug.shell.msgs == []
-
-
-def test_nothing_out_of_range(closed):
-    closed.dig_dug.do("say hi")
-    assert closed.stupid.shell.msgs == []
 
 
 def test_voiceline_through_door(closed):
@@ -182,11 +171,11 @@ def test_voiceline_sound(closed):
 
 
 def test_vl_repr():
-    assert repr(VL("$N $vhum.", sound=SAY)) == "VL('$N $vhum.', 1, Sound('say', range=6, hearability=1.0))"
+    assert repr(VL("$N $vhum.", sound=SAY)) == "VL('$N $vhum.', 1, Sound('say', spl=60))"
 
 
 def test_sound_repr():
-    assert repr(Sound("test", range=8)) == "Sound('test', range=8, hearability=1.0)"
+    assert repr(Sound("test", spl=40)) == "Sound('test', spl=40)"
 
 
 def test_actor_gets_one_line(closed):

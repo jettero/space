@@ -17,16 +17,21 @@ class Door(StdObj):
     # Whether this door is attached to a cell (not portable/removable)
     attached: bool = False
 
+    # dB lost passing through the closed door (30 is a solid core door)
+    attenuation: int = 30
+
     @property
     def abbr(self):
         return "□" if self.open else "■"
 
-    def __init__(self, *items, is_open=False, is_locked=False, is_stuck=False, is_attached=False, **kw):
+    def __init__(self, *items, is_open=False, is_locked=False, is_stuck=False, is_attached=False, attenuation=None, **kw):
         super().__init__(*items, **kw)
         self.open = bool(is_open)
         self.locked = bool(is_locked)
         self.stuck = bool(is_stuck)
         self.attached = bool(is_attached)
+        if attenuation is not None:
+            self.attenuation = attenuation
 
     def can_open(self):
         if self.open:

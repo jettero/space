@@ -7,7 +7,7 @@ from .blocked import BlockedCell
 
 class Wall(MapObj):
     _override = None
-    attenuation = 0.9  # hearability loss across the barrier
+    attenuation = 45  # dB lost entering the cell
     conv = {
         "": "░",
         "C": "▪",
