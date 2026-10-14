@@ -55,6 +55,8 @@ class Door(StdObj):
                 meta["reason"] = "already-closed"
             elif self.stuck:
                 meta["reason"] = "stuck"
+        elif self.attached and (by := next((x for x in self.location if x is not self), None)):
+            return False, {"reason": "blocked", "by": by}
         return ok, meta
 
     def do_close(self):

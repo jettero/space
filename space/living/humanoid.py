@@ -44,12 +44,9 @@ class Humanoid(Living):
         )
 
     def can_get_obj(self, obj: StdObj):
-        if obj.owner == self:
-            return False, {"error": f"You already have {obj}"}
-        if obj.owner:
-            return False, {"error": f"{obj.owner} would probably object if you took that."}
-        if self.unit_distance_to(obj) > self.reach:
-            return False, {"error": f"{obj} seems too far away"}
+        ok, ctx = super().can_get_obj(obj)
+        if not ok:
+            return ok, ctx
         for h in (self.slots.right_hand_slot, self.slots.left_hand_slot):
             try:
                 if h.accept(obj):
@@ -72,16 +69,6 @@ class Humanoid(Living):
         if eff is not None:
             raise eff
 
-    def can_drop_obj(self, obj: StdObj):
-        log.debug("%s.can_drop_obj(%s) (owner: %s)", self, obj, obj.owner)
-        if obj.owner != self:
-            return False, {"error": f"You don't have {obj}."}
-        return True, {"obj": obj}  # keys must match do_drop args
-
-    def do_drop_obj(self, obj):
-        self.location.add_item(obj)
-        self.simple_action("$N $vdrop $o.", obj)
-
     def can_open_obj(self, obj: Door):
         ok, ctx = obj.can_open()
         if ok:
@@ -92,7 +79,7 @@ class Humanoid(Living):
 
     def do_open_obj(self, obj: Door):
         log.debug("do_open_obj(%s)", obj)
-        obj.do_open()
+        self.changes_view(obj.do_open)
         self.simple_action("$N $vopen $o.", obj)
 
     @adj_map(obj="word")
@@ -116,6 +103,9 @@ class Humanoid(Living):
             return False, {"error": f"{obj} is already closed"}
         if reason == "stuck":
             return False, {"error": f"{obj} appears to be stuck"}
+        if reason == "blocked":
+            by = ctx["by"]
+            return False, {"error": f"You're in the way of {obj}" if by is self else f"{by} is in the way of {obj}"}
         return False, {"error": f"You cannot close {obj}"}
 
     @adj_map(obj="word")
@@ -123,8 +113,8 @@ class Humanoid(Living):
         return self.can_close_obj(obj)
 
     def do_close_obj(self, obj: Door):
-        log.debug("do_sclose_obj(%s)", obj)
-        obj.do_close()
+        log.debug("do_close_obj(%s)", obj)
+        self.changes_view(obj.do_close)
         self.simple_action("$N $vclose $o.", obj)
 
     do_close_word_obj = do_close_obj

@@ -20,6 +20,7 @@ log = logging.getLogger(__name__)
 class BaseShell:
     _owner = None
     _stop = False
+    map_view = None
 
     def __init__(self, owner=None, init=None):
         if owner is not None:
@@ -67,6 +68,9 @@ class BaseShell:
     def receive_map(self, a_map):
         self.receive_message(MapMessage(a_map))
 
+    def receive_view(self, view):
+        self.map_view = view
+
     def step(self):
         raise NotImplementedError()
 
@@ -92,7 +96,6 @@ class BaseShell:
         input_text = self.pre_parse_kludges(input_text)
         txts = [f"move {x}" if is_direction_string(x) else x for x in re.split(r"\s*;\s*", input_text)]
         log.debug("SHELL SUBST >>> %s >>> %s", input_text, repr(txts))
-        p0 = self.owner.location.pos
         for txt in txts:
             if txt:
                 try:
@@ -111,8 +114,6 @@ class BaseShell:
                     self.receive_text(str(e))
                     if reraise:
                         raise
-        if self.owner.location.pos != p0:
-            self.owner.do("look")
         return ok
 
     def handle_application_exception(self, loop, context):

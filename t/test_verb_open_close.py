@@ -104,6 +104,38 @@ def test_close_door(me):
         xp()
 
 
+def test_move_item_through_closed_door(me, objs, a_map):
+    a_map[8, 1] = objs.ubi
+    assert not (xp := me.parse("move bauble s"))
+    assert "door is closed" in str(xp.error)
+    assert objs.ubi.location.pos == (8, 1)
+
+
+def test_place_item_in_closed_door(objs, a_map):
+    with pytest.raises(E.ContainerError):
+        a_map[8, 2] = objs.ubi
+
+
+def test_close_door_on_item(me, objs, a_map):
+    me.do("open door")
+    a_map[8, 2] = objs.ubi
+    assert not (xp := me.parse("close door"))
+    assert "in the way" in str(xp.error)
+    assert objs.door.open
+
+
+def test_close_door_on_self(me):
+    me.do("open door; move s")
+    assert not (xp := me.parse("close door"))
+    assert "You're in the way" in str(xp.error)
+
+
+@pytest.mark.parametrize("cmd", ["move door n", "get door"])
+def test_attached_door(me, cmd):
+    assert not (xp := me.parse(cmd))
+    assert "attached" in str(xp.error)
+
+
 def test_close_south_door(me):
     assert (xp := me.parse("open door"))
     xp()

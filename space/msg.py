@@ -237,6 +237,16 @@ SHOUT = Sound("shout", spl=80, muffled_msg="$N $vhear muffled shouting.", unhear
 
 class ReceivesMessages(HasShell, Talks):
 
+    def refresh_map(self):
+        """
+        Hand this body's current view to its shell -- the quiet minimap
+        update: no broadcast, nothing in scrollback.
+        """
+
+        self.shell.receive_view(self.location.map.visicalc_submap(self))
+
+    update_minimap = refresh_map
+
     def compose(self, forwhom, msg, who, *obs):
         has = set()
         plain = {}

@@ -11,12 +11,12 @@ def test_simple_and_targeted_delivery(a_map, objs):
     objs.dig_dug.shell = ListShell()
 
     objs.me.do("open door; sSW6s3w; look")
-    assert len(objs.me.shell.msgs) == 6  # open door, move, look,map, look,map
-    assert len(objs.dig_dug.shell.msgs) == 4  # open, move, look, look
+    assert len(objs.me.shell.msgs) == 4  # open door, move, look,map
+    assert len(objs.dig_dug.shell.msgs) == 3  # open, move, look
 
     objs.me.simple_action("$N $vwave.")
-    assert len(objs.me.shell.msgs) == 7
-    assert len(objs.dig_dug.shell.msgs) == 5
+    assert len(objs.me.shell.msgs) == 5
+    assert len(objs.dig_dug.shell.msgs) == 4
     assert objs.me.shell.msgs[-1] == "You wave."
     assert objs.dig_dug.shell.msgs[-1] == "Paul waves."
 

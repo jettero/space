@@ -2,6 +2,7 @@
 
 import pytest
 from space.map.dir_util import move_string_to_dirs, is_direction_string
+from space.item import Chair, HeavyChair
 
 
 def _moves_for(s):
@@ -124,3 +125,45 @@ def test_exec_moves_final_position(e_map, eroom):
     assert xp
     xp()
     assert me.location.pos == (7, 18)
+
+
+def test_move_item_within_reach(me, objs, a_map):
+    a_map[7, 6] = objs.ubi
+    assert (xp := me.parse("move bauble e")), xp.error
+    xp()
+    assert objs.ubi.location.pos == (8, 6)
+
+
+def test_move_item_out_of_reach(me, objs, a_map):
+    a_map[7, 6] = objs.ubi
+    assert not (xp := me.parse("move bauble s"))
+    assert "too far" in str(xp.error)
+    assert objs.ubi.location.pos == (7, 6)
+
+
+def test_move_far_item(me, objs):
+    assert not (xp := me.parse("move bauble n"))
+    assert "too far" in str(xp.error)
+    assert objs.ubi.location.pos == (4, 9)
+
+
+def test_move_held_item(me, objs, a_map):
+    a_map[7, 6] = objs.ubi
+    me.do("get bauble")
+    assert objs.ubi.owner is me
+    assert not (xp := me.parse("move bauble n"))
+    assert "floor" in str(xp.error)
+
+
+def test_move_heavy_chair(me, a_map):
+    a_map[7, 6] = chair = HeavyChair()
+    assert (xp := me.parse("move chair e")), xp.error
+    xp()
+    assert chair.location.pos == (8, 6)
+
+
+def test_get_chair(me, a_map):
+    a_map[7, 6] = chair = Chair()
+    assert (xp := me.parse("get chair")), xp.error
+    xp()
+    assert chair.owner is me

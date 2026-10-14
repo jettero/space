@@ -406,6 +406,10 @@ class Shell(BaseShell):
         self.message_log.append(msg, drawings=self.config["maps.inline"])
         self.application.invalidate()
 
+    def receive_view(self, view):
+        super().receive_view(view)
+        self.application.invalidate()
+
     def do_step(self, cmd):
         if cmd and not self.internal_command(cmd):
             try:

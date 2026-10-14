@@ -3,6 +3,9 @@
 
 import pytest
 
+from space.item import Chair
+from space.living import Quadruped
+
 
 @pytest.fixture
 def me(objs):
@@ -38,3 +41,25 @@ def test_get_and_drop_bauble(me):
     held = [i for i in (me.slots.left_hand, me.slots.right_hand) if i is not None]
     names = [i.s for i in held]
     assert "bauble" not in names
+
+
+@pytest.fixture
+def dog(objs, a_map):
+    a_map[4, 8] = q = Quadruped()
+    return q
+
+
+def test_quadruped_get_and_drop(dog, objs):
+    assert (xp := dog.parse("get bauble")), xp.error
+    xp()
+    assert dog.slots.mouth is objs.ubi
+    assert (xp := dog.parse("drop bauble")), xp.error
+    xp()
+    assert objs.ubi.location is dog.location
+
+
+def test_quadruped_mouth_full(dog, a_map):
+    dog.do("get bauble")
+    a_map[5, 8] = Chair()
+    assert not (xp := dog.parse("get chair"))
+    assert "not possible" in str(xp.error)

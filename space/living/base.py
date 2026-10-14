@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import logging
+from math import floor
 import space.exceptions as E
 
 from space.find import lazy_find_verb_method
@@ -23,36 +24,56 @@ import space.exceptions as E
 log = logging.getLogger(__name__)
 
 
+def relocate(obj, moves):
+    if len(moves) == 1 and isinstance(moves[0], (tuple, list)):
+        moves = moves[0]
+    c = obj.location
+    for move in moves:
+        c = c.mpos(move)
+        c.add_item(obj)
+
+
 class CanMove:
     def move(self, moves):
-        if len(moves) == 1 and isinstance(moves[0], (tuple, list)):
-            moves = moves[0]
-        c = self.location  # pylint: disable=no-member
-        for move in moves:
-            c = c.mpos(move)
-            c.add_item(self)
+        relocate(self, moves)
 
-    def can_move_words(self, moves: tuple[str, ...]):
-        c = self.location  # pylint: disable=no-member
+    def path_for(self, obj, moves):
+        cells = []
+        c = obj.location
         for move in moves:
             try:
                 c = c.mpos(move)
-                if c.accept(self):
-                    continue
+                c.accept(obj)
+                cells.append(c)
             except E.BadDirection as e:
                 return False, {"error": e}
             except AttributeError as e:
                 return False, {"error": "there's something in the way"}
             except E.ContainerError as e:
                 return False, {"error": e}
+        return True, {"cells": cells}
+
+    def can_move_words(self, moves: tuple[str, ...]):
+        ok, ctx = self.path_for(self, moves)
+        if not ok:
+            return ok, ctx
         return True, {"moves": moves}  # keys must match do_move_words args
 
     def can_move_obj_words(self, obj: StdObj, moves: tuple[str, ...]):
-        # XXX: should we do more to consider which obj is more appropriate?
+        from ..map.cell.base import MapObj
+
         # XXX: if the obj doesn't want to move, we should have some sort of ability contest here
-        # XXX: the object should be within reach before, during, and after the move too
-        if isinstance(obj, (list, tuple)):
-            obj = obj[0]
+        if obj.attached:
+            return False, {"error": f"{obj} is attached"}
+        if not isinstance(obj.location, MapObj):
+            return False, {"error": f"{obj} has to be on the floor"}
+        ok, ctx = self.path_for(obj, moves)
+        if not ok:
+            return ok, ctx
+        r = max(1, floor(self.reach))  # pylint: disable=no-member
+        x0, y0 = self.location.pos  # pylint: disable=no-member
+        if any(max(abs(c.pos[0] - x0), abs(c.pos[1] - y0)) > r for c in [obj.location, *ctx["cells"]]):
+            return False, {"error": f"{obj} is too far away"}
         return True, {"obj": obj, "moves": moves}  # keys must match do_move_obj_words args
 
     def do_move_words(self, moves):
@@ -60,7 +81,7 @@ class CanMove:
         from ..map.dir_util import moves_to_description
 
         desc = moves_to_description(moves)
-        self.move(moves)
+        self.changes_view(self.move, moves)
         self.simple_action(f"$N $vmove {desc}.")
 
     def do_move_obj_words(self, obj, moves):  # space.parser.implied_types makes these obj:StdObj and moves:tuple[str,...]
@@ -68,7 +89,7 @@ class CanMove:
         from ..map.dir_util import moves_to_description
 
         desc = moves_to_description(moves)
-        obj.move(moves)
+        obj.changes_view(relocate, obj, moves)
         self.simple_action(f"$N $vmove $o {desc}.", obj)
 
 
@@ -300,6 +321,27 @@ class Living(ReceivesMessages, CanMove, StdObj):
     @property
     def inventory(self):
         return self.slots.inventory
+
+    def can_get_obj(self, obj: StdObj):
+        if obj.attached:
+            return False, {"error": f"{obj} is attached"}
+        if obj.owner == self:
+            return False, {"error": f"You already have {obj}"}
+        if obj.owner:
+            return False, {"error": f"{obj.owner} would probably object if you took that."}
+        if self.unit_distance_to(obj) > self.reach:
+            return False, {"error": f"{obj} seems too far away"}
+        return True, {"obj": obj}
+
+    def can_drop_obj(self, obj: StdObj):
+        log.debug("%s.can_drop_obj(%s) (owner: %s)", self, obj, obj.owner)
+        if obj.owner != self:
+            return False, {"error": f"You don't have {obj}."}
+        return True, {"obj": obj}  # keys must match do_drop args
+
+    def do_drop_obj(self, obj):
+        self.location.add_item(obj)
+        self.simple_action("$N $vdrop $o.", obj)
 
     def do(self, input_text):
         return self.shell.do(input_text)

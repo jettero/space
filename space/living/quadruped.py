@@ -2,8 +2,10 @@
 
 import logging
 
+import space.exceptions as E
 from .base import Living
 from .slots import Slots, MouthSlot
+from ..stdobj import StdObj
 
 log = logging.getLogger(__name__)
 
@@ -18,32 +20,17 @@ class Quadruped(Living):
             slots = {"mouth": MouthSlot}
             default = "mouth"
 
-    def can_get_obj(self, obj):
-        for targ in obj:
-            dist = self.unit_distance_to(targ)
-            if dist <= self.reach:
-                if self.slots.mouth.accept(targ):
-                    return True, {"obj": targ}  # keys must match do_get args
-        return False, {"error": "There's nothing like that nearby."}
+    def can_get_obj(self, obj: StdObj):
+        ok, ctx = super().can_get_obj(obj)
+        if not ok:
+            return ok, ctx
+        try:
+            if self.slots.mouth_slot.accept(obj):
+                return True, {"obj": obj}  # keys must match do_get_obj args
+        except E.ContainerError:
+            pass
+        return False, {"error": f"It's not possible to get {obj}."}
 
-    def do_get(self, obj):
-        self.slots.mouth.add_item(obj)
+    def do_get_obj(self, obj):
+        self.slots.mouth_slot.add_item(obj)
         self.simple_action("$N $vget $o.", obj)
-
-    def can_drop_obj(self, obj):
-        for targ in obj:
-            loc = getattr(targ, "location", None)
-            if loc is None:
-                continue
-            if loc is self.pack:
-                return True, {"obj": targ}  # keys must match do_drop args
-            try:
-                if loc.owner is self:
-                    return True, {"obj": targ}  # keys must match do_drop args
-            except Exception:
-                pass
-        return False, {"error": "You aren't holding that."}
-
-    def do_drop(self, obj):
-        self.location.add_item(obj)
-        self.simple_action("$N $vdrop $o.", obj)

@@ -2,7 +2,6 @@
 
 from .cell import Corridor
 from ...container import Container
-from ...living import Living
 from ...door import Door
 import space.exceptions as E
 
@@ -28,10 +27,8 @@ class BlockedCell(Corridor):
         return bool(self.door)
 
     def accept(self, item):
-        if isinstance(item, Living):
-            if door := self.door:
-                if not door.open:
-                    raise E.ContainerError(f"the {door} is closed")
+        if (door := self.door) and not door.open:
+            raise E.ContainerError(f"the {door} is closed")
         return super().accept(item)
 
     def do_open(self):

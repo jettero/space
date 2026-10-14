@@ -2,6 +2,7 @@
 
 from space.pv import PV
 from space.size import Size
+from space.item import Ubi
 
 
 def test_size():
@@ -22,3 +23,7 @@ def test_size_subclass():
 
     s.weight = "20lb"
     assert s.mass > "5kg"
+
+
+def test_ubi_volume():
+    assert Ubi().volume == PV("5 cm³")
