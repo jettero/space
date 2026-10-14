@@ -207,10 +207,13 @@ def add_boolops(cls, *op):
         op_f = getattr(operator, op)
 
         def _inner(self, other):
+            q = self._q  # pylint: disable=protected-access
             gv = generic_value(other)
             if isinstance(gv, (int, float)):
-                gv *= self._q.units  # pylint: disable=protected-access
-            return bool(op_f(self._q, gv))  # pylint: disable=protected-access
+                gv *= q.units
+            if _is_qty(gv) and gv.dimensionality == q.dimensionality and math.isclose(q.magnitude, gv.to(q.units).magnitude):
+                return op in ("__eq__", "__le__", "__ge__")
+            return bool(op_f(q, gv))
 
         return _inner
 

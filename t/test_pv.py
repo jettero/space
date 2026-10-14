@@ -3,6 +3,7 @@
 
 import pytest
 from space.pv import PV, DimensionalityError, INFINITY
+from space.size import Length, Volume
 
 
 def test_infinity():
@@ -77,6 +78,26 @@ def test_lt_z():
 
     assert three > 0
     assert zero == 0
+
+
+@pytest.mark.parametrize("x", [PV("5 cm³"), Volume("5 cm³"), PV("3 m³"), Length("7 m")])
+def test_roundoff_is_close_enough(x):
+    y = (x ** (1 / 3)) ** 3
+    assert y == x and y <= x and y >= x
+    assert not (y != x or y < x or y > x)
+
+
+def test_tolerance_is_not_too_loose():
+    assert Length("1 m") != Length("1.001 m")
+    assert Length("1 m") < Length("1.001 m")
+    assert Volume("1 cm³") != Volume("1.001 cm³")
+    assert PV(INFINITY) == PV(INFINITY)
+    assert PV("3 g") != PV("3 m")
+
+
+def test_tolerance_is_relative():
+    assert PV("3 g") != PV("3 g") + "0.0001 g"
+    assert PV("30000 kg") == PV("30000 kg") + "0.0001 g"
 
 
 def test_format():
