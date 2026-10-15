@@ -12,5 +12,5 @@ The lib is called /space/ because I wanted a generic backend for a SciFi random
 map explorer (at least originally) and I just kinda liked the name -- including
 the oddball punctuation.
 
-I also hope that such game(s) will turn out to be multiplayer and instanced, but
-this library won't address that. This is just the rules engine (I think).
+It's a MUD: shared (sharded) space stations, plus instanced ships and away
+missions. [appserv](contrib/appserv) (Rust) hosts it over SSH.
