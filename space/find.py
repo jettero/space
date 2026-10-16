@@ -4,10 +4,12 @@ import gc
 import pkgutil
 import importlib
 import logging
+import threading
 
 log = logging.getLogger(__name__)
 
 _this_body = None
+LOCK = threading.RLock()  # ponytail: one world-wide lock; per-instance locks when instances run in parallel
 
 
 def set_this_body(b=None):

@@ -62,6 +62,7 @@ class Humanoid(Living):
                 if hand.accept(obj):
                     hand.add_item(obj)
                     self.simple_action("$N $vget $o.", obj)
+                    self.location.map.time.charge(self, main=1)
                     return
             except E.ContainerError as e:
                 if eff is None:
@@ -73,7 +74,8 @@ class Humanoid(Living):
         ok, ctx = obj.can_open()
         if ok:
             if self.unit_distance_to(obj) <= self.reach:
-                return ok, {"obj": obj}
+                ok, ctx = self.location.map.time.my_turn(self, main=1)
+                return ok, {**ctx, "obj": obj}
             return False, {"error": f"{obj} is too far away"}
         return ok, ctx
 
@@ -81,6 +83,7 @@ class Humanoid(Living):
         log.debug("do_open_obj(%s)", obj)
         self.changes_view(obj.do_open)
         self.simple_action("$N $vopen $o.", obj)
+        self.location.map.time.charge(self, main=1)
 
     @adj_map(obj="word")
     def can_open_word_obj(self, word: str, obj: Door):
@@ -97,7 +100,8 @@ class Humanoid(Living):
         ok, ctx = obj.can_close()
         if ok:
             if self.unit_distance_to(obj) <= self.reach:
-                return ok, {"obj": obj}
+                ok, ctx = self.location.map.time.my_turn(self, main=1)
+                return ok, {**ctx, "obj": obj}
             return False, {"error": f"{obj} is too far away"}
         if (reason := ctx.get("reason")) == "already-closed":
             return False, {"error": f"{obj} is already closed"}
@@ -116,6 +120,7 @@ class Humanoid(Living):
         log.debug("do_close_obj(%s)", obj)
         self.changes_view(obj.do_close)
         self.simple_action("$N $vclose $o.", obj)
+        self.location.map.time.charge(self, main=1)
 
     do_close_word_obj = do_close_obj
 

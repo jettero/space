@@ -57,7 +57,8 @@ class CanMove:
         ok, ctx = self.path_for(self, moves)
         if not ok:
             return ok, ctx
-        return True, {"moves": moves}  # keys must match do_move_words args
+        ok, ctx = self.location.map.time.my_turn(self, cells=len(moves))
+        return ok, {**ctx, "moves": moves}  # keys must match do_move_words args
 
     def can_move_obj_words(self, obj: StdObj, moves: tuple[str, ...]):
         from ..map.cell.base import MapObj
@@ -74,7 +75,8 @@ class CanMove:
         x0, y0 = self.location.pos  # pylint: disable=no-member
         if any(max(abs(c.pos[0] - x0), abs(c.pos[1] - y0)) > r for c in [obj.location, *ctx["cells"]]):
             return False, {"error": f"{obj} is too far away"}
-        return True, {"obj": obj, "moves": moves}  # keys must match do_move_obj_words args
+        ok, ctx = self.location.map.time.my_turn(self, main=1)
+        return ok, {**ctx, "obj": obj, "moves": moves}  # keys must match do_move_obj_words args
 
     def do_move_words(self, moves):
         log.debug("do_move_words(%s)", moves)
@@ -83,6 +85,7 @@ class CanMove:
         desc = moves_to_description(moves)
         self.changes_view(self.move, moves)
         self.simple_action(f"$N $vmove {desc}.")
+        self.location.map.time.charge(self, cells=len(moves))
 
     def do_move_obj_words(self, obj, moves):  # space.parser.implied_types makes these obj:StdObj and moves:tuple[str,...]
         log.debug("do_move_obj_words(%s, %s)", obj, moves)
@@ -91,6 +94,7 @@ class CanMove:
         desc = moves_to_description(moves)
         obj.changes_view(relocate, obj, moves)
         self.simple_action(f"$N $vmove $o {desc}.", obj)
+        self.location.map.time.charge(self, main=1)
 
 
 class Living(ReceivesMessages, CanMove, StdObj):
@@ -136,6 +140,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
         self.level = ClassRank(1)
         self.xp = ExperiencePoints(0)
         self.damage = Damage()
+        self.aggro = {}
 
         super().__init__(**kw)
 
@@ -159,6 +164,8 @@ class Living(ReceivesMessages, CanMove, StdObj):
         h1 = self.hp
         self.damage.add(damage)
         log.debug("%s .hurt(%s) hp %s -> %s", self, damage, h1, self.hp)
+        if h1 > 0 >= self.hp:
+            self.simple_action("$N $vcollapse.")
 
     @property
     def weapon(self):
@@ -205,15 +212,48 @@ class Living(ReceivesMessages, CanMove, StdObj):
             return v.length
         return INFINITY
 
+    def add_aggro(self, target):
+        target = target.strongify()
+        self.aggro[target] = self.aggro.get(target, 0) + 1
+
     def can_attack_living(self, targ):  # targ:Living is implied via space.parser.implied_type
         dist = self.unit_distance_to(targ)
         log.debug("%s.can_attack_living(%s), dist: %f", repr(self), repr(targ), dist)
         if dist > self.reach:
             return False, {"error": f"{targ} is out of range"}
-        return True, {"target": targ}
+        ok, ctx = self.location.map.time.my_turn(self, main=1)
+        return ok, {**ctx, "target": targ}
+
+    @adj_map(targ="word")
+    def can_attack_word_living(self, word: str, targ):
+        return self.can_attack_living(targ)
 
     def do_attack_living(self, target):
-        self.attack(target)
+        self.add_aggro(target)
+        target.add_aggro(self)
+        if (t := self.location.map.time).round:
+            self.attack(target)
+            t.charge(self, main=1)
+        else:
+            t.start()
+
+    do_attack_word_living = do_attack_living
+
+    def can_pass(self):
+        return self.location.map.time.my_turn(self)
+
+    def do_pass(self):
+        self.location.map.time.pass_turn(self)
+
+    def can_disengage(self):
+        if not self.aggro:
+            return False, {"error": "You're not fighting anyone."}
+        return self.location.map.time.my_turn(self)
+
+    def do_disengage(self):
+        self.aggro.clear()
+        self.simple_action("$N $vcalm down.")
+        self.location.map.time.pass_turn(self)
 
     def can_look(self):
         return True, {}
@@ -331,17 +371,20 @@ class Living(ReceivesMessages, CanMove, StdObj):
             return False, {"error": f"{obj.owner} would probably object if you took that."}
         if self.unit_distance_to(obj) > self.reach:
             return False, {"error": f"{obj} seems too far away"}
-        return True, {"obj": obj}
+        ok, ctx = self.location.map.time.my_turn(self, main=1)
+        return ok, {**ctx, "obj": obj}
 
     def can_drop_obj(self, obj: StdObj):
         log.debug("%s.can_drop_obj(%s) (owner: %s)", self, obj, obj.owner)
         if obj.owner != self:
             return False, {"error": f"You don't have {obj}."}
-        return True, {"obj": obj}  # keys must match do_drop args
+        ok, ctx = self.location.map.time.my_turn(self, small=1)
+        return ok, {**ctx, "obj": obj}  # keys must match do_drop args
 
     def do_drop_obj(self, obj):
         self.location.add_item(obj)
         self.simple_action("$N $vdrop $o.", obj)
+        self.location.map.time.charge(self, small=1)
 
     def do(self, input_text):
         return self.shell.do(input_text)

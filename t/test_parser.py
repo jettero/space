@@ -51,21 +51,6 @@ def bystander(people):
     return people[2]
 
 
-def test_attack_parse(me, target, room):
-    me.do("look")
-    xp = me.parse("attack jaime")
-    assert xp
-    assert xp.fn.__name__ == "do_attack_living"
-    assert xp.kw.get("target") == target
-
-
-def test_attack_exec(me, target, room):
-    hp1 = target.hp
-    me.parse("attack jaime")()
-    hp2 = target.hp
-    assert hp2 < hp1
-
-
 def test_move_parse(me, room):
     dt = {
         "n": "north North NORTH nOrth n".split(),

@@ -13,6 +13,7 @@ from .cell import Cell, Floor, Corridor, MapObj, Wall
 from .cell.blocked import BlockedCell
 from .dir_util import convert_pos, DIRS, DDIRS
 from .util import LineSeg, Box, Bounds, test_maxdist
+from ..time import Time
 
 import space.exceptions as E
 
@@ -36,6 +37,7 @@ class Map(baseobj):
     def __init__(self, *a):
         x, y = self.atosz(a)
         self.cells = []
+        self.time = Time(self)
         self.set_min_size(x, y)
         self.invalidate()
 

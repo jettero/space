@@ -34,3 +34,4 @@ class Quadruped(Living):
     def do_get_obj(self, obj):
         self.slots.mouth_slot.add_item(obj)
         self.simple_action("$N $vget $o.", obj)
+        self.location.map.time.charge(self, main=1)

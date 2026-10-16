@@ -2,10 +2,30 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
+import space.time
 from space.shell.list import Shell as ListShell
 import logging
 
 log = logging.getLogger(__name__)
+
+
+class FakeMCP:
+    def __init__(self):
+        self.queue = []
+
+    def call_out(self, fn, delay, *args, **kw):  # pylint: disable=unused-argument
+        self.queue.append((fn, args, kw))
+
+    def run(self):
+        while self.queue:
+            fn, args, kw = self.queue.pop(0)
+            fn(*args, **kw)
+
+
+@pytest.fixture
+def mcp(monkeypatch):
+    monkeypatch.setattr(space.time, "MCP", fake := FakeMCP())
+    return fake
 
 
 class TRoom:

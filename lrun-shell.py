@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from t.troom import a_map, o
-from space.master import MasterControlProgram as MCP
+from space.master import MCP
 from space.map import import_map_from_path
 
 profile = False
@@ -48,10 +48,10 @@ if profile:
     import os, cProfile, pstats
 
     with cProfile.Profile() as pr:
-        MCP().start_instance(type="local", username="jettero", map=a_map, body=o.me, init=c)
+        MCP.start_instance(type="local", username="jettero", map=a_map, body=o.me, init=c)
     with open("profile.txt", "w") as f:
         pstats.Stats(pr, stream=f).sort_stats("cumulative").print_stats()
     h = max(25, int(int(os.environ.get("LINES", 27)) * 0.8))
     os.execvp("head", f"head -n {h} profile.txt".split())
 else:
-    MCP().start_instance(type="local", username="jettero", map=a_map, body=o.me, init=c)
+    MCP.start_instance(type="local", username="jettero", map=a_map, body=o.me, init=c)

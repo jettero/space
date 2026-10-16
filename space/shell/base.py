@@ -7,6 +7,7 @@ from ..util import weakify
 # note: shell.owner is weakref
 # owner.shell is not weakref
 
+from ..find import LOCK
 from ..verb.quit import IntentionalQuit
 from ..parser import parse
 from ..msg import TextMessage, MapMessage, Message
@@ -74,6 +75,16 @@ class BaseShell:
     def step(self):
         raise NotImplementedError()
 
+    def round_start(self, n):
+        self.receive_text("-------=: Round {} :=-------", n)
+
+    def your_turn(self):
+        t = self.owner.location.map.time
+        self.receive_text("It's your turn (round {}): {} main, {} small.", t.round, t.main, t.small)
+
+    def round_end(self, n):
+        pass
+
     def start(self):
         raise NotImplementedError()
 
@@ -99,14 +110,15 @@ class BaseShell:
         for txt in txts:
             if txt:
                 try:
-                    xp = parse(self.owner, txt, parse_only=True)
-                    if parse_only:
-                        return xp
-                    if xp:
-                        xp()
-                        ok = True
-                    else:
-                        self.receive_text(xp.error)
+                    with LOCK:
+                        xp = parse(self.owner, txt, parse_only=True)
+                        if parse_only:
+                            return xp
+                        if xp:
+                            xp()
+                            ok = True
+                        else:
+                            self.receive_text(xp.error)
                 except IntentionalQuit:
                     raise
                 except Exception as e:  # pylint: disable=broad-except

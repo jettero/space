@@ -1,6 +1,7 @@
 # coding: utf-8
 
 from space.living import Human
+from space.map import Room
 from space.living.gender import Male, Female
 from space.living.stats import HitPoints
 from space.item import Sack, Ubi
@@ -8,7 +9,8 @@ from space.item import Sack, Ubi
 
 def test_human():
     for _ in range(20):
-        h = Human()
+        room = Room(3, 3)
+        room[1, 1] = h = Human()
         assert 3 <= h.sci <= 18
         assert 1 <= h.hp <= 100
         assert h.conscious is True
@@ -41,7 +43,8 @@ def test_slots():
 
 
 def test_life_state_boundaries():
-    h = Human()
+    room = Room(3, 3)
+    room[1, 1] = h = Human()
 
     # Start healthy
     assert h.hp > 0

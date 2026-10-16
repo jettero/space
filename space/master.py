@@ -12,8 +12,12 @@ import logging
 
 log = logging.getLogger(__name__)
 
+import space.time
+from space.find import LOCK
 from space.shell import PromptShell, HasShell
 from space.shell.mob import Shell as MobShell
+
+MCP = None
 
 
 class MasterControlProgram:
@@ -155,13 +159,24 @@ class MasterControlProgram:
         """Advance every HasShell on the active map (best-effort)."""
         log.debug("timer: step_map_shells")
         # Iterate current snapshot to avoid issues if list mutates during stepping
-        if self.map is None:
+        if self.map is None or self.map.time.fighting:
             return
         for obj in self.map.objects:
             if isinstance(obj, HasShell):
                 try:
-                    obj.shell.step()
+                    with LOCK:
+                        obj.shell.step()
                     log.debug("%s.shell.step()", obj)
                 except Exception:  # pylint: disable=broad-except
                     # keep stepping others
                     log.exception("error stepping shell for %s", obj)
+
+
+def load_mcp():
+    global MCP
+    if MCP is None:
+        space.time.MCP = MCP = MasterControlProgram()
+    return MCP
+
+
+load_mcp()  # just get this over-with immediately
