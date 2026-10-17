@@ -81,6 +81,93 @@ def test_fight_ends(fight, me, dd, mcp):
     assert fight.my_turn(dd)[0]
 
 
+def test_attack_unconscious_is_free_hit(mobs, me, dd, mcp):
+    dd.hurt(dd.hp)
+    hp = dd.hp
+    assert me.do("attack dig dug")
+    assert dd.hp < hp
+    assert not mobs.round
+
+
+def test_target_reacts(mobs, me, dd, mcp, monkeypatch):
+    seen = []
+    monkeypatch.setattr(dd, "react_to_attack", lambda a, t: seen.append((a, t)))
+    me.do("attack dig dug")
+    assert seen == [(me, dd)]
+
+
+def test_witness_without_los_no_reaction(objs, a_map, mobs, me, dd, ss, mcp, monkeypatch):
+    a_map[8, 1] = ss
+    objs.door.do_close()
+    assert not ss.can_see(me) and not ss.can_see(dd)
+    seen = []
+    monkeypatch.setattr(ss, "react_to_attack", lambda a, t: seen.append((a, t)))
+    me.do("attack dig dug")
+    assert not seen
+
+
+def test_witness_joins(mobs, me, dd, ss, mcp, monkeypatch):
+    assert ss.can_see(me)
+    monkeypatch.setattr(ss, "react_to_attack", lambda a, t: ss.add_aggro(a))
+    me.do("attack dig dug")
+    assert me in ss.aggro
+
+
+def test_witness_objects_to_free_hit(mobs, me, dd, ss, mcp, monkeypatch):
+    dd.hurt(dd.hp)
+    hp = dd.hp
+    monkeypatch.setattr(ss, "react_to_attack", lambda a, t: ss.add_aggro(a))
+    assert me.do("attack dig dug")
+    assert dd.hp < hp
+    assert mobs.round == 1
+
+
+def test_unconscious_cannot_act(dd):
+    dd.hurt(dd.hp)
+    for cmd in ("say hi", "smile"):
+        assert not dd.do(cmd)
+        assert dd.shell.msgs[-1] == "You can't do that while unconscious."
+    assert dd.do("sheet")
+
+
+def test_unconscious_inventory_is_private(dd, monkeypatch):
+    seen = []
+    dd.hurt(dd.hp)
+    monkeypatch.setattr(dd, "simple_action", lambda *a, **kw: seen.append(a))
+    assert dd.do("inventory")
+    assert not seen
+
+
+def test_unconscious_mob_no_growl(mobs, dd, monkeypatch):
+    seen = []
+    monkeypatch.setattr(dd, "simple_action", lambda *a, **kw: seen.append(a))
+    dd.add_aggro(dd)
+    dd.shell.round_start(1)
+    assert seen
+    dd.hurt(dd.hp)
+    seen.clear()
+    dd.shell.round_start(1)
+    assert not seen
+
+
+def test_unconscious_skip_initiative(mobs, me, ss, mcp):
+    ss.hurt(ss.hp)
+    me.do("attack dig dug")
+    assert me in mobs.actors and ss not in mobs.actors
+
+
+def test_unconscious_voicelines(dd, monkeypatch):
+    seen = []
+    monkeypatch.setattr(dd, "voiceline_frequency", True)
+    monkeypatch.setattr(dd, "simple_action", lambda *a, **kw: seen.append(a))
+    dd.do_receive(":EOF:YOUR_TURN:", your_turn=True)
+    assert seen
+    dd.hurt(dd.hp)
+    seen.clear()
+    dd.do_receive(":EOF:YOUR_TURN:", your_turn=True)
+    assert not seen
+
+
 def test_pass_keeps_aggro(fight, me, dd, mcp):
     assert me.do("pass")
     assert fight.current is dd

@@ -39,6 +39,8 @@ def parse(actor, input_text, parse_only=False):
     rnames = set(x.verb.name for x in routes)
     if len(rnames) > 1:
         raise E.ParseError(f'"{vtok}" is ambiguous and could mean any of: {", ".join(sorted(rnames))}')
+    if not actor.conscious and any(r.verb.needs_conscious for r in routes):
+        raise E.ParseError("You can't do that while unconscious.")
 
     set_this_body(actor)
 

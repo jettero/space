@@ -6,11 +6,12 @@ from .base import Verb
 class Action(Verb):
     name = "inventory"
     nick = ["i", "inv"]
+    needs_conscious = False
 
     def do_inventory(self):
         from ..msg import BoxMessage
 
-        self.simple_action("$N $vinventory $p stuff.")
+        (self.simple_action if self.conscious else self.my_action)("$N $vinventory $p stuff.")
         entries = []  # (slot_label, item_name, mass_str)
         # collect primary slot items
         for slot in self.slots:

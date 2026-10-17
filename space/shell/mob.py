@@ -26,7 +26,7 @@ class Shell(LogShell):
         self.owner.do_receive(":EOF:YOUR_TURN:", your_turn=True)
 
     def round_start(self, n):
-        if self.owner.aggro:
+        if self.owner.conscious and self.owner.aggro:
             self.owner.simple_action("$N $vgrowl menacingly.")
 
     def your_turn(self):

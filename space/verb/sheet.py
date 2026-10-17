@@ -7,6 +7,7 @@ class Action(Verb):
     name = "sheet"
     # Keep 's' free for move direction rewrites; no single-letter alias.
     nick = ["sheet", "stats", "status", "character"]
+    needs_conscious = False
 
     def do_sheet(self):
         """Display basic character sheet with core stats."""

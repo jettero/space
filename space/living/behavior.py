@@ -61,7 +61,7 @@ class PointLessVoiceLines:
             log.debug("do_receive() handled above")
             return True
 
-        if not your_turn:
+        if not your_turn or not self.conscious:
             return
 
         if not self.voiceline_frequency:

@@ -63,7 +63,7 @@ class Time:
         the order, and start round 1.
         """
 
-        rolls = {a: a.initiative.roll() for a in self.livings}
+        rolls = {a: a.initiative.roll() for a in self.conscious}
         self.actors = sorted(rolls, key=rolls.get, reverse=True)
         self.tell(
             self.actors, lambda s: s.receive_text, "Initiative: {}", ", ".join(f"{a.short} {rolls[a]}" for a in self.actors)

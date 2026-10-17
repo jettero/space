@@ -228,13 +228,21 @@ class Living(ReceivesMessages, CanMove, StdObj):
     def can_attack_word_living(self, word: str, targ):
         return self.can_attack_living(targ)
 
+    def react_to_attack(self, attacker, target):
+        if self is target:
+            self.add_aggro(attacker)
+
     def do_attack_living(self, target):
-        self.add_aggro(target)
-        target.add_aggro(self)
-        if (t := self.location.map.time).round:
+        t = self.location.map.time
+        if t.round or not target.conscious:
             self.attack(target)
+        self.add_aggro(target)
+        for w in t.conscious:
+            if w is target or w is not self and (w.can_see(self) or w.can_see(target)):
+                w.react_to_attack(self, target)
+        if t.round:
             t.charge(self, main=1)
-        else:
+        elif t.fighting:
             t.start()
 
     do_attack_word_living = do_attack_living

@@ -15,6 +15,7 @@ class Verb:
     name = "verb"
     nick = None
     noise = ("a", "an", "the")
+    needs_conscious = True
 
     def __init__(self):
         if self.name == "verb":
