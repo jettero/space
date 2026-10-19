@@ -42,7 +42,7 @@ def test_attack_starts_fight(mobs, me, dd, mcp):
 def test_my_turn_in_fight(fight, me, dd):
     assert fight.my_turn(me)[0]
     assert fight.my_turn(dd) == (False, {"error": "It's not your turn."})
-    assert "It's your turn (round 1): 2 main, 1 small." in me.shell.msgs
+    assert not any("It's your turn" in m for m in me.shell.msgs)
 
 
 def test_six_cells_is_one_move_action(fight, me):
@@ -79,6 +79,19 @@ def test_fight_ends(fight, me, dd, mcp):
     assert "The fight is over." in me.shell.msgs
     assert not fight.fighting
     assert fight.my_turn(dd)[0]
+
+
+def test_status(fight, me, dd, mcp):
+    bar = "Round 1 │ ▸ Paul · Dig Dug · skellyman │ "
+    assert me.shell.msgs[-1] == bar + "your turn: 2/2 main · 1/1 small"
+    assert bar + "waiting on Paul" in dd.shell._queue
+    me.do("2s")
+    mcp.run()
+    assert me.shell.msgs[-1] == bar + "your turn: 1/2 main · 1/1 small · 4 cells"
+    dd.hurt(dd.hp - 1)
+    me.do("2n; attack dig dug")
+    mcp.run()
+    assert me.shell.msgs[-2:] == ["The fight is over.", ""]
 
 
 def test_attack_unconscious_is_free_hit(mobs, me, dd, mcp):

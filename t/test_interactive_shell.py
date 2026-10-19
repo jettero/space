@@ -1,6 +1,9 @@
+import re
+
 import pytest
 
 from space.msg import TextMessage
+from space.shell.prompt import Shell
 
 from t.shellexpect import ShellEnv, build_screen, find_completion_extension, render_terminal
 
@@ -46,6 +49,39 @@ def test_completions_menu_renders(width, height):
     assert row == height - 1
     assert col == len("/space/ lo")
     assert lines[-1] == "/space/ lo"
+
+
+def above_rule(env):
+    lines, _, _ = env.screen()
+    return lines[next(i for i, l in enumerate(lines) if l.startswith("─")) - 1]
+
+
+def test_fight_status_bar(me, dd, ss, mcp, monkeypatch):
+    for b, r in ((me, 20), (dd, 10), (ss, 1)):
+        monkeypatch.setattr(b.initiative, "roll", lambda r=r: r)
+    with ShellEnv() as env:
+        env.shell.owner = me
+        assert "Round" not in above_rule(env)
+        me.do("n")
+        me.do("attack dig dug")
+        mcp.run()
+        assert above_rule(env).startswith("Round 1 │ ▸ Paul") and "your turn: 2/2 main" in above_rule(env)
+        assert not any("It's your turn" in l for l in env.screen()[0])
+        assert re.search(r"\x1b\[(?:[0-9;]*;)?7m[^\x1b]*Round 1", env.frames)
+
+
+def test_render_lines_keeps_unchanged_rows():
+    with ShellEnv() as env:
+        first, _, _ = env.render_lines()
+        env.shell.receive_message(TextMessage("Hiya."))
+        second, _, _ = env.render_lines()
+    assert any("Hiya." in l for l in second)
+    assert second[-2:] == first[-2:]
+
+
+def test_init_commands_run(me):
+    with ShellEnv():
+        assert Shell(owner=me, init=["look"]).message_log.records
 
 
 def test_tab_completion_inserts_common_prefix():

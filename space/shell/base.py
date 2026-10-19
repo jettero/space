@@ -79,8 +79,7 @@ class BaseShell:
         self.receive_text("-------=: Round {} :=-------", n)
 
     def your_turn(self):
-        t = self.owner.location.map.time
-        self.receive_text("It's your turn (round {}): {} main, {} small.", t.round, t.main, t.small)
+        pass
 
     def round_end(self, n):
         pass

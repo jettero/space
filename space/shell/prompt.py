@@ -15,7 +15,7 @@ from prompt_toolkit.formatted_text.utils import to_formatted_text, to_plain_text
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.defaults import load_key_bindings
 from prompt_toolkit.key_binding.key_bindings import merge_key_bindings
-from prompt_toolkit.layout import Layout, HSplit, VSplit
+from prompt_toolkit.layout import ConditionalContainer, Layout, HSplit, VSplit
 from prompt_toolkit.layout.containers import Window, FloatContainer, Float
 from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl, UIControl, UIContent
 from prompt_toolkit.layout.dimension import Dimension
@@ -26,7 +26,7 @@ import logging, re
 from .base import BaseShell, IntentionalQuit
 from .minimap import Minimap
 from .pane import Record, anchor_step, clip_fragments, drop_fragments, layout_rows, splice_fragments
-from space.msg import MapMessage
+from space.msg import MapMessage, StatusMessage
 from space.verb import VERBS
 
 log = logging.getLogger(__name__)
@@ -246,6 +246,7 @@ class Shell(BaseShell):
 
         self.config = dict(self.default_config)
         self.map_view = None
+        self.fight_status = ""
         self.full_map = False
         self.map_buffer = list()
         self.map_pan = (0, 0)
@@ -276,6 +277,15 @@ class Shell(BaseShell):
                     content=HSplit(
                         [
                             self.message_window,
+                            ConditionalContainer(
+                                Window(
+                                    FormattedTextControl(lambda: self.fight_status),
+                                    height=Dimension.exact(1),
+                                    wrap_lines=False,
+                                    style="reverse",
+                                ),
+                                filter=Condition(lambda: bool(self.fight_status)),
+                            ),
                             Window(height=Dimension.exact(1), char="─"),
                             VSplit(
                                 [
@@ -401,9 +411,12 @@ class Shell(BaseShell):
             handler.addFilter(kwf)
 
     def receive_message(self, msg):
-        if isinstance(msg, MapMessage):
-            self.map_view = msg.map
-        self.message_log.append(msg, drawings=self.config["maps.inline"])
+        if isinstance(msg, StatusMessage):
+            self.fight_status = msg.render_text()
+        else:
+            if isinstance(msg, MapMessage):
+                self.map_view = msg.map
+            self.message_log.append(msg, drawings=self.config["maps.inline"])
         self.application.invalidate()
 
     def receive_view(self, view):

@@ -437,7 +437,7 @@ class ShellEnv:
         return data
 
     def render_lines(self):
-        return render_terminal(self.render(), width=self.width, height=self.height)
+        return self.screen()
 
     def screen(self):
         """

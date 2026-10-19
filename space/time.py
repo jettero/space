@@ -70,6 +70,7 @@ class Time:
         )
         self.round, self.turn = 1, -1
         self.next_turn()
+        self.status(self.actors)
 
     def my_turn(self, body, main=0, small=0, cells=0) -> tuple[bool, dict]:
         """
@@ -85,6 +86,21 @@ class Time:
         if main + max(0, small - self.small) + ceil(max(0, cells - self.cells) / CELLS) <= self.main:
             return True, {}
         return False, {"error": "You can't move that far." if cells else "You have no actions left this turn."}
+
+    def status(self, bodies):
+        """
+        Hand each of bodies a StatusMessage of the fight as it stands,
+        through MCP.call_out like every other fight event.
+        """
+
+        from .msg import StatusMessage  # pylint: disable=import-outside-toplevel
+
+        for b in bodies:
+            MCP.call_out(
+                b.shell.receive_message,
+                0,
+                StatusMessage(b, self.round, self.actors, self.current, self.main, self.small, self.cells),
+            )
 
     def charge(self, body, main=0, small=0, cells=0):
         """
@@ -113,11 +129,13 @@ class Time:
             self.check(True)
 
     def check(self, over):
+        actors = self.actors
         if not self.fighting:
-            self.tell(self.actors, lambda s: s.receive_text, "The fight is over.")
+            self.tell(actors, lambda s: s.receive_text, "The fight is over.")
             del self.actors, self.round, self.turn, self.main, self.small, self.cells, self.spent
         elif over:
             self.next_turn()
+        self.status(actors)
 
     def next_turn(self):
         here = self.conscious

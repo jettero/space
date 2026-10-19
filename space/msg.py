@@ -5,6 +5,7 @@ from collections import namedtuple
 from space.find import lazy_find_verb_method
 import space.exceptions as E
 from .stdobj import StdObj
+from .time import MAIN, SMALL
 
 Messages = namedtuple("Messages", ["us", "them", "other"])
 Actors = namedtuple("Actors", ["actor", "target"])
@@ -122,6 +123,33 @@ class MapMessage(Message):
 
     def __str__(self):
         return f'"""\n{self.render_text()}\n"""'
+
+
+class StatusMessage(Message):
+    """
+    The fight status as tb sees it: the round, the turn order with the
+    current actor marked, and either what's left of tb's turn or whose
+    turn it is.  round=0 means no fight and renders empty, which clears
+    a status bar.  A shell with a status bar keeps the latest one out of
+    scrollback; every other shell takes it like any other message.
+    """
+
+    def __init__(self, tb, round=0, actors=(), current=None, main=0, small=0, cells=0):  # pylint: disable=redefined-builtin
+        super().__init__()
+        self.tb, self.round, self.actors, self.current = tb, round, tuple(actors), current
+        self.main, self.small, self.cells = main, small, cells
+
+    def render_text(self, color=True):
+        if not self.round:
+            return ""
+        order = " · ".join(f"▸ {a.short}" if a is self.current else a.short for a in self.actors)
+        if self.tb is self.current:
+            turn = f"your turn: {self.main}/{MAIN} main · {self.small}/{SMALL} small" + (
+                f" · {self.cells} cells" if self.cells else ""
+            )
+        else:
+            turn = f"waiting on {self.current.short}"
+        return f"Round {self.round} │ {order} │ {turn}"
 
 
 class BoxMessage(Message):
