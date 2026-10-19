@@ -3,12 +3,15 @@
 """Behavioral mixins for NPC/mob Livings.
 
 PointLessVoiceLines emits occasional weighted voice lines during turns.
+Behavior runs a mob's fight turn; each mob has one, DefensivelyPassive
+by default.
 """
 
 import logging
 import random
 from ..roll import Chance
 from ..msg import Sound
+from ..time import CELLS
 
 log = logging.getLogger(__name__)
 
@@ -27,6 +30,43 @@ class VL:
 
     def __repr__(self):
         return f"VL({self.msg!r}, {self.weight}, {self.sound})"
+
+
+class Behavior:
+    """
+    How a mob fights.  Each mob has exactly one, picked from a small
+    standard set.  behave(body) runs body's whole fight turn by issuing
+    commands through body.do(), like a player would.  The base one
+    just passes.
+    """
+
+    def behave(self, body):
+        body.do("pass")
+
+
+class DefensivelyPassive(Behavior):
+    """
+    Passive until attacked, then persistent: chase the first conscious
+    foe in body.aggro (first come, first served) along body.path_to,
+    attack it in reach, and never calm down.  A foe it can't reach
+    this turn costs a pass, not the aggro.
+    """
+
+    def behave(self, body):
+        t = body.location.map.time
+        while (
+            t.current is body
+            and (foe := next((f for f, v in body.aggro.items() if v > 0 and f.conscious), None))
+            and (moves := body.path_to(foe)) is not None
+        ):
+            if not body.do(
+                f"move {''.join(d.upper() if len(d) > 1 else d for d in moves[: t.cells + CELLS * t.main])}"
+                if moves
+                else f"attack {foe.short}"
+            ):
+                break
+        if t.current is body:
+            body.do("pass")
 
 
 class PointLessVoiceLines:

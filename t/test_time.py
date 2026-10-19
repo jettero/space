@@ -3,6 +3,7 @@
 
 import pytest
 from space.find import this_body
+from space.map import Wall
 from space.shell.mob import Shell as MobShell
 
 
@@ -205,7 +206,7 @@ def test_disengage_without_aggro(me):
     assert me.shell.msgs[-1] == "You're not fighting anyone."
 
 
-def test_mob_disengages_when_target_unseen(objs, a_map, mobs, me, dd, ss, mcp):
+def test_mob_keeps_aggro_when_target_unseen(objs, a_map, mobs, me, dd, ss, mcp):
     a_map[8, 1] = dd
     objs.door.do_close()
     assert not ss.can_see(dd)
@@ -214,5 +215,50 @@ def test_mob_disengages_when_target_unseen(objs, a_map, mobs, me, dd, ss, mcp):
     mcp.run()
     me.do("pass")
     mcp.run()
-    assert not ss.aggro
-    assert not mobs.fighting
+    assert dd in ss.aggro
+    assert mobs.fighting
+
+
+def test_mob_paths_around_wall(a_map, mobs, me, dd, mcp):
+    a_map[6, 7] = dd
+    for x in (5, 6, 7):
+        a_map[x, 6] = Wall()
+    dd.add_aggro(me)
+    mobs.start()
+    mcp.run()
+    hp = me.hp
+    me.do("pass")
+    mcp.run()
+    assert me.hp < hp
+
+
+def test_mob_fights_to_the_end(fight, me, dd, mcp):
+    for _ in range(100):
+        if not fight.fighting:
+            break
+        me.do("pass")
+        mcp.run()
+    assert not me.conscious
+    assert me in dd.aggro
+
+
+def test_passive_until_attacked(fight, me, ss, mcp, monkeypatch):
+    seen, pos = [], ss.location.pos
+    monkeypatch.setattr(ss, "do", lambda *a, f=ss.do, **kw: seen.append(a[0]) or f(*a, **kw))
+    me.do("pass")
+    mcp.run()
+    assert seen == ["pass"]
+    assert ss.location.pos == pos
+
+
+def test_first_come_first_served(a_map, mobs, me, dd, ss, mcp):
+    a_map[5, 8] = me
+    a_map[9, 3] = ss
+    dd.add_aggro(me)
+    dd.add_aggro(ss)
+    mobs.start()
+    mcp.run()
+    hp, shp = me.hp, ss.hp
+    me.do("pass")
+    mcp.run()
+    assert me.hp < hp and ss.hp == shp

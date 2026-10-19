@@ -1,7 +1,8 @@
 # coding: utf-8
 
 import logging
-from math import floor
+from collections import deque
+from math import dist, floor
 import space.exceptions as E
 
 from space.find import lazy_find_verb_method
@@ -17,6 +18,7 @@ from ..roll import Roll, AttrChoices
 from .gender import Gender
 from .stats import Sci, Dip, Mar, Eng, Mor, HitPoints, ClassRank, ExperiencePoints, Initiative
 from .slots import PackSlot, Slots
+from .behavior import DefensivelyPassive
 from ..msg import ReceivesMessages
 
 import space.exceptions as E
@@ -52,6 +54,30 @@ class CanMove:
             except E.ContainerError as e:
                 return False, {"error": e}
         return True, {"cells": cells}
+
+    def path_to(self, target) -> tuple[str, ...] | None:
+        """
+        Shortest moves (breadth-first over DDIRS) from here to the first
+        cell within self.reach of target, by the same Euclidean measure
+        attacks use.  Each step must pass path_for, so walls, closed
+        doors and occupied cells block it like any move.  () when
+        already in reach, None when no path gets there.
+        """
+
+        from ..map.dir_util import DDIRS
+
+        goal = target.location.pos
+        seen, todo = {self.location}, deque([(self.location, ())])
+        while todo:
+            here, moves = todo.popleft()
+            if dist(here.pos, goal) <= self.reach:  # pylint: disable=no-member
+                return moves
+            # ponytail: re-walks the path per expansion, O(cells·len); fine for station-sized maps
+            for d in DDIRS:
+                if (r := self.path_for(self, [*moves, d]))[0] and (c := r[1]["cells"][-1]) not in seen:
+                    seen.add(c)
+                    todo.append((c, (*moves, d)))
+        return None
 
     def can_move_words(self, moves: tuple[str, ...]):
         ok, ctx = self.path_for(self, moves)
@@ -109,6 +135,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
     reach = 1.42  # arm reach for closing doors and grabbing things
     sight_range = None  # our visual range is forever
     hearing_range = None  # we hear forever too
+    behavior = DefensivelyPassive()  # ponytail: shared instance; give each mob its own when a behavior keeps state
 
     class Choices(AttrChoices):
         _ordered = ("gender", "height", "mass")
