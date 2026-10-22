@@ -4,7 +4,7 @@ from collections import deque
 import space.exceptions as E
 from .dn import DN
 
-__all__ = ["Generic", "Kinetic", "Thermal", "Mind", "Damage"]
+__all__ = ["Generic", "Kinetic", "Thermal", "Mind", "Slashing", "Bludgeoning", "Piercing", "Damage", "Armor", "resolve"]
 
 
 class Generic(DN):
@@ -33,6 +33,41 @@ class Mind(Generic):
 
     class Meta:
         units = "mind = [mind] = M"
+
+
+class Slashing(Kinetic):
+    d = "kinetic damage from an edge"
+
+    class Meta:
+        units = "kinetic"
+
+
+class Bludgeoning(Kinetic):
+    d = "kinetic damage from a blunt impact"
+
+    class Meta:
+        units = "kinetic"
+
+
+class Piercing(Kinetic):
+    d = "kinetic damage from a point"
+
+    class Meta:
+        units = "kinetic"
+
+
+def resolve(table: dict, hit: Generic, default=1):
+    """
+    The table entry for the most specific class on type(hit).mro(), or
+    default when the table names none of them.
+    """
+
+    return next((table[c] for c in type(hit).mro() if c in table), default)
+
+
+class Armor:
+    resist = {}
+    armor_class = {}
 
 
 class Damage:

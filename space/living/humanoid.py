@@ -20,6 +20,7 @@ class Humanoid(Living):
     s = l = "humanoid"
     a = "p"
     d = "a humanoid"
+    attack_msg = "$N $vpunch $t causing $o1 damage."
 
     class Slots(BaseSlots):
         class Meta:

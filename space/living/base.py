@@ -2,7 +2,7 @@
 
 import logging
 from collections import deque
-from math import dist, floor
+from math import ceil, dist, floor, prod
 import space.exceptions as E
 
 from space.find import lazy_find_verb_method
@@ -12,12 +12,13 @@ from ..vv import VV
 from ..stdobj import StdObj
 from ..obj import register_haver_leaf
 from ..pfilter import adj_map
-from ..damage import Damage, Kinetic
+from ..damage import Damage, Generic, Armor, resolve
+from ..weapon import Weapon
 from ..roll import Roll, AttrChoices
 
 from .gender import Gender
 from .stats import Sci, Dip, Mar, Eng, Mor, HitPoints, ClassRank, ExperiencePoints, Initiative
-from .slots import PackSlot, Slots
+from .slots import PackSlot, HandSlot, Slots
 from .behavior import DefensivelyPassive
 from ..msg import ReceivesMessages
 
@@ -123,9 +124,10 @@ class CanMove:
         self.location.map.time.charge(self, main=1)
 
 
-class Living(ReceivesMessages, CanMove, StdObj):
+class Living(ReceivesMessages, CanMove, Weapon, StdObj):
     health = gender = None  # autoloaded from metaclass
     active = False
+    attack_msg = "$N $vattack $t causing $o1 damage."
 
     s = l = "living"
     a = "L"
@@ -136,6 +138,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
     sight_range = None  # our visual range is forever
     hearing_range = None  # we hear forever too
     behavior = DefensivelyPassive()  # ponytail: shared instance; give each mob its own when a behavior keeps state
+    resist = {}
 
     class Choices(AttrChoices):
         _ordered = ("gender", "height", "mass")
@@ -187,9 +190,25 @@ class Living(ReceivesMessages, CanMove, StdObj):
     def reflexive(self):  # e.g., himself/herself/themself/itself
         return self.gender.reflexive
 
-    def hurt(self, damage):
+    def mitigate(self, hit: Generic) -> Generic:
+        """
+        One hit in, one hit out: hit multiplied by the resist tables of
+        every Armor worn outside the hand slots and of self (structural
+        armor), rounded up so a hit of 1 or more never drops to 0.
+        Sources stack by multiplying.  The result is the hit's base type
+        (Slashing(4) through a vest is Kinetic(2)); hits of 0 or less and
+        hits no table names keep their amount.
+        """
+
+        srcs = [s.item for s in self.slots if not isinstance(s, HandSlot) and isinstance(s.item, Armor)] + [self]
+        m = prod(resolve(s.resist, hit) for s in srcs)
+        return next((c for c in type(hit).mro() if c.__base__ is Generic), Generic)(
+            ceil(hit.v * m) if hit.v > 0 and m != 1 else hit.v
+        )
+
+    def hurt(self, damage, mitigated=False):
         h1 = self.hp
-        self.damage.add(damage)
+        self.damage.add(damage if mitigated else [self.mitigate(e) for e in Damage(damage)])
         log.debug("%s .hurt(%s) hp %s -> %s", self, damage, h1, self.hp)
         if h1 > 0 >= self.hp:
             self.simple_action("$N $vcollapse.")
@@ -197,14 +216,7 @@ class Living(ReceivesMessages, CanMove, StdObj):
     @property
     def weapon(self):
         # XXX: we need some way to mount weapons
-        # XXX: we need a Weapon base class as well
-        return self
-
-    def roll_damage(self):
-        # XXX: we probably need a weapon subclass that bodies can inherit from
-        # this should be a function of living things also being weapons when
-        # employed that way
-        return Kinetic(Roll("1d2").roll())
+        return next((s.item for s in self.slots if isinstance(s, HandSlot) and isinstance(s.item, Weapon)), self)
 
     def attack(self, target):
         # XXX: clearly, we need to send this instruction to a fight daemon to
@@ -212,15 +224,15 @@ class Living(ReceivesMessages, CanMove, StdObj):
         # XXX: we should really roll to see if we hit
 
         w = self.weapon
-        d = w.roll_damage()
+        d = target.mitigate(w.roll_damage(self.unit_distance_to(target)))
 
         # XXX: any time we deliver a message to a player, we should deliver
         # something to all players in view and that should automatically parse
         # context, e.g.: $N $vattack $t causing $o damage.
-        self.targeted_action("$N $vattack $t causing $o damage.", target, d)
+        self.targeted_action(w.attack_msg, target, w, d)
 
         log.debug("%s .attack( %s ) weapon=%s damage=%s", self, target, w, d)
-        target.hurt(d)
+        target.hurt(d, mitigated=True)
 
     def unit_vect_to(self, other):
         try:
@@ -246,8 +258,10 @@ class Living(ReceivesMessages, CanMove, StdObj):
     def can_attack_living(self, targ):  # targ:Living is implied via space.parser.implied_type
         dist = self.unit_distance_to(targ)
         log.debug("%s.can_attack_living(%s), dist: %f", repr(self), repr(targ), dist)
-        if dist > self.reach:
+        if dist > ((w := self.weapon).range or self.reach):
             return False, {"error": f"{targ} is out of range"}
+        if w.range and not self.can_see(targ):
+            return False, {"error": f"You can't see {targ}"}
         ok, ctx = self.location.map.time.my_turn(self, main=1)
         return ok, {**ctx, "target": targ}
 

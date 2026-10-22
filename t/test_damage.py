@@ -1,7 +1,22 @@
 # coding: utf-8
 # pylint: disable=unidiomatic-typecheck,protected-access
 
-from space.damage import Damage, Kinetic, Thermal, Mind, Generic
+from space.damage import Damage, Kinetic, Thermal, Mind, Generic, Slashing, Piercing, Bludgeoning, resolve
+
+
+def test_sub_types():
+    assert [str(c(2)) for c in (Slashing, Bludgeoning, Piercing)] == ["2 K"] * 3
+    s = Slashing(3) + Piercing(2)
+    assert type(s) == Kinetic
+    assert s.v == 5
+
+
+def test_resolve():
+    table = {Kinetic: 0.5, Piercing: 0.25}
+    assert resolve(table, Piercing(4)) == 0.25
+    assert resolve(table, Slashing(4)) == 0.5
+    assert resolve(table, Thermal(4)) == 1
+    assert resolve(table, Thermal(4), default=3) == 3
 
 
 def test_damage_types():

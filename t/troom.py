@@ -7,7 +7,7 @@ __all__ = ["a_map", "o"]
 def gen_troom():
     from space.map import Room, Wall, BlockedCell
     from space.living import Human, Skeleton
-    from space.item import Ubi
+    from space.item import Ubi, WireGun
     from space.nico import nico
 
     a_map = Room(4, 4)
@@ -20,6 +20,7 @@ def gen_troom():
 
     od = {"door": bc.door}
     a_map[8, 1] = od["me"] = Human("Paul Miller", "Paul", gender="male")
+    a_map[8, 1] = od["wire_gun"] = WireGun()
     a_map[4, 9] = od["ubi"] = Ubi()
     a_map[1, 2] = od["stupid"] = Skeleton("stupid skellyman", "skellyman")
     a_map[8, 3] = od["dig_dug"] = Human("Dig~Dug", gender="female")
