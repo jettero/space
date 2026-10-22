@@ -1,0 +1,11 @@
+[Unit]
+Description=space (appserv ssh game host)
+
+[Service]
+Environment=SPACE=%h/code/python/space BIND=127.0.0.1:2222
+EnvironmentFile=-%E/space/env
+ExecStart=/usr/bin/env -C ${SPACE} ${SPACE}/contrib/appserv/target/debug/appserv --prefix ${SPACE}/contrib/appserv/data --entry as_entry.py --prepend-path ${SPACE} --bind ${BIND}
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
