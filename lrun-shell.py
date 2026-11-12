@@ -5,7 +5,7 @@
 import sys
 from pathlib import Path
 
-from t.troom import a_map, o
+from space.living import Human
 from space.master import MCP
 from space.map import import_map_from_path
 
@@ -18,13 +18,19 @@ if "--profile" in c:
     c.remove("--profile")
     profile = True
 
-for arg in c:
-    if (candidate := Path(arg)).suffix == ".map" and candidate.is_file():
-        c.remove(arg)
-        a_map = import_map_from_path(candidate)
-        for dood in o:
-            a_map.randomly_drop(dood)
-        break
+if maps := [a for a in c if (p := Path(a)).suffix == ".map" and p.is_file()]:
+    c.remove(maps[0])
+    a_map = import_map_from_path(maps[0])
+    me = Human("Paul Miller", "Paul", gender="male")
+    me.active = True
+    if a_map.start:
+        a_map[a_map.start] = me
+    else:
+        a_map.randomly_drop(me)
+else:
+    from t.troom import a_map, o
+
+    me = o.me
 
 if c[0:2] in (["get"], ["ubi"], ["get", "bauble"], ["bauble"], ["ubi"]):
     c = GET_BAUBLE
@@ -48,10 +54,10 @@ if profile:
     import os, cProfile, pstats
 
     with cProfile.Profile() as pr:
-        MCP.start_instance(type="local", username="jettero", map=a_map, body=o.me, init=c)
+        MCP.start_instance(type="local", username="jettero", map=a_map, body=me, init=c)
     with open("profile.txt", "w") as f:
         pstats.Stats(pr, stream=f).sort_stats("cumulative").print_stats()
     h = max(25, int(int(os.environ.get("LINES", 27)) * 0.8))
     os.execvp("head", f"head -n {h} profile.txt".split())
 else:
-    MCP.start_instance(type="local", username="jettero", map=a_map, body=o.me, init=c)
+    MCP.start_instance(type="local", username="jettero", map=a_map, body=me, init=c)

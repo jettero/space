@@ -71,9 +71,11 @@ def map_to_text(a_map: Map) -> str:
     """
     Serialize `a_map` into a compact text format.
 
-    The layout starts with a magic header, the map size, a legend mapping
-    single-character tokens to concrete cell classes, a blank line, and the
-    token grid trimmed to the populated bounds.
+    The layout starts with a magic header, the map size, an optional
+    `start X Y` line (where a player arrives; no line means a random
+    spot), a legend mapping single-character tokens to concrete cell
+    classes, a blank line, and the token grid trimmed to the populated
+    bounds.
     """
 
     min_x = min_y = max_x = max_y = None
@@ -105,6 +107,8 @@ def map_to_text(a_map: Map) -> str:
                 chars.append(assign_token(NONE_TYPE if cell is None else type(cell), type_to_token, used_tokens))
             rows.append("".join(chars).rstrip())
     lines = ["space.map 1", f"size {width} {height}"]
+    if a_map.start:
+        lines.append(f"start {a_map.start[0] - min_x} {a_map.start[1] - min_y}")
     for cell_type, token in type_to_token.items():
         lines.append(f'legend "{token}" {type_identifier(cell_type)}')
     lines.append("")
@@ -140,9 +144,13 @@ def text_to_map(text: str) -> Map:
     width = int(size_parts[1])
     height = int(size_parts[2])
     token_to_type: dict[str, type] = dict()
+    start = None
     for line in iter_lines:
         if line == "":
             break
+        if line.startswith("start "):
+            start = tuple(int(v) for v in line.split()[1:3])
+            continue
         if not line.startswith("legend "):
             raise ValueError("legend section malformed")
         rest = line[len("legend ") :]
@@ -164,6 +172,7 @@ def text_to_map(text: str) -> Map:
     if len(data_lines) != height:
         raise ValueError("map data height mismatch")
     result = Map(width, height)
+    result.start = start
     none_token = next((token for token, cell_type in token_to_type.items() if cell_type is NONE_TYPE), None)
     for y, line in enumerate(data_lines):
         if len(line) > width:

@@ -4,6 +4,8 @@
 import pytest
 
 import space.exceptions as E
+from space.living import Human
+from space.map import import_map_from_path
 from space.shell.list import Shell as ListShell
 
 
@@ -77,6 +79,15 @@ def test_open_door_and_move_through_it(me):
     assert xp and xp.fn.__name__ == "do_move_words"
     xp()
     assert me.location.pos == (8, 2)
+
+
+def test_close_door_with_a_closed_door_in_view():
+    a_map = import_map_from_path("t/asset/annoying-door-problem.map")
+    a_map[a_map.start] = me = Human("Bob")
+    me.shell = ListShell()
+    me.do("open door; e; e; close door; open east door; e; e; close door")
+    assert me.location.pos == (5, 1), me.shell.msgs
+    assert not a_map.get(4, 1).door.open, me.shell.msgs
 
 
 def test_open_open_door_after_someone_else_acts(me, objs):

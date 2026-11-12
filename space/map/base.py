@@ -25,6 +25,7 @@ SHADOW = 10
 class Map(baseobj):
     whom = None
     seen = frozenset()
+    start = None
 
     @classmethod
     def atosz(cls, a):
