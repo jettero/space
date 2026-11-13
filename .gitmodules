@@ -1,3 +1,0 @@
-[submodule "contrib/appserv"]
-	path = contrib/appserv
-	url = git@github.com:jettero/appserv
