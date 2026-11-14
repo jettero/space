@@ -90,6 +90,32 @@ def test_close_door_with_a_closed_door_in_view():
     assert not a_map.get(4, 1).door.open, me.shell.msgs
 
 
+def test_open_door_reports_nearest_refusal():
+    a_map = import_map_from_path("t/asset/two-door-room.map")
+    a_map[a_map.start] = me = Human("Bob")
+    a_map.get(0, 3).door.locked = True
+    assert not (xp := me.parse("open door"))
+    assert xp.error == "door is locked"
+
+
+def test_open_door_by_id(me, objs):
+    assert me.parse(f"open door.{objs.door.id[-4:]}")
+
+
+def test_open_door_by_wrong_id(me):
+    assert not me.parse("open door.zz")
+
+
+def test_can_see_adjacent_closed_door(me, objs):
+    assert not objs.door.open
+    assert me.can_see(objs.door)
+
+
+def test_refusal_beats_unable_to_find(me):
+    assert not (xp := me.parse("move nowhere s"))
+    assert "'nowhere' is a bad direction" in str(xp.error)
+
+
 def test_open_open_door_after_someone_else_acts(me, objs):
     me.shell = ListShell()
     me.do("open door")

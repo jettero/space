@@ -509,7 +509,7 @@ class Map(baseobj):
         cur_x, cur_y = x1 + 0.5, y1 + 0.5
 
         if ldx == 0:
-            while cur_y < bnd.Y:
+            while int(cur_y) <= bnd.Y:
                 ix, iy = int(cur_x), int(cur_y)
                 if not (bnd.x <= ix <= bnd.X and bnd.y <= iy <= bnd.Y):
                     break
@@ -521,7 +521,7 @@ class Map(baseobj):
                 yield c
                 cur_y += step_y
         elif ldy == 0:
-            while cur_x < bnd.X:
+            while int(cur_x) <= bnd.X:
                 ix, iy = int(cur_x), int(cur_y)
                 if not (bnd.x <= ix <= bnd.X and bnd.y <= iy <= bnd.Y):
                     break
@@ -535,7 +535,7 @@ class Map(baseobj):
         else:
             tdelta_x, tdelta_y = abs(step_x / ldx), abs(step_y / ldy)
             tmax_x, tmax_y = tdelta_x / 2, tdelta_y / 2
-            while cur_x <= bnd.X and cur_y <= bnd.Y:
+            while int(cur_x) <= bnd.X and int(cur_y) <= bnd.Y:
                 ix, iy = int(cur_x), int(cur_y)
                 if not (bnd.x <= ix <= bnd.X and bnd.y <= iy <= bnd.Y):
                     break
@@ -573,7 +573,7 @@ class Map(baseobj):
 
         if l2d.x == 0:
             # voxel divides by 0 while computing tdelta if l2d.x is 0
-            while cur.y < bnd.Y:
+            while int(cur.y) <= bnd.Y:
                 c = self[cur]
                 if type_break(c):
                     break
@@ -582,7 +582,7 @@ class Map(baseobj):
 
         elif l2d.y == 0:
             # voxel divides by 0 while computing tdelta if l2d.y is 0
-            while cur.x < bnd.X:
+            while int(cur.x) <= bnd.X:
                 c = self[cur]
                 if type_break(c):
                     break
@@ -601,7 +601,7 @@ class Map(baseobj):
             # tmax_other = (b1.lr-b1.center) / l2d
             # assert tmax == tmax_other
 
-            while cur.x <= bnd.X and cur.y <= bnd.Y:
+            while int(cur.x) <= bnd.X and int(cur.y) <= bnd.Y:
                 # The loop is actually in the paper
 
                 c = self[cur]

@@ -119,8 +119,8 @@ class Humanoid(Living):
 
     def do_close_obj(self, obj: Door):
         log.debug("do_close_obj(%s)", obj)
-        self.changes_view(obj.do_close)
         self.simple_action("$N $vclose $o.", obj)
+        self.changes_view(obj.do_close)
         self.location.map.time.charge(self, main=1)
 
     do_close_word_obj = do_close_obj

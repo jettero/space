@@ -1,4 +1,4 @@
-import shlex, inspect, logging, types
+import shlex, inspect, itertools, logging, types
 from functools import lru_cache
 from collections import namedtuple
 from collections.abc import Iterable, Iterator
@@ -36,6 +36,7 @@ def parse(actor, input_text, parse_only=False):
     pop_to_args = None
 
     routes = find_routes(actor, verbs, len(tokens))
+    objs.sort(key=lambda o: (o.haver is actor, actor.unit_distance_to(o)))
     rnames = set(x.verb.name for x in routes)
     if len(rnames) > 1:
         raise E.ParseError(f'"{vtok}" is ambiguous and could mean any of: {", ".join(sorted(rnames))}')
@@ -45,6 +46,7 @@ def parse(actor, input_text, parse_only=False):
     set_this_body(actor)
 
     errors = list()
+    refusals = list()
     for route in routes:
         log.debug("considering route=%s", repr(route))
         filled = True
@@ -53,6 +55,7 @@ def parse(actor, input_text, parse_only=False):
         already_filled = set()  # if we steal a token, we skip this ihint in the mainloop
         max_fill = dict()  # and then we limit the earlier variadic to this many tokens
         kw = {}
+        choices = {}
         if len(remaining) > len(route.can.ihint):
             for i, iih in enumerate(route.can.ihint):
                 if iih.multi:
@@ -130,7 +133,7 @@ def parse(actor, input_text, parse_only=False):
 
             if issubclass(ih.type, StdObj):
                 if m := list_match(remaining[0], objs, rtype=ih.type, adj=route.adj(ih.name, **kw), aerr=errors):
-                    kw[ih.name] = m[0]
+                    choices[ih.name] = m
                     remaining.pop(0)
                     continue
                 log.debug("rejecting %s: unable to fill ihint=%s, no obj", repr(route), repr(ih))
@@ -149,32 +152,33 @@ def parse(actor, input_text, parse_only=False):
             log.debug("rejecting %s: unable to fill args with available tokens", repr(route))
             continue
 
-        kw = route.verb.preprocess_tokens(actor, **kw)
-        args = kw.pop(pop_to_args) if pop_to_args in kw else tuple()
-        log.debug("running %s.can.fn(%s, %s)", repr(route), repr(args), repr(kw))
-        ok, ctx = route.can.fn(*args, **kw)
-        set_this_body()
-        log.debug("can.fn result: ok=%s ctx=%s", repr(ok), repr(ctx))
-        if ok:
-            try:
-                merged = {ih.name: ctx[ih.name] for ih in route.do.ihint}
-                filled = True
-            except KeyError as e:
-                log.error("%s is broken, can.fn didn't provide %s arg for do.fn.", repr(route), e)
-                filled = False
-            if not filled:
-                raise E.ParseError(f'internal error with "{route.verb.name}" verb')
-            if parse_only:
-                return ExecutionPlan(actor, route.do.fn, merged)
-            set_this_body(actor)
-            ret = route.do.fn(**merged)
+        for combo in itertools.product(*choices.values()):
+            ckw = route.verb.preprocess_tokens(actor, **kw, **dict(zip(choices, combo)))
+            args = ckw.pop(pop_to_args) if pop_to_args in ckw else tuple()
+            log.debug("running %s.can.fn(%s, %s)", repr(route), repr(args), repr(ckw))
+            ok, ctx = route.can.fn(*args, **ckw)
             set_this_body()
-            return ret
-        if "error" in ctx:
-            errors.append(ctx["error"])
+            log.debug("can.fn result: ok=%s ctx=%s", repr(ok), repr(ctx))
+            if ok:
+                try:
+                    merged = {ih.name: ctx[ih.name] for ih in route.do.ihint}
+                    filled = True
+                except KeyError as e:
+                    log.error("%s is broken, can.fn didn't provide %s arg for do.fn.", repr(route), e)
+                    filled = False
+                if not filled:
+                    raise E.ParseError(f'internal error with "{route.verb.name}" verb')
+                if parse_only:
+                    return ExecutionPlan(actor, route.do.fn, merged)
+                set_this_body(actor)
+                ret = route.do.fn(**merged)
+                set_this_body()
+                return ret
+            if "error" in ctx:
+                refusals.append(ctx["error"])
         ############################# end-route-for
 
-    msg = errors[0] if errors else f"unable to understand {input_text!r}"
+    msg = (refusals or errors or [f"unable to understand {input_text!r}"])[0]
     if parse_only:
         # we must present ExecutionPlan.error so the shell can use it
         return ExecutionPlan(actor, _parse_error, {"error": msg})

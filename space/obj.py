@@ -199,7 +199,8 @@ class baseobj(Serial):  # pylint: disable=invalid-name
         if not names:
             return False
         if m := re.match(r"^(.+)\.(.+)$", names[0]):
-            name[0], id1 = m.groups()
+            name, id1 = m.groups()
+            names = (name, *names[1:])
             id2 = self.id
             if not (id2.startswith(id1) or id2.endswith(id1)):
                 return False

@@ -1,6 +1,25 @@
 # coding: utf-8
 
+from space.living import Human
 from space.map import Wall
+from space.map.io import text_to_map
+
+EDGE_MAP = """space.map 1
+size 3 3
+start 1 1
+legend "#" space.map.cell.wall.Wall
+legend "." space.map.cell.cell.Floor
+
+###
+#..
+#..
+"""
+
+
+def test_visicalc_reaches_right_and_bottom_edges():
+    a_map = text_to_map(EDGE_MAP)
+    a_map[a_map.start] = me = Human("Bob")
+    assert {(2, 1), (1, 2), (2, 2)} <= a_map.visicalc(me)
 
 
 def test_visicalc_from_nw_room(vroom):

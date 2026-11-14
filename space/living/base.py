@@ -456,7 +456,7 @@ class Living(ReceivesMessages, CanMove, Weapon, StdObj):
         return self.location.map.visicalc_submap(self)
 
     def can_see(self, obj):
-        return self.location.pos in self.location.map.visicalc_submap(obj.haver or obj).seen
+        return self.location.map[obj.haver or obj].pos in self.vmap.seen
 
     @property
     def nearby_objects(self):
