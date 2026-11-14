@@ -20,6 +20,10 @@ class Door(StdObj):
     # dB lost passing through the closed door (30 is a solid core door)
     attenuation: int = 30
 
+    # weak ref set by space.map.cell.blocked.dock(): the other door of the same airlock,
+    # which must be closed before this one opens
+    interlock = None
+
     @property
     def abbr(self):
         return "□" if self.open else "■"
@@ -40,7 +44,17 @@ class Door(StdObj):
             return False, {"error": f"{self} is locked"}
         if self.stuck:
             return False, {"error": f"{self} appears to be stuck"}
+        if self.interlock is not None and self.interlock.open:
+            return False, {"error": f"{self} won't open while {self.interlock} is open"}
         return True, {"target": self}  # keys must match do_open args
+
+    def passage(self, body):
+        """
+        The door that actually opens when `body` opens this one: this one,
+        except for a space.map.cell.blocked.HatchDoor.
+        """
+
+        return self
 
     def do_open(self):
         self.open = True

@@ -6,6 +6,8 @@ import importlib
 from pathlib import Path
 from typing import Union
 
+from ..living import Living
+from ..serial import load
 from .base import Map
 from .cell.blocked import BlockedCell
 from .cell.cell import Corridor, Floor
@@ -199,3 +201,27 @@ def import_map_from_path(path: Union[str, Path]) -> Map:
     """
 
     return text_to_map(Path(path).read_text(encoding="utf-8"))
+
+
+def floor_items(a_map: Map) -> dict[str, list]:
+    """
+    The loose things lying on `a_map` as {"x,y": [Serial.save(), ...]}.
+    Livings and attached things (doors) stay out: the map itself comes from
+    its asset, and bodies save themselves.
+    """
+
+    return {
+        f"{x},{y}": s
+        for (x, y), c in a_map.iter_type()
+        if (s := [i.save() for i in c if not i.attached and not isinstance(i, Living)])
+    }
+
+
+def drop_floor_items(a_map: Map, doc: dict[str, list]) -> None:
+    """
+    Put the things saved by floor_items() back where they were on `a_map`.
+    """
+
+    for p, saves in doc.items():
+        for s in saves:
+            a_map.get(*map(int, p.split(","))).add_item(load(s))

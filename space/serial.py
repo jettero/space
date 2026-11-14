@@ -73,6 +73,7 @@ class Serial:
                 and not isinstance(obj_v, STOP_FILTER)
                 and isinstance(obj_v, PASS_FILTER)
                 and cls_v != obj_v  # but we don't want to save any defaults
+                and not (cls_v is None and isinstance(obj_v, (list, tuple, deque)) and not obj_v)
             )
         }
 
@@ -88,10 +89,10 @@ class Serial:
     def load(cls, data):
         if not isinstance(data, dict):
             raise TypeError(f"{cls.__qualname__} cannot load {type(data).__name__}")
-        inst = cls.__new__(cls)
+        inst = cls()
 
         def convert(value):
-            if isinstance(value, tuple):
+            if isinstance(value, (tuple, list)):
                 return tuple(convert(v) for v in value)
             if isinstance(value, dict) and len(value) == 1:
                 for marker in value:

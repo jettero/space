@@ -8,6 +8,7 @@ import space.exceptions as E
 from space.find import lazy_find_verb_method
 from space.pv import INFINITY
 
+from .. import serial
 from ..vv import VV
 from ..stdobj import StdObj
 from ..obj import register_haver_leaf
@@ -139,6 +140,7 @@ class Living(ReceivesMessages, CanMove, Weapon, StdObj):
     hearing_range = None  # we hear forever too
     behavior = DefensivelyPassive()  # ponytail: shared instance; give each mob its own when a behavior keeps state
     resist = {}
+    credits = 1000  # ponytail: placeholder starting purse; nothing has a real price until the economy exists
 
     class Choices(AttrChoices):
         _ordered = ("gender", "height", "mass")
@@ -173,6 +175,17 @@ class Living(ReceivesMessages, CanMove, Weapon, StdObj):
         self.aggro = {}
 
         super().__init__(**kw)
+
+    def save(self):
+        return super().save(inject={"slots": s} if (s := self.slots.save()) else None)
+
+    @classmethod
+    def load(cls, data):
+        inst = super().load({k: v for k, v in data.items() if k != "slots"})
+        for k, v in data.get("slots", {}).items():
+            getattr(inst.slots, k).add_item(serial.load(v))
+        inst.initiative.mar, inst.initiative.mor = inst.mar, inst.mor
+        return inst
 
     @property
     def subjective(self):  # e.g., he/she/they/it

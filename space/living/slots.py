@@ -6,7 +6,6 @@ from collections import OrderedDict
 import space.exceptions as E
 from ..container import Slot, Container
 from ..stdobj import StdObj
-from ..serial import Serial
 
 log = logging.getLogger(__name__)
 PROP_NAME_RE = re.compile(r"[^\w\d]+")
@@ -64,7 +63,7 @@ class FeetSlot(Slot):
     accept_types = (FeetWearable,)
 
 
-class Slots(Serial):
+class Slots:
     class Meta:
         slots = OrderedDict()
         default = None
@@ -107,6 +106,9 @@ class Slots(Serial):
     def __iter__(self):
         for slot_prop_name in self._slots:
             yield getattr(self, slot_prop_name)
+
+    def save(self):
+        return {k: s.item.save() for k in self._slots if (s := getattr(self, k)).item is not None}
 
     @property
     def inventory(self):

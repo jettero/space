@@ -82,6 +82,7 @@ class Humanoid(Living):
 
     def do_open_obj(self, obj: Door):
         log.debug("do_open_obj(%s)", obj)
+        obj = obj.passage(self)
         self.changes_view(obj.do_open)
         self.simple_action("$N $vopen $o.", obj)
         self.location.map.time.charge(self, main=1)

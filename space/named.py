@@ -56,6 +56,12 @@ class Named(baseobj):
             self.proper_name = proper_name
         self.tokens = self._tokenize()
 
+    @classmethod
+    def load(cls, data):
+        inst = super().load(data)
+        inst.tokens = inst._tokenize()
+        return inst
+
     @property
     def proper_name(self):
         if self.proper:

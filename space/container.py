@@ -7,7 +7,7 @@ from .pv import INFINITY
 from .size import Size, BLESSED_PROPERTIES
 from .obj import baseobj, register_haver_recurse_by_owner, register_location_leaf
 from .named import Named
-from .serial import Serial
+from . import serial
 
 
 class Containable(Size, baseobj):
@@ -50,6 +50,12 @@ class Container(baseobj):
                 setattr(Capacity, aname, val)
             # have to invoke this manually since we added these after it ran. :-(
             Capacity.__init_subclass__()
+
+    @classmethod
+    def load(cls, data):
+        inst = super().load({k: v for k, v in data.items() if k != "_items"})
+        inst.add_items(*(serial.load(v) for v in data.get("_items", ())))
+        return inst
 
     @property
     def content_size(self):

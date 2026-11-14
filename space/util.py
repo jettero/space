@@ -6,9 +6,30 @@ from collections import namedtuple
 from typing import Any, get_args, get_origin, Literal, Annotated, Union, get_type_hints
 import inspect
 import logging
+import os
+import subprocess
 import weakref
 
 log = logging.getLogger(__name__)
+
+
+def program_of(pid: int) -> str:
+    """
+    The command name `ps` reports for process `pid`, or "" when there is
+    no such process.  Works on Linux and macOS (no /proc needed).
+    """
+
+    return subprocess.run(["ps", "-o", "comm=", "-p", str(pid)], capture_output=True, text=True).stdout.strip()
+
+
+def same_program(pid: int) -> bool:
+    """
+    True when process `pid` is alive and runs the same program as this
+    process, so a stale pid since reused by something else isn't mistaken
+    for one of ours.
+    """
+
+    return (p := program_of(pid)) != "" and p == program_of(os.getpid())
 
 
 def weakify(v):

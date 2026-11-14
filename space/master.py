@@ -156,12 +156,12 @@ class MasterControlProgram:
 
     # --- Helpers ----------------------------------------------------------
     def step_map_shells(self):
-        """Advance every HasShell on the active map (best-effort)."""
+        """Advance every HasShell on the map the body is on now (best-effort)."""
         log.debug("timer: step_map_shells")
         # Iterate current snapshot to avoid issues if list mutates during stepping
-        if self.map is None or self.map.time.fighting:
+        if self.map is None or (m := self.body.location.map).time.fighting:
             return
-        for obj in self.map.objects:
+        for obj in m.objects:
             if isinstance(obj, HasShell):
                 try:
                     with LOCK:
