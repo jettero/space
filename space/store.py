@@ -10,15 +10,13 @@ from pathlib import Path
 @cache
 def db():
     """
-    The one sqlite connection: data/space.db beside appserv's
-    data/appserv/users (APPSERV_USERS_DIR), in WAL mode.  The schema is a
+    The one sqlite connection: space.db in appserv's data dir
+    (APPSERV_DATA_DIR, default ./data), in WAL mode.  The schema is a
     single table that never changes with the mudlib: saves(kind, key, doc)
     where doc is JSONB.
     """
 
-    con = sqlite3.connect(
-        Path(os.environ.get("APPSERV_USERS_DIR", "data/appserv/users")).parent.parent / "space.db", autocommit=True
-    )
+    con = sqlite3.connect(Path(os.environ.get("APPSERV_DATA_DIR", "data")) / "space.db", autocommit=True)
     con.execute("PRAGMA journal_mode=WAL")
     con.execute("CREATE TABLE IF NOT EXISTS saves (kind TEXT, key TEXT, doc JSONB, PRIMARY KEY (kind, key))")
     return con

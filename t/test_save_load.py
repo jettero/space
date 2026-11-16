@@ -30,14 +30,15 @@ def test_roundtrip_me(objs):
 
 @pytest.fixture
 def db(tmp_path, monkeypatch):
-    monkeypatch.setenv("APPSERV_USERS_DIR", str(tmp_path / "appserv" / "users"))
+    monkeypatch.setenv("APPSERV_DATA_DIR", str(tmp_path))
     store.db.cache_clear()
     yield store
     store.db.cache_clear()
 
 
-def test_store_roundtrip(db):
+def test_store_roundtrip(db, tmp_path):
     db.put("character", "acct/Bob", doc := Human("Bob").save())
+    assert (tmp_path / "space.db").exists()
     db.put("character", "other/Al", {})
     assert db.get("character", "acct/Bob") == json.loads(json.dumps(doc))
     assert db.get("character", "acct/nobody") is None
